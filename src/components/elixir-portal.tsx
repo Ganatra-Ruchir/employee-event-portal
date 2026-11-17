@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import PublicLanding from "@/components/public-landing";
 import V3Workspace from "@/components/v3-workspace";
+import {seedPreview,previewActor} from "@/lib/v3-preview";
 import {DiscoverHome, DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
 import dynamic from "next/dynamic";
 const SpeakerEditor=dynamic(()=>import("@/components/speaker-editor").then(m=>m.SpeakerEditor),{loading:()=> <div className="ep-hint">Loading speaker editor…</div>});
@@ -234,6 +235,7 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
         <FormRow label={mode==="signup"?"Work email address":"Email or employee ID"}><input type={mode==="login"?"text":"email"} autoComplete={mode==="login"?"username":"email"} required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com"/></FormRow>
         {mode!=="forgot"&&<div className="ep-field"><label htmlFor="ep-password">Password</label><div className="ep-password-wrap"><input id="ep-password" type={showPassword?"text":"password"} minLength={6} autoComplete={mode==="login"?"current-password":"new-password"} required value={pass} onChange={e=>setPass(e.target.value)} placeholder="Enter password"/><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword?"Hide password":"Show password"}>{showPassword?"Hide":"Show"}</button></div></div>}
         
+        {!remoteMode&&mode==="login"&&<div className="ep-info"><strong>Demo accounts (browser only)</strong><div>Root: admin@elixir.example</div><div>Country: alex@northwind.example</div><div>State: state@northwind.example</div><div>Employee: priya@northwind.example</div><div>Password: Demo@2026!</div></div>}
         {error&&<div role="alert" className="ep-error">{error}</div>}
         {message&&<div role="status" className="ep-success">{message}</div>}
         <button type="submit" className="ep-auth-submit" disabled={busy}>{busy?"Working…":mode==="login"?"Sign in":mode==="signup"?"Create account":"Reset demo password"}<ArrowRight size={18}/></button>
@@ -300,6 +302,11 @@ export default function ElixirPortal(){
   const [profileSuccess,setProfileSuccess]=useState("");
   useEffect(()=>{
     void Promise.resolve().then(async()=>{
+      if(process.env.NEXT_PUBLIC_PORTAL_DATABASE_ENABLED!=="true"){
+        let restored=structuredClone(initialData);let savedSession:string|null=null;
+        try{const saved=localStorage.getItem(STORE);if(saved){const parsed=JSON.parse(saved) as PortalData;if(Array.isArray(parsed.users)&&Array.isArray(parsed.companies)&&Array.isArray(parsed.events)&&Array.isArray(parsed.registrations)&&Array.isArray(parsed.invitations))restored=parsed;}savedSession=localStorage.getItem(SESSION);}catch{}
+        const next=seedPreview(restored);setData(next);setSession(savedSession);setNow(Date.now());setReady(true);return;
+      }
       try{
         const response=await fetch("/api/portal",{cache:"no-store"});
         const payload=await response.json();
@@ -415,9 +422,11 @@ export default function ElixirPortal(){
       else if(!await remoteRefresh())return "Signed in, but could not load your account. Refresh the page.";
       setSignedOut(false);setShowAuth(false);setView("home");window.history.replaceState(null,"","/overview");return null;
     }
-    const u=data.users.find(x=>x.email.toLowerCase()===email.toLowerCase().trim());
+    const loginId=email.toLowerCase().trim();
+    const u=data.users.find(x=>x.email.toLowerCase()===loginId||x.id.toLowerCase()===loginId);
     if(!u||!(await passwordMatches(u.password,password)))return "Invalid email or password.";
     if(!u.verified)return "Verify the sample email before signing in.";
+    if(u.mustChangePassword&&u.temporaryPasswordExpiresAt&&Date.parse(u.temporaryPasswordExpiresAt)<=Date.now())return "Temporary password expired. Ask your demo administrator to reset it.";
     const org=u.companyId?data.companies.find(c=>c.id===u.companyId):null;
     if(u.status==="suspended"||org?.status==="suspended")return "This account or company is suspended. Contact the platform administrator.";
     setSession(u.id);setSignedOut(false);try{localStorage.setItem(SESSION,u.id);}catch{}
@@ -630,9 +639,10 @@ export default function ElixirPortal(){
   if(!ready)return <main className="ep-loading" role="status"><span className="ep-loading-mark" aria-hidden="true">E</span><span>Loading your events…</span></main>;
   if(remoteError&&remote)return <main className="ep-loading" role="alert">Database connection error: {remoteError}. Refresh to retry.</main>;
   if(!current)return showAuth?
-    <AuthPage data={data} onLogin={login} onSignup={signup} onVerified={verify} onReset={reset} remoteMode={true} onBack={()=>{setShowAuth(false);window.history.replaceState(null,"","/");}}/>:
+    <AuthPage data={data} onLogin={login} onSignup={signup} onVerified={verify} onReset={reset} remoteMode={remote} onBack={()=>{setShowAuth(false);window.history.replaceState(null,"","/");}}/>:
     <PublicLanding onEnter={()=>{setShowAuth(true);window.history.pushState(null,"","/?auth=login");}}/>;
-  if(remote&&current.mustChangePassword)return <FirstLoginPasswordChange person={current} onLogout={logout} onSave={async password=>{
+  if(current.mustChangePassword)return <FirstLoginPasswordChange person={current} onLogout={logout} onSave={async password=>{
+    if(!remote){if(password.length<12)return "Use at least 12 characters.";if(await passwordMatches(current.password,password))return "Choose a different password.";const hashed=await encodePassword(password);if(!save({...data,users:data.users.map(u=>u.id===current.id?{...u,password:hashed,mustChangePassword:false,temporaryPasswordExpiresAt:undefined}:u)}))return "Unable to save password.";setView("home");return null;}
     const result=await remoteRequest("profile",{fullName:current.fullName,department:current.department,password});
     if(result.error)return result.error;
     if(!await remoteRefresh())return "Password updated. Refresh to continue.";
@@ -668,12 +678,12 @@ export default function ElixirPortal(){
     </header>
     <div className="ep-layout">
       <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
-        <div className="ep-nav-title">{roleName(current.role)}</div>
+        <div className="ep-nav-title">{!remote&&previewActor(current,data).level==="state_admin"?"State admin":roleName(current.role)}</div>
         {nav.map(v=><button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"?"Dashboard":"Discover"):pageName(v)}</button>)}
         <div className="ep-side-bottom"><button className="ep-nav-link" onClick={logout}><LogOut size={17}/> Sign out</button></div>
       </nav>
       <main className="ep-main" id="main-content" tabIndex={-1}>
-        {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. No real accounts or shared database. <button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(structuredClone(initialData));setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button></div>}
+        {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. No real accounts or shared database. <button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(seedPreview(structuredClone(initialData)));setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button></div>}
         {notice&&<div className="ep-info ep-notice" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice("")}><X size={17}/></button></div>}
         {resetResult&&<div className="ep-reset-result" role="status">
           <div><strong>Temporary password for {resetResult.email}</strong><p>Give it to them privately. It is shown only once; they&apos;ll choose a new password when they sign in.</p></div>
@@ -682,7 +692,7 @@ export default function ElixirPortal(){
         </div>}
         {view==="eventForm"&&editingEvent&&<EventEditor key={editingEvent.id} event={editingEvent} data={data} onSave={saveEvent} onBack={()=>goto("events")}/>}
         {view==="companyForm"&&<CompanyEditor key={editingCompany?.id||"new"} company={editingCompany||undefined} data={data} onSave={saveCompany} onBack={()=>goto("companies")}/>}
-        {view==="home"&&<V3Workspace key={current.id} user={current} data={data} remote={remote} onEvent={openEvent}/>}
+        {view==="home"&&<V3Workspace key={current.id} user={current} data={data} remote={remote} onEvent={openEvent} onSave={save} hash={encodePassword}/>}
         {view==="home"&&current.role==="employee"&&<DiscoverHome
           data={data} events={companyEvents} user={current} now={now}
           onOpen={e=>{openEvent(e.id);}}
