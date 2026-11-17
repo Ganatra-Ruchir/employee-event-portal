@@ -96,3 +96,56 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .cc-hierarchy-setup .v3-list button{width:fit-content;min-height:36px;font-size:12px}
 .cc-issued-credentials{overflow-wrap:anywhere}
 @media(max-width:600px){.cc-form-step{padding:12px}.cc-form-step .v3-form{grid-template-columns:1fr}.cc-form-step>.ep-button.primary{width:100%;min-width:0}}
+
+/* Compact 4/8/12/16/24 spacing rhythm across all pages. Preserve touch targets. */
+.ep-shell .ep-main{padding:16px clamp(14px,2vw,28px) 24px!important}
+.ep-shell .ep-sidebar{padding:12px 10px!important;gap:2px}
+.ep-shell .ep-demobar{margin:0 0 10px!important;padding:7px 10px!important}
+.ep-shell .aw-root,.ep-shell .v3-workspace{gap:12px!important}
+.ep-shell .ep-panel,.ep-shell .aw-section{padding:16px!important;margin:0 0 12px!important}
+.ep-shell .aw-heading,.ep-shell .ep-page-head,.ep-shell .ed-browse-title{margin:0 0 14px!important;padding:0!important}
+.ep-shell .aw-heading h1,.ep-shell .ep-page-head h1,.ep-shell .ed-browse-title h1{margin:3px 0 4px!important}
+.ep-shell .aw-heading p,.ep-shell .ep-page-head p,.ep-shell .ed-browse-title p,.ep-shell .aw-section-heading p{margin:4px 0 0!important}
+.ep-shell .aw-section-heading,.ep-shell .ep-section-head,.ep-shell .ed-section-head{margin:0 0 10px!important;gap:8px!important}
+.ep-shell .aw-section-heading h2,.ep-shell .ep-section-head h2{margin:0!important}
+.ep-shell .aw-metric-grid,.ep-shell .v3-metrics,.ep-shell .aw-two-col,.ep-shell .ed-tile-grid,.ep-shell .md-person-grid,.ep-shell .md-company-grid,.ep-shell .ep-detail-layout,.ep-shell .ep-form-grid{gap:12px!important}
+.ep-shell .aw-metric-grid{margin-bottom:0!important}
+.ep-shell .aw-metric,.ep-shell .v3-metrics>div{padding:12px!important;min-height:0!important}
+.ep-shell .aw-metric strong,.ep-shell .v3-metrics strong{font-size:26px!important}
+.ep-shell .aw-item,.ep-shell .aw-registration-row,.ep-shell .md-person,.ep-shell .md-company,.ep-shell .md-account,.ep-shell .md-invitation,.ep-shell .v3-list>div,.ep-shell .v3-list>button{padding:10px 12px!important;min-height:0!important}
+.ep-shell .aw-list-panel,.ep-shell .aw-registration-list,.ep-shell .md-account-list,.ep-shell .v3-list{gap:6px!important}
+.ep-shell .aw-empty,.ep-shell .ep-empty,.ep-shell .md-empty,.ep-shell .ed-feature-empty{min-height:0!important;padding:18px 14px!important;margin:0!important}
+.ep-shell .ep-field,.ep-shell .ep-form,.ep-shell .aw-profile-form,.ep-shell .v3-form,.ep-shell .cc-location-form{gap:8px!important}
+.ep-shell .ep-field{margin-bottom:10px!important}
+.ep-shell .aw-form-divider{margin:12px 0!important}
+.ep-shell .ep-banner{margin:10px 0 12px!important;min-height:0!important;aspect-ratio:16/6;max-height:300px}
+.ep-shell .ep-detail-copy{padding:16px!important}
+.ep-shell .ep-detail-copy dl{margin:12px 0 0!important}
+.ep-shell .ep-detail-copy dl>div{padding:8px 0!important}
+.ep-shell .ed-event-bottom-info{margin:12px 0!important;padding:10px 12px!important}
+.ep-shell .cc-speakers-secondary{margin-top:12px}
+.ep-shell .ed-tile-content{padding:12px!important;gap:6px!important}
+.ep-shell .cc-card-summary{min-height:0!important}
+.ep-shell .cc-form-step,.ep-shell .cc-location-directory{padding:12px!important}
+.ep-shell .cc-hierarchy-setup{gap:12px!important}
+.ep-shell .aw-browse-bar,.ep-shell .ed-browse-row,.ep-shell .md-toolbar,.ep-shell .employee-list-stats,.ep-shell .ep-people-toolbar{margin:0 0 10px!important;gap:8px!important}
+.ep-shell .ep-footer{margin-top:12px!important;padding:12px 0!important}
+.ep-shell .cc-account-label{cursor:default}
+.ep-shell .ep-header-signout{display:inline-flex!important;align-items:center;justify-content:center;min-height:40px;min-width:40px}
+.ep-shell .ep-panel .ep-panel{margin-bottom:0!important}
+.ep-shell .cc-nav-group-title{margin:10px 8px 5px;padding-top:10px}
+.ep-auth-v2 .ep-auth-card{padding:24px clamp(18px,3vw,38px)!important}
+.ep-auth-v2 .ep-auth-heading{margin-bottom:24px!important}
+.ep-auth-v2 .ep-auth-form{gap:10px!important}
+.ep-auth-v2 .ep-auth-links{margin-top:12px!important}
+.landing-editorial .landing-header{min-height:60px!important;height:auto!important;padding-top:10px!important;padding-bottom:10px!important;justify-content:space-between}
+.landing-editorial .landing-photo-hero{min-height:clamp(280px,42vw,460px)!important}
+.landing-editorial .landing-hero-wrap{padding-top:40px!important;padding-bottom:40px!important;min-height:0!important}
+.landing-editorial .landing-curations,.landing-editorial .landing-private-wrap{padding-top:24px!important;padding-bottom:24px!important}
+.landing-editorial .landing-section-intro{margin-bottom:16px!important}
+.landing-editorial .landing-curation-grid{gap:12px!important}
+.landing-editorial article.landing-curation{cursor:default;transform:none!important}
+.landing-editorial .cc-landing-footer{padding:14px clamp(16px,4vw,48px)!important}
+.landing-editorial .cc-landing-footer .landing-footer-bottom{margin:0!important;padding:0!important;border:0!important}
+@media(max-width:900px){.ep-shell .ep-main{padding:12px 12px 20px!important}.ep-shell .ep-sidebar{padding:4px 8px!important}.ep-shell .cc-nav-group-title{margin:3px 5px;padding:0}.ep-shell .ep-panel,.ep-shell .aw-section{padding:12px!important}.ep-shell .ep-detail-layout{gap:10px!important}.ep-shell .ep-banner{max-height:220px;aspect-ratio:16/9}.ep-shell .ep-detail-right{width:100%}.ep-shell .ep-detail-copy{padding:12px!important}}
+@media(max-width:480px){.landing-editorial .landing-glass-stamp,.landing-editorial .landing-hero-index{display:none!important}.landing-editorial .landing-nav{gap:8px!important}.landing-editorial .landing-nav .landing-login:first-child{display:none}.landing-editorial .landing-hero-wrap{padding-top:28px!important;padding-bottom:28px!important}}
