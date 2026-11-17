@@ -19,18 +19,26 @@ function companyStats(c:Company,data:PortalData){
  const members=data.users.filter(u=>u.companyId===c.id);
  return {events,people:members.length,attending:events.reduce((sum,e)=>sum+activeRegistrations(e.id,data).length,0)};
 }
-export function PlatformOverview({data,onCompany,onAdd,onCompanies,onInvites,onUsers}:{data:PortalData;onCompany:(company:Company)=>void;onAdd:()=>void;onCompanies:()=>void;onInvites:()=>void;onUsers:()=>void}){
+export function PlatformOverview({data,onCompany,onAdd,onCompanies,onInvites,onUsers,onEvents,onEvent,now}:{data:PortalData;onCompany:(company:Company)=>void;onAdd:()=>void;onCompanies:()=>void;onInvites:()=>void;onUsers:()=>void;onEvents:()=>void;onEvent:(event:PortalEvent)=>void;now:number}){
  const active=data.companies.filter(c=>c.status==="active");
  const attendees=data.registrations.filter(r=>r.status==="going").length;
+ const upcoming=data.events.filter(e=>e.status==="published"&&Date.parse(e.startsAt)>now).sort((a,b)=>Date.parse(a.startsAt)-Date.parse(b.startsAt));
+ const recent=data.registrations.filter(r=>r.status==="going").sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)).slice(0,5);
  return <div className="aw-root">
-  <WorkspaceHeading eyebrow="ELIXIR FOUNDATION · PLATFORM" title="Your partner network" description="Keep track of organizations, their teams and events in one place."
-   action={<button className="aw-primary" onClick={onAdd}><Plus size={18}/> Add organization</button>}/>
+  <WorkspaceHeading eyebrow="ELIXIR FOUNDATION · PLATFORM" title="Platform overview" description="Monitor upcoming events and registration activity across partners."
+   action={<button className="aw-primary" onClick={onEvents}><CalendarDays size={18}/> View events</button>}/>
   <div className="aw-metric-grid">
-   <Metric icon={Building2} value={data.companies.length} label="Organizations" detail={active.length+" active"}/>
-   <Metric icon={Users} value={data.users.length} label="Accounts" detail="Including platform administrators"/>
-   <Metric icon={CalendarDays} value={data.events.length} label="Events created" detail="All partner events"/>
+   <Metric icon={CalendarDays} value={upcoming.length} label="Upcoming events" detail="Published and scheduled"/>
    <Metric icon={TicketCheck} value={attendees} label="Active RSVPs" detail="Currently going"/>
+   <Metric icon={Users} value={data.users.length} label="Accounts" detail="Across partner organizations"/>
+   <Metric icon={Building2} value={active.length} label="Active organizations" detail={data.companies.length+" total"}/>
   </div>
+  <WorkspaceSection title="Upcoming partner events" description="Next scheduled activities across all organizations" action={<button className="aw-text-action" onClick={onEvents}>All events <ArrowRight size={16}/></button>}>
+   {upcoming.length?<div className="ed-tile-grid">{upcoming.slice(0,3).map(e=><EventTile key={e.id} event={e} data={data} now={now} onOpen={onEvent} showHost/>)}</div>:<div className="aw-list-empty">No upcoming published events.</div>}
+  </WorkspaceSection>
+  <WorkspaceSection title="Recent registrations" description="Latest participation across partners">
+   <div className="aw-list-panel">{recent.length?recent.map(r=>{const e=data.events.find(x=>x.id===r.eventId),p=data.users.find(x=>x.id===r.userId);return e?<button key={r.id} className="aw-item" onClick={()=>onEvent(e)}><span className="aw-item-icon"><TicketCheck size={18}/></span><span className="aw-item-copy"><strong>{e.title}</strong><small>{p?.fullName||"Employee"} · {shortDate(r.createdAt)}</small></span><ChevronRight size={17}/></button>:null}):<div className="aw-list-empty">No recent registrations.</div>}</div>
+  </WorkspaceSection>
   <WorkspaceSection title="Organizations" description="Your organizations and their recent event activity"
    action={<button className="aw-text-action" onClick={onCompanies}>Manage organizations <ArrowRight size={16}/></button>}>
    <div className="aw-company-grid">{data.companies.map(c=>{const s=companyStats(c,data);return <button key={c.id} className="aw-company-card" onClick={()=>onCompany(c)}>
@@ -38,7 +46,7 @@ export function PlatformOverview({data,onCompany,onAdd,onCompanies,onInvites,onU
     <span className="aw-company-body"><strong>{c.name}</strong><small>{c.domains.join(", ")}</small><span className="aw-company-foot"><span>{s.events.length} events</span><span>{s.people} people</span><span className={"aw-status "+c.status}>{c.status}</span></span></span><ChevronRight size={18}/>
    </button>})}</div>
   </WorkspaceSection>
-  <WorkspaceSection title="Quick actions" description="Common platform administration tasks">
+  <WorkspaceSection title="Administration shortcuts" description="Occasional organization setup and account administration">
    <div className="aw-action-grid">
     <button onClick={onAdd}><Building2 size={22}/><strong>Add an organization</strong><span>Set up an organization and its work domains</span><ArrowRight size={17}/></button>
     <button onClick={onInvites}><UserRoundCheck size={22}/><strong>Invite an organization admin</strong><span>Assign access to a partner manager</span><ArrowRight size={17}/></button>
@@ -47,7 +55,7 @@ export function PlatformOverview({data,onCompany,onAdd,onCompanies,onInvites,onU
   </WorkspaceSection>
  </div>;
 }
-export function CompanyOverview({data,current,company,now,onCreate,onEvents,onPeople,onEvent}:{data:PortalData;current:Person;company:Company;now:number;onCreate:()=>void;onEvents:()=>void;onPeople:()=>void;onEvent:(event:PortalEvent)=>void}){
+export function CompanyOverview({data,current,company,now,onCreate,onEvents,onPeople,onEvent,onAttendance}:{data:PortalData;current:Person;company:Company;now:number;onCreate:()=>void;onEvents:()=>void;onPeople:()=>void;onEvent:(event:PortalEvent)=>void;onAttendance?:()=>void}){
  const events=data.events.filter(e=>e.companyId===company.id);
  const upcoming=events.filter(e=>e.status==="published"&&new Date(e.startsAt).getTime()>now).sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime());
  const drafts=events.filter(e=>e.status==="draft");
@@ -75,9 +83,7 @@ export function CompanyOverview({data,current,company,now,onCreate,onEvents,onPe
     <Metric icon={TicketCheck} value={attending} label="People going" detail="Across company events"/>
     <Metric icon={Users} value={members.length} label="Team members" detail="In your organization"/>
    </div>
-   <WorkspaceSection title="Your upcoming events" description="See what your team can join next" action={<button className="aw-text-action" onClick={onEvents}>All events <ArrowRight size={16}/></button>}>
-    {upcoming.length?<div className="ed-tile-grid">{upcoming.slice(0,3).map(e=><EventTile event={e} data={data} onOpen={onEvent} key={e.id} now={now} showHost={false}/>)}</div>:<div className="aw-empty"><CalendarDays size={22}/><strong>No upcoming events</strong><p>Create an event to start accepting registrations.</p><button onClick={onCreate}>Create event <ArrowRight size={15}/></button></div>}
-   </WorkspaceSection>
+   <div className="v3-daily-actions"><button className="ep-button primary" onClick={onCreate}>Create event</button>{onAttendance&&<button className="ep-button secondary" onClick={onAttendance}>Verify attendance</button>}<button className="ep-button secondary" onClick={onPeople}>Manage employees</button></div>
    <div className="aw-two-col">
     <WorkspaceSection title="Needs your attention" description="Drafts, closed registration and full events" action={<button className="aw-text-action" onClick={onEvents}>View events <ArrowRight size={16}/></button>}>
      <div className="aw-list-panel">{alertEvents.length?alertEvents.slice(0,5).map(({event:e,reason})=><button key={e.id} className="aw-item" onClick={()=>onEvent(e)}>
@@ -89,5 +95,9 @@ export function CompanyOverview({data,current,company,now,onCreate,onEvents,onPe
       </button>}):<div className="aw-list-empty">No registrations yet. New RSVPs will appear here.</div>}</div>
     </WorkspaceSection>
    </div>
+   <WorkspaceSection title="Your upcoming events" description="See what your team can join next" action={<button className="aw-text-action" onClick={onEvents}>All events <ArrowRight size={16}/></button>}>
+    {upcoming.length?<div className="ed-tile-grid">{upcoming.slice(0,3).map(e=><EventTile event={e} data={data} onOpen={onEvent} key={e.id} now={now} showHost={false}/>)}</div>:<div className="aw-empty"><CalendarDays size={22}/><strong>No upcoming events</strong><p>Create an event to start accepting registrations.</p><button onClick={onCreate}>Create event <ArrowRight size={15}/></button></div>}
+   </WorkspaceSection>
+
  </div>;
 }
