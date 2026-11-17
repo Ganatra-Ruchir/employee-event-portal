@@ -34,7 +34,7 @@ export function previewWorkspace(user:Person,data:PreviewData){
  const {level,scope}=actor;
  if(level==="employee")return {level,scope,contributions:v.contributions.filter(r=>r.user_id===user.id).flatMap(r=>{const e=data.events.find(e=>e.id===r.event_id&&e.companyId===user.companyId&&e.status==="published");return e?[{...r,id:e.id,title:e.title,starts_at:e.startsAt}]:[];})};
  const visible=(r:Row)=>canManageScope(actor,scopeOf(str(r.organization_id),str(r.country_code||r.code),str(r.state_id||r.id)||null,str(r.branch_id)||null));
- const members=v.members.filter(m=>canManageScope(actor,m)).flatMap(m=>{const u=data.users.find(u=>u.id===m.user_id&&u.companyId===m.organization_id);return u?[{...m,full_name:u.fullName,email:u.email}]:[];});
+ const members=v.members.filter(m=>canManageScope(actor,m)).flatMap(m=>{const u=data.users.find(u=>u.id===m.user_id&&u.companyId===m.organization_id);return u?[{...m,full_name:u.fullName,email:u.email,employee_number:u.employeeNumber||u.id}]:[];});
  const attendance=level==="root"?[]:data.registrations.flatMap(r=>{
   const e=data.events.find(e=>e.id===r.eventId),m=members.find(m=>m.user_id===r.userId&&m.level==="employee");
   if(!e||!m||e.companyId!==m.organization_id||e.status!=="published"||r.status!=="going"||Date.parse(e.endsAt)>Date.now())return [];
@@ -52,6 +52,28 @@ export async function previewAction(user:Person,input:PreviewData,a:Record<strin
  const hasState=v.states.some(s=>s.organization_id===org&&s.country_code===country&&s.id===state);
  const hasBranch=v.branches.some(b=>b.organization_id===org&&b.country_code===country&&b.state_id===state&&b.id===branch);
  let credentials:Row|null=null;
+ if(action==="cityStateAdmin"){
+  const city=str(a.city),stateName=str(a.state_name),employeeNumber=str(a.employee_number).toUpperCase();
+  if(actor.level!=="country_admin"||!hasCountry||!city||!stateName||city.length>160||stateName.length>100||!/^[A-Z0-9][A-Z0-9_-]{0,39}$/.test(employeeNumber))throw Error("Select a city and enter a valid company ID number");
+  if(d.users.some(u=>u.id.toUpperCase()===employeeNumber||u.employeeNumber?.toUpperCase()===employeeNumber))throw Error("This ID number is already in use");
+  let targetState=v.states.find(s=>s.organization_id===org&&s.country_code===country&&str(s.name).toLowerCase()===stateName.toLowerCase());
+  if(!targetState){targetState={id:crypto.randomUUID(),organization_id:org,country_code:country,name:stateName};v.states.push(targetState);}
+  const sid=str(targetState.id);
+  if(!v.branches.some(b=>b.organization_id===org&&b.country_code===country&&b.state_id===sid&&str(b.name).toLowerCase()===city.toLowerCase()))v.branches.push({id:crypto.randomUUID(),...scopeOf(org,country,sid),name:city});
+  const result=await previewAction(user,d,{action:"provision",level:"state_admin",organization_id:org,country_code:country,state_id:sid,name:email.split("@")[0].replace(/[._-]+/g," ")||"State administrator",email,department:"Administration"},hash);
+  const account=result.data.users.find(u=>u.id===result.credentials?.employeeId);
+  if(!account||!result.credentials)throw Error("Unable to provision account");
+  account.employeeNumber=employeeNumber;
+  result.credentials.employeeId=employeeNumber;
+  return result;
+ }
+ if(action==="resetStateAdmin"){
+  const target=d.users.find(u=>u.id===str(a.user_id)&&u.status==="active"),m=v.members.find(m=>m.user_id===target?.id&&m.level==="state_admin");
+  if(actor.level!=="country_admin"||!target||!m||!canManageScope(actor,m))throw Error("Account outside your country scope");
+  const password=crypto.randomUUID().replaceAll("-","").slice(0,24);
+  target.password=await hash(password);target.mustChangePassword=true;target.temporaryPasswordConsumedAt=undefined;target.temporaryPasswordExpiresAt=new Date(Date.now()+86400000).toISOString();
+  return {data:d,credentials:{employeeId:target.employeeNumber||target.id,email:target.email,temporaryPassword:password,expiresIn:"24 hours"}};
+ }
  if(action==="country"&&actor.level==="root"){
   if(hasCountry||name.length<2||name.length>100)throw Error("Enter a new country and valid name");
   v.countries.push({organization_id:org,code:country,name,organization_name:company.name});
