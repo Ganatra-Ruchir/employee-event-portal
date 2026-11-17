@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import PublicLanding from "@/components/public-landing";
 import V3Workspace from "@/components/v3-workspace";
-import {seedPreview,previewActor} from "@/lib/v3-preview";
+import {previewActor} from "@/lib/v3-preview";
+import {createDemoData,DEMO_DATA_VERSION} from "@/lib/demo-data";
 import {DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
 import dynamic from "next/dynamic";
 const SpeakerEditor=dynamic(()=>import("@/components/speaker-editor").then(m=>m.SpeakerEditor),{loading:()=> <div className="ep-hint">Loading speaker editor…</div>});
@@ -24,7 +25,7 @@ import {
 } from "lucide-react";
 import {
   activeRegistrations, canCancel, canRegister, cancelLocally, CATEGORIES, dateText, DEMO_PASSWORD,
-  eventAccess, exportCsv, initialData, isPersonalDomain, makeId, registrationLabel, registrationState, remainingPlaces,
+  eventAccess, exportCsv, isPersonalDomain, makeId, registrationLabel, registrationState, remainingPlaces,
   registerLocally, registrationsFor, shortDate, signupCompany, toInput, validateEvent,
   waitlistedRegistrations, waitlistPosition, promoteWaitlistLocally
 } from "@/lib/portal-model";
@@ -235,7 +236,7 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
         <FormRow label={mode==="signup"?"Work email address":"Email or employee ID"}><input type={mode==="login"?"text":"email"} autoComplete={mode==="login"?"username":"email"} required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com"/></FormRow>
         {mode!=="forgot"&&<div className="ep-field"><label htmlFor="ep-password">Password</label><div className="ep-password-wrap"><input id="ep-password" type={showPassword?"text":"password"} minLength={6} autoComplete={mode==="login"?"current-password":"new-password"} required value={pass} onChange={e=>setPass(e.target.value)} placeholder="Enter password"/><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword?"Hide password":"Show password"}>{showPassword?"Hide":"Show"}</button></div></div>}
         
-        {!remoteMode&&mode==="login"&&<div className="ep-info"><strong>Demo accounts (browser only)</strong><div>Root: admin@elixir.example</div><div>Country: alex@northwind.example</div><div>State: state@northwind.example</div><div>Employee: priya@northwind.example</div><div>Password: Demo@2026!</div></div>}
+        {!remoteMode&&mode==="login"&&<div className="ep-info"><strong>Demo accounts (browser only)</strong><div>Root: admin@elixir.example</div><div>Common password: <strong>Demo@2026!</strong></div>{["elixir","micron","microsoft"].map(org=><details key={org} className="cc-demo-account-group"><summary>{org==="elixir"?"Elixir Foundation":org==="micron"?"Micron":"Microsoft"}</summary>{["country","state","employee"].map(role=><button key={role} type="button" className="cc-demo-login" onClick={()=>{setEmail(role+"@"+org+".example");setPass(DEMO_PASSWORD);}}>{role==="country"?"Country admin":role==="state"?"State admin":"Employee"} · {role}@{org}.example</button>)}</details>)}</div>}
         {error&&<div role="alert" className="ep-error">{error}</div>}
         {message&&<div role="status" className="ep-success">{message}</div>}
         <button type="submit" className="ep-auth-submit" disabled={busy}>{busy?"Working…":mode==="login"?"Sign in":mode==="signup"?"Create account":"Reset demo password"}<ArrowRight size={18}/></button>
@@ -259,7 +260,7 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
 }
 
 export default function ElixirPortal(){
-  const [data,setData]=useState<PortalData>(initialData);
+  const [data,setData]=useState<PortalData>(()=>({companies:[],users:[],events:[],registrations:[],invitations:[]}));
   const [remote,setRemote]=useState(false);
   const [remoteError,setRemoteError]=useState("");
   const [session,setSession]=useState<string|null>(null);
@@ -303,9 +304,22 @@ export default function ElixirPortal(){
   useEffect(()=>{
     void Promise.resolve().then(async()=>{
       if(process.env.NEXT_PUBLIC_PORTAL_DATABASE_ENABLED!=="true"){
-        let restored=structuredClone(initialData);let savedSession:string|null=null;
-        try{const saved=localStorage.getItem(STORE);if(saved){const parsed=JSON.parse(saved) as PortalData;if(Array.isArray(parsed.users)&&Array.isArray(parsed.companies)&&Array.isArray(parsed.events)&&Array.isArray(parsed.registrations)&&Array.isArray(parsed.invitations))restored=parsed;}savedSession=localStorage.getItem(SESSION);}catch{}
-        const next=seedPreview(restored);setData(next);setSession(savedSession);setNow(Date.now());setReady(true);return;
+        let restored=createDemoData();let savedSession:string|null=null;
+        try{
+          const saved=localStorage.getItem(STORE);savedSession=localStorage.getItem(SESSION);
+          if(saved){const parsed=JSON.parse(saved) as PortalData;
+            if(parsed.v3?.demoVersion===DEMO_DATA_VERSION){restored=parsed;}
+            else if(Array.isArray(parsed.users)&&Array.isArray(parsed.companies)){
+              try{localStorage.setItem(STORE+"-before-expanded-demo",saved);localStorage.setItem(STORE+"-before-expanded-demo-session",savedSession||"");}
+              catch{setData(parsed);setSession(savedSession);setNow(Date.now());setReady(true);return;}
+              // Older demo accounts remain in the backup; use the new three-company demo.
+              if(savedSession!=="platform")savedSession=null;
+            }
+          }
+          localStorage.setItem(STORE,JSON.stringify(restored));
+          if(!savedSession)localStorage.removeItem(SESSION);
+        }catch{}
+        setData(restored);setSession(savedSession);setNow(Date.now());setReady(true);return;
       }
       try{
         const response=await fetch("/api/portal",{cache:"no-store"});
@@ -689,7 +703,7 @@ export default function ElixirPortal(){
         {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
       </nav>
       <main className="ep-main" id="main-content" tabIndex={-1}>
-        {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. No real accounts or shared database. {view==="profile"&&<button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(seedPreview(structuredClone(initialData)));setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button>}</div>}
+        {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. No real accounts or shared database. {view==="profile"&&<button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(createDemoData());setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button>}</div>}
         {notice&&<div className="ep-info ep-notice" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice("")}><X size={17}/></button></div>}
         {resetResult&&<div className="ep-reset-result" role="status">
           <div><strong>Temporary password for {resetResult.email}</strong><p>Give it to them privately. It is shown only once; they&apos;ll choose a new password when they sign in.</p></div>

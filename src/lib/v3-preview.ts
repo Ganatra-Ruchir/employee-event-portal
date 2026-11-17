@@ -2,7 +2,7 @@ import {canAssign,canManageScope,type V3Actor,type V3Membership,type V3Scope} fr
 import {DEMO_PASSWORD,isPersonalDomain,type PortalData,type Person} from "./portal-model";
 import type {AttendanceMark,WalkIn} from "./event-attendance";
 export type Row=Record<string,string|number|null>;
-export type PreviewState={countries:Row[];states:Row[];branches:Row[];members:V3Membership[];contributions:Row[];attendanceMarks?:AttendanceMark[];walkIns?:WalkIn[]};
+export type PreviewState={demoVersion?:number;countries:Row[];states:Row[];branches:Row[];members:V3Membership[];contributions:Row[];attendanceMarks?:AttendanceMark[];walkIns?:WalkIn[]};
 export type PreviewData=PortalData&{v3?:PreviewState};
 const str=(v:unknown)=>typeof v==="string"?v.trim():"";
 const scopeOf=(org:string,country:string,state:string|null=null,branch:string|null=null):V3Scope=>({organization_id:org,country_code:country,state_id:state,branch_id:branch});
