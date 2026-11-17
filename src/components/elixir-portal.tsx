@@ -5,7 +5,7 @@ import Image from "next/image";
 import PublicLanding from "@/components/public-landing";
 import V3Workspace from "@/components/v3-workspace";
 import {seedPreview,previewActor} from "@/lib/v3-preview";
-import {DiscoverHome, DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
+import {DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
 import dynamic from "next/dynamic";
 const SpeakerEditor=dynamic(()=>import("@/components/speaker-editor").then(m=>m.SpeakerEditor),{loading:()=> <div className="ep-hint">Loading speaker editor…</div>});
 const SpeakerGallery=dynamic(()=>import("@/components/speaker-gallery").then(m=>m.SpeakerGallery),{loading:()=> <div className="ep-hint">Loading speaker cards…</div>});
@@ -279,7 +279,7 @@ export default function ElixirPortal(){
   useEffect(()=>{void Promise.resolve().then(()=>{if(new URLSearchParams(window.location.search).get("auth")==="login")setShowAuth(true);});},[]);
   const [participantSearch,setParticipantSearch]=useState("");
   const [showAttendees,setShowAttendees]=useState(false);
-  const [historyFilter,setHistoryFilter]=useState("All");
+  const [historyFilter,setHistoryFilter]=useState("Upcoming");
   const [category,setCategory]=useState("All");
   const [timeFilter,setTimeFilter]=useState("Upcoming");
   const [placesOnly,setPlacesOnly]=useState(false);
@@ -675,19 +675,18 @@ export default function ElixirPortal(){
     if(historyFilter==="Upcoming")return (r.status==="going"||r.status==="waitlisted")&&new Date(e.startsAt).getTime()>now;
     if(historyFilter==="Past")return new Date(e.startsAt).getTime()<=now;
     if(historyFilter==="Cancelled")return r.status==="cancelled";return true;});
-  const companyPeople=data.users.filter(u=>u.companyId===current.companyId);
+  const companyPeople=data.users.filter(u=>u.companyId===current.companyId&&(!isCountryAdmin||remote||data.v3?.members.some(m=>m.user_id===u.id&&m.country_code===previewActor(current,data).scope?.country_code&&m.level==="employee")));
   const availableCompanies=data.companies;
   return <div className="ep-shell">
     <a className="ep-skip" href="#main-content">Skip to main content</a>
     <header className="ep-topbar">
       <div className="ep-top-left"><button className="ep-menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Elixir Events</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
-      <div className="ep-top-right">{current.role==="employee"&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<button className="ep-account" aria-label={"Open profile for "+current.fullName} onClick={()=>goto("profile")}><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></button><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
+      <div className="ep-top-right">{current.role==="employee"&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
     </header>
     <div className="ep-layout">
       <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
         <div className="ep-nav-title">{!remote&&previewActor(current,data).level==="state_admin"?"State admin":roleName(current.role)}</div>
         {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
-        <div className="ep-side-bottom"><button className="ep-nav-link" onClick={logout}><LogOut size={17}/> Sign out</button></div>
       </nav>
       <main className="ep-main" id="main-content" tabIndex={-1}>
         {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. No real accounts or shared database. {view==="profile"&&<button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(seedPreview(structuredClone(initialData)));setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button>}</div>}
@@ -699,14 +698,7 @@ export default function ElixirPortal(){
         </div>}
         {view==="eventForm"&&editingEvent&&<EventEditor key={editingEvent.id} event={editingEvent} data={data} onSave={saveEvent} onBack={()=>goto("events")}/>}
         {view==="companyForm"&&<CompanyEditor key={editingCompany?.id||"new"} company={editingCompany||undefined} data={data} onSave={saveCompany} onBack={()=>goto("companies")}/>}
-        {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isCountryAdmin||isStateAdmin)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} onEvent={openEvent} onSave={save} hash={encodePassword} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"} onNavigate={goto}/> }
-        {view==="home"&&current.role==="employee"&&(remote||previewActor(current,data).level!=="state_admin")&&<DiscoverHome
-          data={data} events={companyEvents} user={current} now={now}
-          onOpen={e=>{openEvent(e.id);}}
-          onBrowse={()=>goto("events")}
-          onSearch={()=>{goto("events");setSearchOpen(true);}}
-          onCategory={c=>{goto("events");setCategory(c);setSearchOpen(true);}}
-        />}
+        {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isStateAdmin||isCountryAdmin&&!remote)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} onEvent={openEvent} onSave={save} hash={encodePassword} showPeopleDirectory={current.role!=="company_admin"} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"}/> }
         {view==="events"&&current.role==="employee"&&<DiscoverBrowse
           data={data} events={companyEvents} now={now}
           onOpen={e=>{openEvent(e.id);}}
@@ -718,19 +710,10 @@ export default function ElixirPortal(){
         />}
         {view==="home"&&current.role==="platform_admin"&&<PlatformOverview
           data={data}
-          onCompany={c=>{setSelectedCompany(c.id);goto("companies");}}
-          onAdd={()=>{setEditingCompany(null);goto("companyForm");}}
-          onCompanies={()=>goto("companies")}
-          onInvites={()=>goto("invitations")}
-          onUsers={()=>goto("users")}
-          onEvents={()=>goto("events")} onEvent={e=>openEvent(e.id)} now={now}
+          onEvent={e=>openEvent(e.id)} now={now}
         />}
         {view==="home"&&current.role==="company_admin"&&company&&<CompanyOverview
           data={data} current={current} company={company} now={now}
-          onCreate={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),contactEmail:current.email});goto("eventForm");}}
-          onEvents={()=>goto("events")}
-          onPeople={()=>goto("people")}
-          onAttendance={isCountryAdmin?()=>goto("attendance"):undefined}
           onEvent={e=>openEvent(e.id)}
         />}
         {view==="events"&&(current.role==="company_admin"||current.role==="platform_admin")&&<>
@@ -789,14 +772,6 @@ export default function ElixirPortal(){
               {permittedAttendees.length?permittedAttendees.map(person=><span key={person.id}>{person.fullName}</span>):<span>No public attendee names yet.</span>}
             </div>}
           </footer>
-          {current.role!=="platform_admin"&&<div className="ed-mobile-rsvp">
-            <span>{data.registrations.some(r=>r.eventId===selected.id&&r.userId===current.id&&(r.status==="going"||r.status==="waitlisted"))?"Your RSVP is saved":registrationLabel(selected,data,now)}</span>
-            {data.registrations.some(r=>r.eventId===selected.id&&r.userId===current.id&&(r.status==="going"||r.status==="waitlisted"))?
-              (canCancel(current,selected,data)?null:<button type="button" onClick={()=>modifyRegistration(selected,true)}>Cancel RSVP</button>):
-              // When nobody can sign up (closed, started, cancelled, draft), the label says so; no dead button.
-              ["closed","started","cancelled","draft"].includes(registrationState(selected,data,now))?null:
-              <button type="button" onClick={()=>modifyRegistration(selected,false)} disabled={!!canRegister(current,selected,data)}>{remainingPlaces(selected,data)===0?"Join waitlist":"Attend"}</button>}
-          </div>}
           {current.role==="company_admin"&&<section className="ep-panel ep-participants"><div className="ep-section-head"><h2>Participants</h2><Action kind="secondary" onClick={()=>exportCsv("participants-"+selected.id+".csv",["Name","Email","Department","Registered"],activeRegistrations(selected.id,data).map(r=>{const p=data.users.find(u=>u.id===r.userId);return[p?.fullName||"",p?.email||"",p?.department||"",dateText(r.createdAt)];}))}><Download size={16}/> Export CSV</Action></div>
             <div className="ep-participant-search"><FormRow label="Search participants"><input value={participantSearch} onChange={e=>setParticipantSearch(e.target.value)} placeholder="Name, email or department"/></FormRow></div>
           {waitlistedRegistrations(selected.id,data).length>0&&<div className="ep-info">{waitlistedRegistrations(selected.id,data).length} employees are waitlisted and will be promoted in order when places open.</div>}
@@ -815,10 +790,10 @@ export default function ElixirPortal(){
              <span className="aw-reg-date"><strong>{new Date(e.startsAt).toLocaleDateString("en-IN",{day:"2-digit"})}</strong><small>{new Date(e.startsAt).toLocaleDateString("en-IN",{month:"short"}).toUpperCase()}</small></span>
              <span className="aw-reg-info"><strong>{e.title}</strong><small>{e.category} · {dateText(e.startsAt)}</small></span>
              <Chip tone={r.status==="going"?"green":r.status==="waitlisted"?"orange":"neutral"}>{r.status==="going"?"Going":r.status==="waitlisted"?"Waitlisted":"Cancelled"}</Chip><ChevronRight size={20}/>
-            </button>})}</div>:<div className="aw-empty"><CalendarDays size={23}/><strong>No registrations found</strong><p>Join an event to see it here, or choose another filter.</p><button onClick={()=>goto("events")}>Browse events <ArrowRight size={16}/></button></div>}
+            </button>})}</div>:<div className="aw-empty"><CalendarDays size={23}/><strong>No registrations found</strong><p>Join an event to see it here, or choose another filter.</p></div>}
         </>}
         {view==="people"&&current.role==="company_admin"&&<>
-          <WorkspaceHeading eyebrow={company?.name.toUpperCase()||"COMPANY"} title="Your people" description="Add employees, reset passwords and choose who can manage events."/>
+          {(!isCountryAdmin||remote)&&<WorkspaceHeading eyebrow={company?.name.toUpperCase()||"COMPANY"} title="Your people" description="Manage employee accounts."/>}
           {remote&&<div className="ep-panel ep-invite-employees">
             <div><strong>Invite employees</strong><p>Share the signup page with employees. They confirm their work email with a one-time code, and their account is ready to use.</p></div>
             <button type="button" className="aw-primary" onClick={()=>{void navigator.clipboard.writeText(new URL("/signup",window.location.origin).toString()).then(()=>setNotice("Employee signup link copied."),()=>setNotice("Copy this link from your browser address: /signup"));}}>Copy employee signup link</button>
@@ -846,7 +821,7 @@ export default function ElixirPortal(){
             onStatus={person=>employeeAction("changeEmployeeStatus",{userId:person.id})}
             onClose={()=>setEditingEmployeeId(null)}/>}
           <PeopleDirectory people={employeeFilter==="All"?companyPeople:companyPeople.filter(p=>p.status===employeeFilter)}
-            search={directorySearch} onSearch={setDirectorySearch} selfId={current.id} onRole={changeRole}
+            search={directorySearch} onSearch={setDirectorySearch} selfId={current.id} onRole={remote?changeRole:undefined}
             onEdit={remote?p=>setEditingEmployeeId(p.id):undefined}
             onResetPassword={remote?p=>void resetPassword(p):undefined}
             onStatus={remote?p=>{if(window.confirm((p.status==="active"?"Suspend ":"Reactivate ")+p.fullName+"? "+(p.status==="active"?"They will lose portal access until reactivated.":"Their portal access will be restored.")))void employeeAction("changeEmployeeStatus",{userId:p.id});}:undefined}/>
@@ -885,16 +860,14 @@ export default function ElixirPortal(){
           <div className="aw-two-col aw-profile-layout">
             <div className="aw-profile-summary">
               <PersonAvatar person={current} size={88}/>
-              <h2>{current.fullName}</h2><p>{current.email}</p><span className="md-role">{roleName(current.role)}</span>
+              <h2>{current.fullName}</h2><p>{current.email}</p><span className="md-role">{isStateAdmin?"State admin":roleName(current.role)}</span>
               <div className="aw-profile-company"><span>Organization</span><strong>{company?.name||"Elixir Foundation"}</strong></div>
               <div className="aw-profile-company"><span>Department</span><strong>{current.department||"Not provided"}</strong></div>
               {current.jobTitle&&<div className="aw-profile-company"><span>Job title</span><strong>{current.jobTitle}</strong></div>}
-              <button type="button" className="aw-text-action" onClick={logout}>Sign out <LogOut size={16}/></button>
             </div>
             <form className="ep-panel ep-form aw-profile-form" onSubmit={profileSave}>
               <h2>Personal details</h2>
               {remote&&<div className="profile-photo-control">
-                <PersonAvatar person={current} size={82}/>
                 <label className="profile-upload-button">Upload profile photo (JPG, PNG or WebP)<input type="file" accept="image/png,image/jpeg,image/webp" disabled={profilePhotoBusy} onChange={e=>{void uploadProfilePhoto(e.currentTarget.files?.[0]);e.currentTarget.value="";}}/></label>
                 {current.avatarUrl&&<button type="button" disabled={profilePhotoBusy} onClick={()=>void removeProfilePhoto()}>Remove profile picture</button>}
                 <small>{profilePhotoBusy?"Uploading photo…":"JPG, PNG and WebP images up to 20 MB are resized automatically for faster uploads."}</small>
