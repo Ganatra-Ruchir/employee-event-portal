@@ -13,3 +13,6 @@
 .join-tip{background:#f9eddc!important;color:#75502b!important}
 .join-feedback{background:#fff0e8!important;border-color:#d7a995!important;color:#832d21!important}
 .join-done svg,.join-aside>svg{color:#a66728!important}
+
+/* Compact, consistent onboarding. */
+.join-wrap{padding:16px 14px}.join-top{margin-bottom:12px}.join-grid{gap:12px}.join-panel{padding:16px!important;gap:10px}.join-panel form{gap:10px}.join-panel form label{gap:4px}.join-steps{margin:0}.join-tip{padding:8px 10px}.join-page{background:#f6f7f8!important;color:#171b26!important}.join-panel,.join-aside{background:#fff!important;border-color:#e1e6e0!important}.join-panel form>button,.join-done>button,.join-steps span.active{background:#42763c!important;color:#fff!important}.join-top a,.join-panel>small,.join-actions button{color:#315e30!important}
