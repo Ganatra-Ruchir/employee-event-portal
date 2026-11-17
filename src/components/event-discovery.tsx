@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import {LandingArtwork} from "@/components/landing-artwork";
-import { ArrowRight, CalendarDays, MapPin, Clock3, Search, X } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin, Clock3, Search, X, Users, Building2 } from "lucide-react";
 import {activeRegistrations, registrationLabel, registrationState, remainingPlaces} from "@/lib/portal-model";
 import {useEffect, useRef, useState, memo} from "react";
 import type { PortalEvent, PortalData, Person } from "@/lib/portal-model";
@@ -82,8 +82,10 @@ export function EventTile({event,data,onOpen,now,showHost=false}:{event:PortalEv
   const d=dateParts(event.startsAt);
   const host=data.companies.find(c=>c.id===event.companyId);
   const state=registrationState(event,data,now);
+  const filled=activeRegistrations(event.id,data).length;
+  const percent=Math.min(100,Math.max(0,100*filled/Math.max(1,event.capacity)));
   return <button type="button" className="ed-tile" onClick={()=>onOpen(event)} aria-label={"View "+event.title}>
-    <div className="ed-tile-cover"><EventCover event={event}/>{event.status!=="published"&&<span className={"ed-tile-status "+event.status}>{event.status}</span>}
+    <div className="ed-tile-cover"><EventCover event={event}/>{state==="open"&&<span className="cc-tile-active">Active</span>}{event.status!=="published"&&<span className={"ed-tile-status "+event.status}>{event.status}</span>}
       <div className="ed-tile-hover" aria-hidden="true">
         <strong>{event.title}</strong>
         <span><MapPin size={15}/>{event.format==="online"?"Online event":event.location||"Venue to be announced"}</span>
@@ -92,10 +94,15 @@ export function EventTile({event,data,onOpen,now,showHost=false}:{event:PortalEv
       </div>
     </div>
     <div className="ed-tile-content">
-      <div className="ed-tile-top"><div className="ed-date-mini"><strong>{d.day}</strong><span>{d.month}</span></div><div className="ed-tile-title-wrap"><span className="ed-eyebrow">{d.weekday} · {d.clock}</span><h3>{event.title}</h3></div></div>
-      {showHost&&<div className="ed-tile-host">Hosted by {host?.name||"Event organization"}</div>}
-      <div className="ed-tile-meta"><MapPin size={15}/><span>{event.format==="online"?"Online":event.location}</span></div>
-      <div className="ed-tile-foot"><GoingFaces event={event} data={data}/><span className={"ed-tile-spots ed-state-"+state}>{registrationLabel(event,data,now)}</span></div>
+      <div className="cc-card-heading"><h3>{event.title}</h3><span className="cc-card-org">{showHost?"Hosted by ":""}{host?.name||"Event organization"}</span></div>
+      <p className="cc-card-summary">{event.summary||event.description}</p>
+      <div className="cc-card-meta"><CalendarDays size={14}/><span>{d.full}</span></div>
+      <div className="cc-card-meta"><Clock3 size={14}/><span>{d.clock} · {Math.max(0,Math.round((Date.parse(event.endsAt)-Date.parse(event.startsAt))/60000))} min</span></div>
+      <div className="cc-card-meta"><MapPin size={14}/><span>{event.format==="online"?"Online":event.location}</span></div>
+      <div className="cc-card-meta"><Building2 size={14}/><span>{event.format==="online"?"Online":event.format==="hybrid"?"Hybrid":"In person"}</span></div>
+      <div className="cc-capacity"><div className="cc-card-meta"><Users size={14}/><span>{filled} of {event.capacity} spots filled</span></div><div className="cc-progress" role="progressbar" aria-label="Registration capacity used" aria-valuenow={Math.round(percent)} aria-valuemin={0} aria-valuemax={100}><span style={{width:percent+"%"}}/></div></div>
+      <div className="cc-card-footer"><span className="cc-category">{event.category}</span><span className={"ed-tile-spots ed-state-"+state}>{registrationLabel(event,data,now)}</span></div>
+      <span className="cc-view-details">View details</span>
     </div>
   </button>;
 }
