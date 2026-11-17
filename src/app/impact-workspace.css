@@ -79,3 +79,20 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .ep-shell .cc-speakers-secondary .sp-gallery-strip.sp-overflow .sp-card{min-width:min(100%,255px);flex-basis:255px}
 .ep-shell .ed-discover>.ed-meetup-hero{margin-top:24px!important}
 @media(max-width:900px){.ep-shell .cc-nav-entry{display:flex;align-items:center;flex:none}.cc-nav-group-title{font-size:0;align-self:stretch;margin:3px 5px;border-top:0;border-left:1px solid var(--cc-line);padding:0;line-height:0}.ep-shell .ep-detail-layout{display:flex;flex-direction:column;gap:14px}.ep-shell .ep-detail-layout>.ep-detail-right{order:-1;width:100%;display:block}.ep-shell .ep-detail-copy{width:100%}.ep-shell .cc-priority-registration{width:100%;margin-bottom:0!important}}
+
+/* Location setup: primary task first; existing directories below. */
+.ep-shell .cc-hierarchy-setup{border-color:var(--cc-line)!important;box-shadow:none!important;gap:18px}
+.cc-hierarchy-setup>div>p{margin:5px 0;color:var(--cc-muted)}
+.cc-location-form{display:grid;gap:18px}
+.cc-form-step{padding:18px;border:1px solid var(--cc-line);border-radius:8px;background:#fff}
+.cc-form-step>h3{margin:0 0 12px!important}
+.cc-form-step .v3-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cc-form-step input[readonly]{background:#f3f6f0!important;color:var(--cc-dark)!important}
+.cc-form-step>.ep-button.primary{margin-top:10px;min-width:200px}
+.ep-shell .cc-form-step>.ep-button.primary{color:#fff!important;background:var(--cc-green)!important}
+.cc-location-directory{border:1px solid var(--cc-line);border-radius:8px;padding:14px}
+.cc-location-directory summary{cursor:pointer;font-weight:650}
+.cc-location-directory[open] summary{margin-bottom:12px}
+.cc-hierarchy-setup .v3-list button{width:fit-content;min-height:36px;font-size:12px}
+.cc-issued-credentials{overflow-wrap:anywhere}
+@media(max-width:600px){.cc-form-step{padding:12px}.cc-form-step .v3-form{grid-template-columns:1fr}.cc-form-step>.ep-button.primary{width:100%;min-width:0}}
