@@ -29,3 +29,22 @@ test("attendance is only counted after verification",async()=>{
  const r=await previewAction(admin,d,{action:"verify",organization_id:"northwind",country_code:"IN",state_id:"northwind-gj",event_id:"event-5",user_id:"employee",volunteer_minutes:60,contribution:"Orientation"},hash);
  assert.equal(previewWorkspace(employee,r.data).contributions?.length,1);
 });
+
+test("city onboarding creates state and branch once and accepts a unique administrator ID",async()=>{
+ const d=seedPreview(structuredClone(initialData)),u=d.users.find(u=>u.id==="manager")!;
+ const payload={action:"cityStateAdmin",organization_id:"northwind",country_code:"IN",city:"Mumbai",state_name:"Maharashtra",email:"mumbai@northwind.example",employee_number:"MH-1001"};
+ const result=await previewAction(u,d,payload,hash);
+ const admin=result.data.users.find(p=>p.employeeNumber==="MH-1001")!;
+ assert.equal(result.credentials?.employeeId,"MH-1001");
+ assert.equal(previewActor(admin,result.data).level,"state_admin");
+ assert.equal(result.data.v3?.states.filter(s=>s.name==="Maharashtra").length,1);
+ assert.equal(result.data.v3?.branches.filter(b=>b.name==="Mumbai").length,1);
+ await assert.rejects(previewAction(u,result.data,{...payload,email:"other@northwind.example"},hash));
+ await assert.rejects(previewAction(u,d,{...payload,country_code:"GB"},hash));
+ const second=await previewAction(u,result.data,{...payload,email:"other@northwind.example",employee_number:"MH-1002"},hash);
+ assert.equal(second.data.v3?.states.filter(s=>s.name==="Maharashtra").length,1);
+ assert.equal(second.data.v3?.branches.filter(b=>b.name==="Mumbai").length,1);
+ const reset=await previewAction(u,result.data,{action:"resetStateAdmin",organization_id:"northwind",country_code:"IN",user_id:admin.id},hash);
+ assert.equal(reset.credentials?.employeeId,"MH-1001");
+ assert.notEqual(reset.credentials?.temporaryPassword,result.credentials?.temporaryPassword);
+});
