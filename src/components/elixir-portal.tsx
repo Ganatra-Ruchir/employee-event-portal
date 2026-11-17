@@ -426,12 +426,14 @@ export default function ElixirPortal(){
       setSignedOut(false);setShowAuth(false);setView("home");window.history.replaceState(null,"","/overview");return null;
     }
     const loginId=email.toLowerCase().trim();
-    const u=data.users.find(x=>x.email.toLowerCase()===loginId||x.id.toLowerCase()===loginId);
+    const u=data.users.find(x=>x.email.toLowerCase()===loginId||x.id.toLowerCase()===loginId||x.employeeNumber?.toLowerCase()===loginId);
     if(!u||!(await passwordMatches(u.password,password)))return "Invalid email or password.";
     if(!u.verified)return "Verify the sample email before signing in.";
     if(u.mustChangePassword&&u.temporaryPasswordExpiresAt&&Date.parse(u.temporaryPasswordExpiresAt)<=Date.now())return "Temporary password expired. Ask your demo administrator to reset it.";
     const org=u.companyId?data.companies.find(c=>c.id===u.companyId):null;
     if(u.status==="suspended"||org?.status==="suspended")return "This account or company is suspended. Contact the platform administrator.";
+    if(u.mustChangePassword&&u.temporaryPasswordConsumedAt)return "Temporary password already used. Ask your administrator to generate a new one.";
+    if(u.mustChangePassword&&u.employeeNumber&&!save({...data,users:data.users.map(p=>p.id===u.id?{...p,temporaryPasswordConsumedAt:new Date().toISOString()}:p)}))return "Unable to save your first sign-in.";
     setSession(u.id);setSignedOut(false);setShowAuth(false);setNow(Date.now());try{localStorage.setItem(SESSION,u.id);}catch{}
     const requested=new URLSearchParams(window.location.search).get("event");
     const target=data.events.find(e=>e.id===requested);
@@ -647,7 +649,7 @@ export default function ElixirPortal(){
     <AuthPage data={data} onLogin={login} onSignup={signup} onVerified={verify} onReset={reset} remoteMode={remote} onBack={()=>{setShowAuth(false);window.history.replaceState(null,"","/");}}/>:
     <PublicLanding onEnter={()=>{setShowAuth(true);window.history.pushState(null,"","/?auth=login");}}/>;
   if(current.mustChangePassword)return <FirstLoginPasswordChange person={current} onLogout={logout} onSave={async password=>{
-    if(!remote){if(password.length<12)return "Use at least 12 characters.";if(await passwordMatches(current.password,password))return "Choose a different password.";const hashed=await encodePassword(password);if(!save({...data,users:data.users.map(u=>u.id===current.id?{...u,password:hashed,mustChangePassword:false,temporaryPasswordExpiresAt:undefined}:u)}))return "Unable to save password.";setView("home");return null;}
+    if(!remote){if(password.length<12)return "Use at least 12 characters.";if(await passwordMatches(current.password,password))return "Choose a different password.";const hashed=await encodePassword(password);if(!save({...data,users:data.users.map(u=>u.id===current.id?{...u,password:hashed,mustChangePassword:false,temporaryPasswordExpiresAt:undefined,temporaryPasswordConsumedAt:undefined}:u)}))return "Unable to save password.";setView("home");return null;}
     const result=await remoteRequest("profile",{fullName:current.fullName,department:current.department,password});
     if(result.error)return result.error;
     if(!await remoteRefresh())return "Password updated. Refresh to continue.";
@@ -837,7 +839,7 @@ export default function ElixirPortal(){
           </div>
           <div className="employee-list-actions ep-people-toolbar">
             <label>Status <select value={employeeFilter} onChange={e=>setEmployeeFilter(e.target.value)}><option>All</option><option value="active">Active</option><option value="suspended">Suspended</option></select></label>
-            <button type="button" className="ep-export-button" onClick={()=>exportCsv("company-employees.csv",["Employee ID","Name","Email","Department","Job title","Phone","Role","Status"],companyPeople.map(p=>["EMP-"+p.id.slice(0,8).toUpperCase(),p.fullName,p.email,p.department,p.jobTitle||"",p.phone||"",p.role,p.status]))}><Download size={15}/> Export employees CSV</button>
+            <button type="button" className="ep-export-button" onClick={()=>exportCsv("company-employees.csv",["Employee ID","Name","Email","Department","Job title","Phone","Role","Status"],companyPeople.map(p=>[p.employeeNumber||"EMP-"+p.id.slice(0,8).toUpperCase(),p.fullName,p.email,p.department,p.jobTitle||"",p.phone||"",p.role,p.status]))}><Download size={15}/> Export employees CSV</button>
           </div>
           {editingEmployeeId&&companyPeople.some(p=>p.id===editingEmployeeId&&p.role==="employee")&&<EmployeeEditor key={editingEmployeeId} person={companyPeople.find(p=>p.id===editingEmployeeId)!}
             onSave={values=>employeeAction("editEmployee",values)}
