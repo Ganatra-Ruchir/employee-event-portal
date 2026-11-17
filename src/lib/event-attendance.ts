@@ -71,7 +71,7 @@ export function saveEventAttendance(user:Person,input:PreviewData,eventId:string
    v.contributions.push({event_id:eventId,user_id:row.userId,volunteer_minutes:minutes,contribution:row.contribution.trim(),verified_at:stamp});
   }
  }
- for(const x of newExtras)if(x.userId)v.contributions.push({event_id:eventId,user_id:x.userId,volunteer_minutes:0,contribution:"Walk-in attendance",verified_at:stamp});
+ for(const x of newExtras)if(x.userId){const previous=seeded.v3?.contributions.find(c=>c.event_id===eventId&&c.user_id===x.userId);v.contributions.push({event_id:eventId,user_id:x.userId,volunteer_minutes:previous?.volunteer_minutes??0,contribution:previous?.contribution||"Walk-in attendance",verified_at:stamp});}
  v.walkIns=[...existingOther,...newExtras];
  return data;
 }
