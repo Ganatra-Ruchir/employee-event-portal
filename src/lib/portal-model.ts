@@ -5,7 +5,7 @@ export type RegistrationStatus = "going" | "waitlisted" | "cancelled";
 export type EventFormat = "in_person" | "online" | "hybrid";
 
 export type Company = { id:string; name:string; domains:string[]; status:CompanyStatus; createdAt:string };
-export type Person = { id:string; fullName:string; email:string; department:string; role:Role; companyId:string|null; status:CompanyStatus; verified:boolean; password:string; mustChangePassword?:boolean; showInAttendeeLists?:boolean; jobTitle?:string; phone?:string; avatarUrl?:string };
+export type Person = { id:string; fullName:string; email:string; department:string; role:Role; companyId:string|null; status:CompanyStatus; verified:boolean; password:string; mustChangePassword?:boolean; temporaryPasswordExpiresAt?:string; showInAttendeeLists?:boolean; jobTitle?:string; phone?:string; avatarUrl?:string };
 export type Speaker = {
  id:string; name:string; jobTitle:string; company:string; talkTitle:string;
  bio:string; agendaSlot?:string; linkedIn?:string; github?:string; website?:string;
@@ -41,7 +41,7 @@ export type PortalEvent = {
 };
 export type Registration = { id:string; eventId:string; userId:string; status:RegistrationStatus; createdAt:string; waitlistedAt?:string|null; promotedAt?:string|null };
 export type Invitation = { id:string; email:string; companyId:string; role:"company_admin"; code:string; accepted:boolean };
-export type PortalData = { companies:Company[]; users:Person[]; events:PortalEvent[]; registrations:Registration[]; invitations:Invitation[] };
+export type PortalData = { companies:Company[]; users:Person[]; events:PortalEvent[]; registrations:Registration[]; invitations:Invitation[]; v3?:import('./v3-preview').PreviewState };
 
 export const DEMO_PASSWORD="Demo@2026!";
 export const PERSONAL_DOMAINS = ["gmail.com","yahoo.com","outlook.com","hotmail.com","live.com","icloud.com","aol.com","proton.me","protonmail.com","rediffmail.com"];
