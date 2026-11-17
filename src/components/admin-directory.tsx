@@ -38,7 +38,7 @@ export function CompanyDirectory({companies,data,selected,query,onQuery,onSelect
    </section></div>}
  </div>;
 }
-export function PeopleDirectory({people,search,onSearch,selfId,onRole,onApprove,onEdit,onStatus,onResetPassword,showEmployeesOnly=false}:{people:Person[];search:string;onSearch:(v:string)=>void;selfId:string;onRole:(person:Person)=>void;onApprove?:(person:Person)=>void;onEdit?:(person:Person)=>void;onStatus?:(person:Person)=>void;onResetPassword?:(person:Person)=>void;showEmployeesOnly?:boolean}){
+export function PeopleDirectory({people,search,onSearch,selfId,onRole,onApprove,onEdit,onStatus,onResetPassword,showEmployeesOnly=false}:{people:Person[];search:string;onSearch:(v:string)=>void;selfId:string;onRole?:(person:Person)=>void;onApprove?:(person:Person)=>void;onEdit?:(person:Person)=>void;onStatus?:(person:Person)=>void;onResetPassword?:(person:Person)=>void;showEmployeesOnly?:boolean}){
  const visible=people.filter(p=>(!showEmployeesOnly||p.role==="employee")&&[p.fullName,p.email,p.department,p.role,p.jobTitle||"",p.phone||""].join(" ").toLowerCase().includes(search.trim().toLowerCase()));
  return <div className="md-root">
   <div className="md-toolbar"><DirectorySearch value={search} onChange={onSearch} placeholder="Search teammates"/><span>{visible.length} people</span></div>
@@ -49,7 +49,7 @@ export function PeopleDirectory({people,search,onSearch,selfId,onRole,onApprove,
     <div className="employee-list-actions">{onEdit&&person.role==="employee"&&<button type="button" onClick={()=>onEdit(person)}>Edit details</button>}
     {onResetPassword&&person.role==="employee"&&person.status==="active"&&<button type="button" onClick={()=>onResetPassword(person)}>Reset password</button>}
     {onStatus&&person.role==="employee"&&<button type="button" className={person.status==="active"?"md-danger-text":""} onClick={()=>onStatus(person)}>{person.status==="active"?"Suspend":"Reactivate"}</button>}
-    {!person.verified&&onApprove?<button onClick={()=>onApprove(person)}>Approve account <ArrowRight size={14}/></button>:person.id===selfId?<span className="md-self-label">Your account</span>:<button onClick={()=>onRole(person)}>{person.role==="employee"?"Make admin":"Remove admin"} <ArrowRight size={14}/></button>}</div></div>
+    {!person.verified&&onApprove?<button onClick={()=>onApprove(person)}>Approve account <ArrowRight size={14}/></button>:person.id===selfId?<span className="md-self-label">Your account</span>:onRole?<button onClick={()=>onRole(person)}>{person.role==="employee"?"Make admin":"Remove admin"} <ArrowRight size={14}/></button>:null}</div></div>
   </article>)}</div>
   {!visible.length&&<Empty query={search} label="people"/>}
  </div>;
