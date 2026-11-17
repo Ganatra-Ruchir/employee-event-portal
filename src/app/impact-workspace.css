@@ -226,3 +226,40 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .cc-photo-remove{border:0;background:none;color:#a4332f;font-size:12px;cursor:pointer;padding:4px;min-height:32px}
 .cc-profile-photo-control small{font-size:11px;color:var(--cc-muted);max-width:240px;text-align:center;line-height:1.4}
 .cc-profile-photo-control .ep-error,.cc-profile-photo-control .ep-success{font-size:12px;overflow-wrap:anywhere;margin:0;text-align:left}
+
+/* Brand application: neutral surfaces, green primary actions, restrained pink accents.
+   Keep attendance/status semantics and the official SDG chart colors intact. */
+:root{--cc-bg:var(--elixir-grey-soft);--cc-ink:var(--elixir-grey);--cc-muted:var(--elixir-grey-muted);--cc-green:var(--elixir-green-dark);--cc-dark:#28551c;--cc-soft:var(--elixir-green-soft);--cc-line:var(--elixir-grey-line)}
+.ep-shell,.ep-auth-layout{--ep-bg:var(--cc-bg)!important;--ep-ink:var(--cc-ink)!important;--ep-muted:var(--cc-muted)!important}
+.ep-shell .ep-topbar{border-bottom:1px solid var(--cc-line)!important}
+.ep-shell .cc-brand-mark,.ep-auth-v2 .ep-login-mark{background:var(--cc-green)!important;border-bottom:3px solid var(--elixir-pink);box-sizing:border-box}
+.ep-shell .ep-nav-link.active{background:var(--cc-soft)!important;color:var(--cc-dark)!important;box-shadow:inset 3px 0 var(--elixir-pink)}
+.ep-shell .ep-nav-link:hover{background:var(--elixir-green-soft)!important}
+.ep-shell .ed-eyebrow,.ep-shell .cc-nav-group-title{color:var(--elixir-pink-dark)!important}
+.ep-shell .aw-metric:nth-child(2) .aw-metric-icon,.ep-shell .aw-metric:nth-child(4) .aw-metric-icon{background:var(--elixir-pink-soft)!important;color:var(--elixir-pink-dark)!important}
+.ep-shell .v3-metrics>div:nth-child(2) strong{color:var(--elixir-pink-dark)!important}
+.ep-shell .cc-impact-grid>.cc-impact-chart:nth-child(2){border-top:2px solid var(--elixir-pink)!important}
+.ep-shell .cc-impact-grid>.cc-impact-chart:nth-child(1),.ep-shell .cc-impact-grid>.cc-impact-chart:nth-child(3){border-top:2px solid var(--elixir-green)!important}
+.ep-shell .cc-impact-track{background:var(--elixir-green-soft)}
+.ep-shell .cc-impact-track>div{background:var(--elixir-green-dark)}
+.ep-shell .cc-category{background:var(--elixir-pink-soft);border-color:var(--elixir-pink-line);color:var(--elixir-pink-dark)}
+.ep-shell .cc-progress{background:#e5efdf}
+.ep-shell .cc-view-details:hover,.ep-shell .cc-city-popup li.active,.ep-shell .cc-chart-legend button[aria-pressed=true]{background:var(--elixir-pink-soft)!important;color:var(--elixir-pink-dark)!important}
+.ep-shell .en-bell{color:var(--elixir-grey)!important;border-color:var(--cc-line)!important}
+.ep-shell .en-count{background:var(--elixir-pink-dark)!important}
+.ep-shell .en-panel{background:#fff!important;color:var(--cc-ink)!important;border-color:var(--cc-line)!important}
+.ep-shell .en-head small,.ep-shell .en-item-text small,.ep-shell .en-foot small,.ep-shell .en-empty,.ep-shell .en-message{color:var(--cc-muted)!important}
+.ep-shell .en-head button,.ep-shell .en-calendar,.ep-shell .en-enable{background:var(--elixir-green-soft)!important;color:var(--cc-dark)!important;border-color:var(--cc-line)!important}
+.ep-shell .en-item{color:var(--cc-ink)!important}.ep-shell .en-item:hover,.ep-shell .en-item:focus-visible{background:var(--elixir-pink-soft)!important}
+.ep-shell .cc-photo-upload:hover{background:var(--elixir-pink-soft)!important;border-color:var(--elixir-pink-line)!important;color:var(--elixir-pink-dark)!important}
+.ep-auth-v2 .ep-auth-aside{background:var(--elixir-green-soft)!important}
+.ep-auth-v2 .ep-auth-card-art{background:#e2f1da!important;color:var(--cc-dark)!important}
+.ep-auth-v2 .ep-auth-side-label,.ep-auth-v2 .ep-auth-links button{color:var(--elixir-pink-dark)!important}
+.ep-auth-v2 .ep-auth-feature-card{border-bottom:3px solid var(--elixir-pink)!important}
+.landing-editorial{--forest:var(--elixir-green-dark);--ink:var(--elixir-grey);--cream:var(--elixir-grey-soft);--muted:var(--elixir-grey-muted)}
+.landing-editorial .landing-mark{background:var(--elixir-green-dark)!important;border-bottom:3px solid var(--elixir-pink)}
+.landing-editorial .landing-brand-light,.landing-editorial .landing-section-intro .landing-eyebrow{color:var(--elixir-pink-dark)!important}
+.landing-editorial .landing-signup{background:var(--elixir-green-dark)!important;color:#fff!important}
+.landing-editorial .landing-overline-dot{background:var(--elixir-pink)!important}
+.landing-editorial .landing-curation:nth-child(even) .landing-curation-icon,.landing-editorial .landing-private-symbol{background:var(--elixir-pink-soft)!important;color:var(--elixir-pink-dark)!important}
+@media(max-width:900px){.ep-shell .ep-nav-link.active{box-shadow:inset 0 -3px var(--elixir-pink)}}

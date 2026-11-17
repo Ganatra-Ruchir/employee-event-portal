@@ -16,3 +16,10 @@
 
 /* Compact, consistent onboarding. */
 .join-wrap{padding:16px 14px}.join-top{margin-bottom:12px}.join-grid{gap:12px}.join-panel{padding:16px!important;gap:10px}.join-panel form{gap:10px}.join-panel form label{gap:4px}.join-steps{margin:0}.join-tip{padding:8px 10px}.join-page{background:#f6f7f8!important;color:#171b26!important}.join-panel,.join-aside{background:#fff!important;border-color:#e1e6e0!important}.join-panel form>button,.join-done>button,.join-steps span.active{background:#42763c!important;color:#fff!important}.join-top a,.join-panel>small,.join-actions button{color:#315e30!important}
+
+.join-page{background:var(--elixir-grey-soft)!important;color:var(--elixir-grey)!important}
+.join-page .join-panel,.join-page .join-aside{border-color:var(--elixir-grey-line)!important;color:var(--elixir-grey)!important}
+.join-page .join-top a,.join-page .join-panel>small,.join-page .join-actions button{color:var(--elixir-pink-dark)!important}
+.join-page .join-panel form>button,.join-page .join-done>button{background:var(--elixir-green-dark)!important;color:#fff!important}
+.join-page .join-steps span.active{background:var(--elixir-pink-soft)!important;color:var(--elixir-pink-dark)!important;border-color:var(--elixir-pink-line)!important}
+.join-page input:focus-visible,.join-page button:focus-visible{outline-color:var(--elixir-green-dark)!important}

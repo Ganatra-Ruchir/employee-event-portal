@@ -1,0 +1,7 @@
+/* Elixir brand colors sampled from the supplied logo. Use saturated colors for
+   non-text accents; darker shades provide readable contrast for text and actions. */
+:root{
+ --elixir-green:#51c220;--elixir-green-dark:#326c22;--elixir-green-soft:#eef8e8;
+ --elixir-pink:#ec1e82;--elixir-pink-dark:#ae155c;--elixir-pink-soft:#fdf0f6;--elixir-pink-line:#f4cadd;
+ --elixir-grey:#383536;--elixir-grey-soft:#f6f5f6;--elixir-grey-muted:#625d61;--elixir-grey-line:#e5e1e3;
+}
