@@ -33,7 +33,7 @@ export function previewActor(user:Person,data:PreviewData):V3Actor{
 export function previewWorkspace(user:Person,data:PreviewData){
  const v=seedPreview(data).v3!,actor=previewActor(user,{...data,v3:v});
  const {level,scope}=actor;
- if(level==="employee")return {level,scope,contributions:v.contributions.filter(r=>r.user_id===user.id).flatMap(r=>{const e=data.events.find(e=>e.id===r.event_id&&e.companyId===user.companyId&&e.status==="published");return e?[{...r,id:e.id,title:e.title,starts_at:e.startsAt}]:[];})};
+ if(level==="employee")return {level,scope,contributions:v.contributions.filter(r=>r.user_id===user.id).flatMap(r=>{const e=data.events.find(e=>e.id===r.event_id&&e.companyId===user.companyId&&e.status==="published");return e?[{...r,id:e.id,title:e.title,starts_at:e.startsAt,volunteer_minutes:r.volunteer_minutes,contribution:r.contribution}]:[];})};
  const visible=(r:Row)=>canManageScope(actor,scopeOf(str(r.organization_id),str(r.country_code||r.code),str(r.state_id||r.id)||null,str(r.branch_id)||null));
  const members=v.members.filter(m=>canManageScope(actor,m)).flatMap(m=>{const u=data.users.find(u=>u.id===m.user_id&&u.companyId===m.organization_id);return u?[{...m,full_name:u.fullName,email:u.email,employee_number:u.employeeNumber||u.id}]:[];});
  const attendance=level==="root"?[]:data.registrations.flatMap(r=>{
@@ -44,7 +44,7 @@ export function previewWorkspace(user:Person,data:PreviewData){
  });
  return {level,scope,countries:v.countries.filter(r=>level==="root"||r.organization_id===scope?.organization_id&&r.code===scope?.country_code),states:v.states.filter(visible),branches:v.branches.filter(visible),members,attendance};
 }
-export async function previewAction(user:Person,input:PreviewData,a:Record<string,unknown>,hash:(s:string)=>Promise<string>){
+export async function previewAction(user:Person,input:PreviewData,a:Record<string,unknown>,hash:(s:string)=>Promise<string>):Promise<{data:PreviewData;credentials:Row|null}>{
  const d=structuredClone(seedPreview(input)),v=d.v3!,actor=previewActor(user,d);
  const action=str(a.action),org=str(a.organization_id),country=str(a.country_code).toUpperCase(),state=str(a.state_id)||null,branch=str(a.branch_id)||null,name=str(a.name),email=str(a.email).toLowerCase();
  const scope=scopeOf(org,country,state,branch),company=d.companies.find(c=>c.id===org&&c.status==="active");
