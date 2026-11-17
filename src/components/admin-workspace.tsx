@@ -74,7 +74,7 @@ export function CompanyOverview({data,current,company,now,onEvent}:{data:PortalD
       </button>}):<div className="aw-list-empty">No registrations yet. New RSVPs will appear here.</div>}</div>
     </WorkspaceSection>
    </div>
-   <WorkspaceSection title="Your upcoming events" description="See what your team can join next" action={<button className="aw-text-action" onClick={onEvents}>All events <ArrowRight size={16}/></button>}>
+   <WorkspaceSection title="Your upcoming events" description="See what your team can join next">
     {upcoming.some(e=>!alertEvents.some(a=>a.event.id===e.id))?<div className="ed-tile-grid">{upcoming.filter(e=>!alertEvents.some(a=>a.event.id===e.id)).slice(0,3).map(e=><EventTile event={e} data={data} onOpen={onEvent} key={e.id} now={now} showHost={false}/>)}</div>:<div className="aw-empty"><CalendarDays size={22}/><strong>No additional upcoming events</strong><p>Events needing attention are listed above.</p></div>}
    </WorkspaceSection>
 
