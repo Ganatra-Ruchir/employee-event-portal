@@ -1,4 +1,4 @@
-import type {Person,PortalData,PortalEvent} from "./portal-model";
+import type {Person,PortalData} from "./portal-model";
 import {eventAccess} from "./portal-model";
 import {previewActor,seedPreview,type PreviewData} from "./v3-preview";
 import {canManageScope} from "./v3-permissions";
