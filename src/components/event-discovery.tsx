@@ -136,6 +136,7 @@ export function DiscoverHome({data,events,user,onOpen,onBrowse,onCategory,now,on
   const learning=collect(e=>["Education","Workshop","Town Hall"].includes(e.category));
   const coming=collect(()=>true);
   return <div className="ed-discover">
+    <Section title="Your upcoming events" sub="The events you've already joined" items={joined} data={data} now={now} onOpen={onOpen} onMore={onBrowse}/>
 
     <div className="ed-home-heading ed-home-heading-refined"><div><h2>Events from your organization</h2><p>Find your next experience and see who&apos;s going.</p></div><div className="ed-home-actions"><button type="button" className="ed-search-toggle" onClick={onSearch}><Search size={20}/><span>Search events</span></button><button type="button" className="ed-home-explore" onClick={onBrowse}>See all events <ArrowRight size={17}/></button></div></div>
     {topCards.length>0?<div className="ed-tile-grid ed-home-grid">{topCards.map(e=><EventTile key={e.id} event={e} data={data} onOpen={onOpen} now={now}/>)}</div>:future.length===0?<div className="ed-feature-empty"><h2>No upcoming events</h2><p>Published events from your organization will appear here.</p></div>:null}
@@ -147,7 +148,6 @@ export function DiscoverHome({data,events,user,onOpen,onBrowse,onCategory,now,on
     <nav className="ed-category-nav" aria-label="Explore categories">
       {["All events","Volunteering","Learning","Environment","Health"].map(c=><button key={c} onClick={()=>c==="All events"?onBrowse():onCategory(c)}>{c}<ArrowRight size={14}/></button>)}
     </nav>
-    <Section title="Your upcoming events" sub="The events you've already joined" items={joined} data={data} now={now} onOpen={onOpen} onMore={onBrowse}/>
     <Section title="This week" sub="Make plans with your team" items={week} data={data} now={now} onOpen={onOpen} onMore={onBrowse}/>
     <Section title="Volunteering" sub="Spend time on something that matters" items={volunteer} data={data} now={now} onOpen={onOpen} onMore={()=>onCategory("Volunteering")}/>
     <Section title="Learning" sub="Workshops, talks and new skills" items={learning} data={data} now={now} onOpen={onOpen} onMore={()=>onCategory("Education")}/>
