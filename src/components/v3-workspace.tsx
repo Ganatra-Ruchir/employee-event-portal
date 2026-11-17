@@ -8,7 +8,7 @@ import ImpactCharts from "@/components/impact-charts";
 type Row=Record<string,string|number|null>;
 type Workspace={level:"root"|"country_admin"|"state_admin"|"employee";scope?:Row|null;countries?:Row[];states?:Row[];branches?:Row[];members?:Row[];attendance?:Row[];contributions?:Row[]};
 const str=(v:unknown)=>String(v??"");
-export default function V3Workspace({user,data,remote,onEvent,onSave,hash,section="home",showPeopleDirectory=true}:{user:Person;data:PortalData;remote:boolean;onEvent:(id:string)=>void;onSave:(data:PortalData)=>boolean;hash:(password:string)=>Promise<string>;section?:"home"|"attendance"|"people"|"hierarchy";showPeopleDirectory?:boolean}){
+export default function V3Workspace({user,data,remote,now,onEvent,onSave,hash,section="home",showPeopleDirectory=true}:{user:Person;data:PortalData;remote:boolean;now:number;onEvent:(id:string)=>void;onSave:(data:PortalData)=>boolean;hash:(password:string)=>Promise<string>;section?:"home"|"attendance"|"people"|"hierarchy";showPeopleDirectory?:boolean}){
  const [remoteWorkspace,setWorkspace]=useState<Workspace|null>(null),[issue,setIssue]=useState(""),[success,setSuccess]=useState(""),[busy,setBusy]=useState(false),[credentials,setCredentials]=useState<Row|null>(null);
  const [org,setOrg]=useState(""),[country,setCountry]=useState(""),[state,setState]=useState(""),[branch,setBranch]=useState(""),[name,setName]=useState(""),[email,setEmail]=useState(""),[department,setDepartment]=useState(""),[action,setAction]=useState(""),[countryName,setCountryName]=useState("");
  const [selected,setSelected]=useState(""),[minutes,setMinutes]=useState(""),[contribution,setContribution]=useState("");
@@ -26,7 +26,7 @@ export default function V3Workspace({user,data,remote,onEvent,onSave,hash,sectio
  const states=(workspace?.states||[]).filter(r=>r.organization_id===orgId&&r.country_code===countryCode);
  const branches=(workspace?.branches||[]).filter(r=>r.state_id===stateId);
  const attendance=workspace?.attendance||[];
- const upcoming=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published"&&Date.parse(e.startsAt)>Date.now()).sort((a,b)=>Date.parse(a.startsAt)-Date.parse(b.startsAt));
+ const upcoming=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published"&&Date.parse(e.startsAt)>now).sort((a,b)=>Date.parse(a.startsAt)-Date.parse(b.startsAt));
  const registered=new Set(data.registrations.filter(r=>r.userId===user.id&&r.status==="going").map(r=>r.eventId));
  const verified=[...(workspace?.contributions||[])].sort((a,b)=>Date.parse(str(b.starts_at))-Date.parse(str(a.starts_at)));
  const nextEvents=upcoming.filter(e=>registered.has(e.id));
@@ -45,13 +45,13 @@ export default function V3Workspace({user,data,remote,onEvent,onSave,hash,sectio
  if(section!=="home"&&!workspace&&!issue)return <section className="ep-panel"><p>Loading workspace…</p></section>;
  if(section==="hierarchy"&&!root&&!countryAdmin)return <section className="ep-panel"><p>Hierarchy settings are not available for this account.</p></section>;
  if((section==="attendance"||section==="people")&&!countryAdmin&&!stateAdmin)return <section className="ep-panel"><p>This workspace is not available for this account.</p></section>;
- if(section==="attendance"&&!remote&&(countryAdmin||stateAdmin))return <EventAttendance user={user} data={data} onSave={onSave}/>;
+ if(section==="attendance"&&!remote&&(countryAdmin||stateAdmin))return <EventAttendance user={user} data={data} now={now} onSave={onSave}/>;
  if(section==="hierarchy"&&countryAdmin&&!remote)return <CountryHierarchy user={user} data={data} onSave={onSave} hash={hash}/>;
  return <section className="ep-panel v3-workspace">
   {section==="home"&&user.role==="employee"&&!stateAdmin&&<><div className="ed-eyebrow">MY VOLUNTEERING JOURNEY</div><h2>My impact dashboard</h2>
    <div className="v3-metrics"><div><strong>{workspace?verified.length:"—"}</strong><span>Verified events attended</span></div><div><strong>{workspace?Number(hours.toFixed(2)):"—"}</strong><span>Verified volunteer hours</span></div><div><strong>{upcoming.filter(e=>registered.has(e.id)).length}</strong><span>Upcoming registrations</span></div></div>
    {!workspace&&<p>Verified attendance is unavailable. Registrations are not counted as attendance.</p>}
-   <ImpactCharts data={data} userId={user.id} companyId={user.companyId} verified={verified} available={!!workspace}/>
+   <ImpactCharts data={data} userId={user.id} companyId={user.companyId} verified={verified} available={!!workspace} now={now}/>
    <h3>My next registered events</h3>{nextEvents.length?<div className="v3-list">{nextEvents.slice(0,5).map(e=><button type="button" key={e.id} onClick={()=>onEvent(e.id)}><strong>{e.title}</strong><span>{new Date(e.startsAt).toLocaleDateString()} · {registered.has(e.id)?"Registered":"Explore event"}</span></button>)}</div>:<p>No upcoming registrations. Find opportunities under Events.</p>}
    {verified.length>0&&<><h3>My verified contributions</h3><div className="v3-list">{(showAllContributions?verified:verified.slice(0,6)).map(r=><div key={str(r.id)}><strong>{r.title} · {Number((Number(r.volunteer_minutes)/60).toFixed(2))} hours</strong><span>{new Date(str(r.starts_at)).toLocaleDateString("en-IN")} · {r.contribution||"Attendance verified"}</span></div>)}</div>{verified.length>6&&<button type="button" className="ep-button secondary" onClick={()=>setShowAllContributions(x=>!x)}>{showAllContributions?"Show recent contributions":"Show all "+verified.length+" contributions"}</button>}</>}
   </>}

@@ -3,9 +3,9 @@ import {useState} from "react";
 import {ArrowLeft,CalendarDays,Check,Plus,Search,Trash2} from "lucide-react";
 import type {Person,PortalData} from "@/lib/portal-model";
 import {attendanceEvents,attendanceRoster,employeeId,saveEventAttendance,type AttendanceRow,type WalkInInput,type AttendanceStatus} from "@/lib/event-attendance";
-type Props={user:Person;data:PortalData;onSave:(data:PortalData)=>boolean};
+type Props={user:Person;data:PortalData;now:number;onSave:(data:PortalData)=>boolean};
 export default function EventAttendance(props:Props){
- const {user,data}=props;
+ const {user,data,now}=props;
  const [eventId,setEventId]=useState(""),[query,setQuery]=useState("");
  const events=attendanceEvents(user,data);
  if(eventId&&events.some(e=>e.id===eventId))return <AttendanceSheet key={eventId} {...props} eventId={eventId} onBack={()=>setEventId("")}/>;
@@ -13,16 +13,16 @@ export default function EventAttendance(props:Props){
  return <section className="ep-panel v3-workspace cc-attendance">
   <div><div className="ed-eyebrow">DAILY OPERATIONS</div><h2>Event attendance</h2><p className="ep-hint">Open an event to record attendance for registered employees and walk-ins.</p></div>
   <label className="cc-att-search"><Search size={17}/><input aria-label="Search events" type="search" placeholder="Search events" value={query} onChange={e=>setQuery(e.target.value)}/></label>
-  <div className="v3-list">{visible.map(e=>{const roster=attendanceRoster(user,data,e.id),present=roster.rows.filter(r=>r.status==="present").length;return <button className="cc-att-event" type="button" key={e.id} onClick={()=>setEventId(e.id)}><CalendarDays size={20}/><span><strong>{e.title}</strong><small>{new Date(e.startsAt).toLocaleDateString("en-IN")} · {e.location||"Online"} · {Date.parse(e.startsAt)>Date.now()?"Upcoming":"Attendance available"}</small></span><span className="cc-att-event-count">{roster.rows.length} registered · {present+roster.extras.length} present</span><span className="cc-att-open">Open event →</span></button>})}{!visible.length&&<p>No published events found.</p>}</div>
+  <div className="v3-list">{visible.map(e=>{const roster=attendanceRoster(user,data,e.id),present=roster.rows.filter(r=>r.status==="present").length;return <button className="cc-att-event" type="button" key={e.id} onClick={()=>setEventId(e.id)}><CalendarDays size={20}/><span><strong>{e.title}</strong><small>{new Date(e.startsAt).toLocaleDateString("en-IN")} · {e.location||"Online"} · {Date.parse(e.startsAt)>now?"Upcoming":"Attendance available"}</small></span><span className="cc-att-event-count">{roster.rows.length} registered · {present+roster.extras.length} present</span><span className="cc-att-open">Open event →</span></button>})}{!visible.length&&<p>No published events found.</p>}</div>
  </section>;
 }
-function AttendanceSheet({user,data,onSave,eventId,onBack}:Props&{eventId:string;onBack:()=>void}){
+function AttendanceSheet({user,data,now,onSave,eventId,onBack}:Props&{eventId:string;onBack:()=>void}){
  const roster=attendanceRoster(user,data,eventId);
  const [rows,setRows]=useState<AttendanceRow[]>(()=>roster.rows.map(({userId,status,minutes,contribution})=>({userId,status,minutes,contribution})));
  const [extras,setExtras]=useState<WalkInInput[]>(()=>roster.extras.map(({employeeId,phone})=>({employeeId,phone})));
  const [search,setSearch]=useState(""),[error,setError]=useState(""),[saved,setSaved]=useState(false),[dirty,setDirty]=useState(false);
  const [draftId,setDraftId]=useState(""),[draftPhone,setDraftPhone]=useState("");
- const readOnly=Date.parse(roster.event.startsAt)>Date.now();
+ const readOnly=Date.parse(roster.event.startsAt)>now;
  const present=rows.filter(r=>r.status==="present").length,absent=rows.filter(r=>r.status==="absent").length,pending=rows.length-present-absent;
  const visible=roster.rows.filter(r=>[r.person.fullName,employeeId(r.person),r.person.department].join(" ").toLowerCase().includes(search.trim().toLowerCase()));
  function change(id:string,patch:Partial<AttendanceRow>){setRows(prev=>prev.map(r=>r.userId===id?{...r,...patch}:r));setDirty(true);setSaved(false);setError("");}

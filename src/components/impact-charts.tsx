@@ -8,8 +8,8 @@ function sector(a:number,b:number,r:number){
  const [x,y]=point(a,r),[u,v]=point(b,r);
  return "M 130 130 L "+x+" "+y+" A "+r+" "+r+" 0 "+(b-a>Math.PI?1:0)+" 1 "+u+" "+v+" Z";
 }
-export default function ImpactCharts({data,userId,companyId,verified,available}:{data:PortalData;userId:string;companyId:string|null;verified:Row[];available:boolean}){
- const {goals,unassigned,outcomes,monthly,attended}=employeeImpact(data,userId,companyId,verified);
+export default function ImpactCharts({data,userId,companyId,verified,available,now}:{data:PortalData;userId:string;companyId:string|null;verified:Row[];available:boolean;now:number}){
+ const {goals,unassigned,outcomes,monthly,attended}=employeeImpact(data,userId,companyId,verified,now);
  const [active,setActive]=useState<number|null>(null);
  const pie=[{name:"Present",value:outcomes.present,color:"#42763c"},{name:"Absent",value:outcomes.absent,color:"#c65b50"},{name:"Not marked",value:outcomes.unmarked,color:"#c5cbd0"}];
  const total=pie.reduce((s,x)=>s+x.value,0);let cursor=0;

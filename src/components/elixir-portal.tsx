@@ -16,7 +16,7 @@ import {CompanyDirectory,PeopleDirectory,AccountDirectory,InvitationDirectory} f
 import {EmployeeProvisioner} from "@/components/employee-provisioner";
 import {EmployeeEditor} from "@/components/employee-editor";
 import {PersonAvatar} from "@/components/person-avatar";
-import {optimizePngAvatar,MAX_AVATAR_SOURCE_BYTES} from "@/lib/avatar-optimization";
+import {optimizeLocalAvatar,optimizePngAvatar,MAX_AVATAR_SOURCE_BYTES} from "@/lib/avatar-optimization";
 import {EventQuickActions} from "@/components/event-quick-actions";
 import {FirstLoginPasswordChange} from "@/components/first-login-password-change";
 import {EmployeeEventNotifications} from "@/components/employee-event-notifications";
@@ -295,6 +295,8 @@ export default function ElixirPortal(){
   const [profileJobTitle,setProfileJobTitle]=useState<string|null>(null);
   const [profilePhone,setProfilePhone]=useState<string|null>(null);
   const [profilePhotoBusy,setProfilePhotoBusy]=useState(false);
+  const [photoError,setPhotoError]=useState("");
+  const [photoSuccess,setPhotoSuccess]=useState("");
   const [editingEmployeeId,setEditingEmployeeId]=useState<string|null>(null);
   const [employeeFilter,setEmployeeFilter]=useState("All");
   const [profilePw,setProfilePw]=useState("");
@@ -340,6 +342,7 @@ export default function ElixirPortal(){
       }
     });
   },[]);
+  useEffect(()=>{if(remote||!session)return;const timer=window.setInterval(()=>setNow(Date.now()),30000);return ()=>window.clearInterval(timer);},[remote,session]);
   // Refresh the database feed while employees are signed in so newly
   // published events also reach the reminder bell without reloading.
   useEffect(()=>{
@@ -617,31 +620,41 @@ export default function ElixirPortal(){
     save({...data,users:data.users.map(u=>u.id===current.id?{...u,fullName:fullName.trim(),department:department.trim(),jobTitle:profileJobTitle??current.jobTitle??"",phone:profilePhone??current.phone??"",password}:u)});
     setProfilePw("");setProfilePwConfirm("");setProfileSuccess("Profile saved in this browser.");
   }
+  function saveLocalPhoto(userId:string,avatarUrl:string|undefined){
+    if(localStorage.getItem(SESSION)!==userId)throw Error("Your session changed. Sign in again before changing your photo.");
+    const stored=localStorage.getItem(STORE);
+    const latest:PortalData=stored?JSON.parse(stored):data;
+    if(!latest.users.some(u=>u.id===userId))throw Error("Your account is no longer available.");
+    if(!save({...latest,users:latest.users.map(u=>u.id===userId?{...u,avatarUrl}:u)}))throw Error("Browser storage is full. Your previous photo was kept.");
+  }
   async function uploadProfilePhoto(file?:File){
-    if(!file||!current||!remote)return;
-    if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>MAX_AVATAR_SOURCE_BYTES){setProfileError("Choose a JPG, PNG or WebP image up to 20 MB.");return;}
-    setProfilePhotoBusy(true);setProfileError("");setProfileSuccess("");
+    if(!file||!current||profilePhotoBusy)return;
+    setPhotoError("");setPhotoSuccess("");
+    if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>MAX_AVATAR_SOURCE_BYTES||file.size===0){setPhotoError("Choose a JPG, PNG or WebP image up to 20 MB.");return;}
+    setProfilePhotoBusy(true);
     try{
+      if(!remote){const url=await optimizeLocalAvatar(file);saveLocalPhoto(current.id,url);setPhotoSuccess("Profile picture saved in this browser.");return;}
       const optimized=await optimizePngAvatar(file);
       const form=new FormData();form.set("avatar",optimized);
       const r=await fetch("/api/portal/avatar",{method:"POST",body:form});
       const response=await r.json();
-      if(!r.ok){setProfileError(response.error||"Unable to upload the picture.");return;}
+      if(!r.ok)throw Error(response.error||"Unable to upload the picture.");
       if(response.data)setData(response.data);
-      setProfileSuccess("Profile picture updated.");
-    }catch(e){setProfileError(e instanceof Error&&e.message?e.message:"Unable to upload profile picture.");}
+      setPhotoSuccess("Profile picture updated.");
+    }catch(e){setPhotoError(e instanceof Error&&e.message?e.message:"Unable to upload profile picture.");}
     finally{setProfilePhotoBusy(false);}
   }
   async function removeProfilePhoto(){
-    if(!remote||!current)return;
-    setProfilePhotoBusy(true);setProfileError("");setProfileSuccess("");
+    if(!current||profilePhotoBusy)return;
+    setProfilePhotoBusy(true);setPhotoError("");setPhotoSuccess("");
     try{
+      if(!remote){saveLocalPhoto(current.id,undefined);setPhotoSuccess("Profile picture removed.");return;}
       const r=await fetch("/api/portal/avatar",{method:"DELETE"});
       const response=await r.json();
-      if(!r.ok){setProfileError(response.error||"Unable to remove profile picture.");return;}
+      if(!r.ok)throw Error(response.error||"Unable to remove profile picture.");
       if(response.data)setData(response.data);
-      setProfileSuccess("Profile picture removed.");
-    }catch{setProfileError("Unable to remove picture.");}
+      setPhotoSuccess("Profile picture removed.");
+    }catch(e){setPhotoError(e instanceof Error?e.message:"Unable to remove picture.");}
     finally{setProfilePhotoBusy(false);}
   }
   async function employeeAction(action:"editEmployee"|"changeEmployeeStatus",args:Record<string,unknown>){
@@ -714,7 +727,7 @@ export default function ElixirPortal(){
         </div>}
         {view==="eventForm"&&editingEvent&&<EventEditor key={editingEvent.id} event={editingEvent} data={data} onSave={saveEvent} onBack={()=>goto("events")}/>}
         {view==="companyForm"&&<CompanyEditor key={editingCompany?.id||"new"} company={editingCompany||undefined} data={data} onSave={saveCompany} onBack={()=>goto("companies")}/>}
-        {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isStateAdmin||isCountryAdmin&&!remote)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} onEvent={openEvent} onSave={save} hash={encodePassword} showPeopleDirectory={current.role!=="company_admin"} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"}/> }
+        {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isStateAdmin||isCountryAdmin&&!remote)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} now={now} onEvent={openEvent} onSave={save} hash={encodePassword} showPeopleDirectory={current.role!=="company_admin"} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"}/> }
         {view==="events"&&current.role==="employee"&&<DiscoverBrowse
           data={data} events={companyEvents} now={now}
           onOpen={e=>{openEvent(e.id);}}
@@ -876,6 +889,12 @@ export default function ElixirPortal(){
           <div className="aw-two-col aw-profile-layout">
             <div className="aw-profile-summary">
               <PersonAvatar person={current} size={88}/>
+              <div className="cc-profile-photo-control" key={current.id}>
+                <label className="cc-photo-upload"><input type="file" aria-label="Choose profile picture" accept="image/png,image/jpeg,image/webp" disabled={profilePhotoBusy} onChange={e=>{void uploadProfilePhoto(e.currentTarget.files?.[0]);e.currentTarget.value="";}}/><span>{profilePhotoBusy?"Processing…":current.avatarUrl?"Change profile picture":"Upload profile picture"}</span></label>
+                {current.avatarUrl&&<button className="cc-photo-remove" type="button" disabled={profilePhotoBusy} onClick={()=>void removeProfilePhoto()}>Remove picture</button>}
+                <small>JPG, PNG, WebP · Up to 20 MB. {remote?"Automatically resized.":"Saved locally; use demo photos only."}</small>
+                {photoError&&<p className="ep-error" role="alert">{photoError}</p>}{photoSuccess&&<p className="ep-success" role="status">{photoSuccess}</p>}
+              </div>
               <h2>{current.fullName}</h2><p>{current.email}</p><span className="md-role">{isStateAdmin?"State admin":roleName(current.role)}</span>
               <div className="aw-profile-company"><span>Organization</span><strong>{company?.name||"Elixir Foundation"}</strong></div>
               <div className="aw-profile-company"><span>Department</span><strong>{current.department||"Not provided"}</strong></div>
@@ -883,11 +902,7 @@ export default function ElixirPortal(){
             </div>
             <form className="ep-panel ep-form aw-profile-form" onSubmit={profileSave}>
               <h2>Personal details</h2>
-              {remote&&<div className="profile-photo-control">
-                <label className="profile-upload-button">Upload profile photo (JPG, PNG or WebP)<input type="file" accept="image/png,image/jpeg,image/webp" disabled={profilePhotoBusy} onChange={e=>{void uploadProfilePhoto(e.currentTarget.files?.[0]);e.currentTarget.value="";}}/></label>
-                {current.avatarUrl&&<button type="button" disabled={profilePhotoBusy} onClick={()=>void removeProfilePhoto()}>Remove profile picture</button>}
-                <small>{profilePhotoBusy?"Uploading photo…":"JPG, PNG and WebP images up to 20 MB are resized automatically for faster uploads."}</small>
-              </div>}
+
               <div className="ep-form-grid">
                 <FormRow label="Full name"><input required value={profileName??current.fullName} onChange={e=>setProfileName(e.target.value)}/></FormRow>
                 <FormRow label="Department"><input value={profileDepartment??current.department} onChange={e=>setProfileDepartment(e.target.value)}/></FormRow>
