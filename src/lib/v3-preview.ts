@@ -1,7 +1,8 @@
 import {canAssign,canManageScope,type V3Actor,type V3Membership,type V3Scope} from "./v3-permissions";
 import {DEMO_PASSWORD,isPersonalDomain,type PortalData,type Person} from "./portal-model";
+import type {AttendanceMark,WalkIn} from "./event-attendance";
 export type Row=Record<string,string|number|null>;
-export type PreviewState={countries:Row[];states:Row[];branches:Row[];members:V3Membership[];contributions:Row[]};
+export type PreviewState={countries:Row[];states:Row[];branches:Row[];members:V3Membership[];contributions:Row[];attendanceMarks?:AttendanceMark[];walkIns?:WalkIn[]};
 export type PreviewData=PortalData&{v3?:PreviewState};
 const str=(v:unknown)=>typeof v==="string"?v.trim():"";
 const scopeOf=(org:string,country:string,state:string|null=null,branch:string|null=null):V3Scope=>({organization_id:org,country_code:country,state_id:state,branch_id:branch});
@@ -39,7 +40,7 @@ export function previewWorkspace(user:Person,data:PreviewData){
   const e=data.events.find(e=>e.id===r.eventId),m=members.find(m=>m.user_id===r.userId&&m.level==="employee");
   if(!e||!m||e.companyId!==m.organization_id||e.status!=="published"||r.status!=="going"||Date.parse(e.endsAt)>Date.now())return [];
   const c=v.contributions.find(c=>c.event_id===e.id&&c.user_id===r.userId);
-  return [{event_id:e.id,user_id:r.userId,title:e.title,full_name:m.full_name,volunteer_minutes:c?.volunteer_minutes??null,contribution:c?.contribution??""}];
+  return [{event_id:e.id,user_id:r.userId,title:e.title,full_name:m.full_name,volunteer_minutes:c?.volunteer_minutes??null,contribution:c?.contribution??"",attendance_status:v.attendanceMarks?.find(x=>x.eventId===e.id&&x.userId===r.userId)?.status||(c?"present":"unmarked")}];
  });
  return {level,scope,countries:v.countries.filter(r=>level==="root"||r.organization_id===scope?.organization_id&&r.code===scope?.country_code),states:v.states.filter(visible),branches:v.branches.filter(visible),members,attendance};
 }
