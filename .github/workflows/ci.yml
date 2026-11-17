@@ -20,3 +20,17 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
+      - name: Install browser audit tooling
+        run: |
+          npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Browser layout audit
+        run: |
+          npm run start -- --hostname 127.0.0.1 > /tmp/portal-audit-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/audit-layout.mjs
+        env:
+          NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "false"

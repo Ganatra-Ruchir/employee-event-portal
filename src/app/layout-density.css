@@ -126,3 +126,15 @@
 @media(max-width:1250px){.ep-shell .ep-main .cc-impact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ep-shell .cc-impact-grid>.cc-impact-chart:last-child{grid-column:1/-1}}
 @media(max-width:900px){.ep-shell .ep-main{flex:1 1 auto;padding:10px!important}.ep-shell .ep-sidebar{padding:4px 8px!important;left:0;right:auto}.ep-shell .ep-topbar{padding-inline:10px!important}.ep-shell .ep-detail-layout{display:flex;flex-direction:column;gap:10px!important}.ep-shell .ep-detail-layout>.ep-detail-right{width:100%}.ep-shell .ep-detail-copy{width:100%}.ep-shell .aw-profile-layout{grid-template-columns:minmax(180px,220px) minmax(0,1fr)}}
 @media(max-width:680px){.ep-shell .ep-main{padding:8px!important}.ep-shell .ep-main .ep-panel,.ep-shell .ep-main .aw-section{padding:10px!important}.ep-shell .aw-heading,.ep-shell .ep-page-head,.ep-shell .ed-browse-title-row{align-items:flex-start;flex-wrap:wrap}.ep-shell .aw-two-col,.ep-shell .aw-profile-layout,.ep-shell .ep-form-grid,.ep-shell .ep-main .cc-impact-grid,.ep-shell .ed-tile-grid,.ep-shell .md-person-grid,.ep-shell .md-company-grid{grid-template-columns:minmax(0,1fr)}.ep-shell .cc-impact-grid>.cc-impact-chart:last-child{grid-column:auto}.ep-shell .ep-top-left{gap:6px}.ep-shell .ep-top-right{gap:5px}.ep-shell .ep-account>span:last-child{display:none}.ep-shell .ep-account{padding:4px!important}.ep-shell .ep-brand{font-size:13px!important}.ep-shell .ep-menu{display:none!important}.ep-shell .cc-att-add{grid-template-columns:minmax(0,1fr)}.ep-shell .ep-table-scroll table{min-width:560px}.ep-shell .ep-banner{max-height:200px}.ep-shell .ep-button,.ep-shell .aw-primary,.ep-shell .md-outline-action{min-height:42px}.ep-auth-v2 .ep-auth-aside{display:none!important}.ep-auth-v2 .ep-auth-card{max-width:100%;padding:16px!important}}
+
+/* Do not retain legacy orange hover borders or excessive fixed row heights. */
+.ep-shell .ep-main .ed-tile:hover{border-color:var(--elixir-green-dark)!important;box-shadow:0 1px 3px #17221a08!important}
+.ep-shell .aw-registration-row{min-height:62px}
+.ep-shell .ep-sidebar{bottom:auto}
+.ep-shell .ep-main .ep-detail-speakers{min-width:0}
+.ep-shell .cc-chart-stage{display:grid;place-items:center;height:174px;min-width:0}
+.ep-shell .cc-chart-stage .cc-impact-bars{width:100%}
+.ep-shell .cc-chart-stage .cc-pie{margin:0}
+.ep-shell .cc-chart-stage .cc-polar{width:min(100%,174px)}
+@media(min-width:1251px){.ep-shell .cc-impact-chart>p:nth-child(2){min-height:32px}}
+@media(max-width:680px){.ep-shell .cc-chart-stage{height:164px}.ep-shell .cc-chart-stage .cc-polar{width:min(100%,164px)}}
