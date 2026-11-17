@@ -149,3 +149,8 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .landing-editorial .cc-landing-footer .landing-footer-bottom{margin:0!important;padding:0!important;border:0!important}
 @media(max-width:900px){.ep-shell .ep-main{padding:12px 12px 20px!important}.ep-shell .ep-sidebar{padding:4px 8px!important}.ep-shell .cc-nav-group-title{margin:3px 5px;padding:0}.ep-shell .ep-panel,.ep-shell .aw-section{padding:12px!important}.ep-shell .ep-detail-layout{gap:10px!important}.ep-shell .ep-banner{max-height:220px;aspect-ratio:16/9}.ep-shell .ep-detail-right{width:100%}.ep-shell .ep-detail-copy{padding:12px!important}}
 @media(max-width:480px){.landing-editorial .landing-glass-stamp,.landing-editorial .landing-hero-index{display:none!important}.landing-editorial .landing-nav{gap:8px!important}.landing-editorial .landing-nav .landing-login:first-child{display:none}.landing-editorial .landing-hero-wrap{padding-top:28px!important;padding-bottom:28px!important}}
+
+.landing-editorial .landing-photo-hero{height:auto!important}
+.ep-shell .aw-root>.aw-heading{margin-bottom:12px!important}
+.ep-shell .aw-two-col>.aw-section{margin-bottom:0!important}
+.ep-shell .v3-workspace .ep-hint{margin:4px 0!important}
