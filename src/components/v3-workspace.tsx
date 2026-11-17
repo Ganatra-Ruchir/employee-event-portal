@@ -3,6 +3,7 @@ import {useEffect,useState} from "react";
 import type {Person,PortalData} from "@/lib/portal-model";
 import {previewWorkspace,previewAction} from "@/lib/v3-preview";
 import CountryHierarchy from "@/components/country-hierarchy";
+import EventAttendance from "@/components/event-attendance";
 type Row=Record<string,string|number|null>;
 type Workspace={level:"root"|"country_admin"|"state_admin"|"employee";scope?:Row|null;countries?:Row[];states?:Row[];branches?:Row[];members?:Row[];attendance?:Row[];contributions?:Row[]};
 const str=(v:unknown)=>String(v??"");
@@ -42,6 +43,7 @@ export default function V3Workspace({user,data,remote,onEvent,onSave,hash,sectio
  if(section!=="home"&&!workspace&&!issue)return <section className="ep-panel"><p>Loading workspace…</p></section>;
  if(section==="hierarchy"&&!root&&!countryAdmin)return <section className="ep-panel"><p>Hierarchy settings are not available for this account.</p></section>;
  if((section==="attendance"||section==="people")&&!countryAdmin&&!stateAdmin)return <section className="ep-panel"><p>This workspace is not available for this account.</p></section>;
+ if(section==="attendance"&&!remote&&(countryAdmin||stateAdmin))return <EventAttendance user={user} data={data} onSave={onSave}/>;
  if(section==="hierarchy"&&countryAdmin&&!remote)return <CountryHierarchy user={user} data={data} onSave={onSave} hash={hash}/>;
  return <section className="ep-panel v3-workspace">
   {section==="home"&&user.role==="employee"&&!stateAdmin&&<><div className="ed-eyebrow">MY VOLUNTEERING JOURNEY</div><h2>My impact dashboard</h2>
@@ -51,7 +53,7 @@ export default function V3Workspace({user,data,remote,onEvent,onSave,hash,sectio
    {verified.length>0&&<><h3>My verified contributions</h3><div className="v3-list">{verified.map(r=><div key={str(r.id)}><strong>{r.title} · {Number(r.volunteer_minutes)/60} hours</strong><span>{r.contribution||"Attendance verified"}</span></div>)}</div></>}
   </>}
   {section==="home"&&stateAdmin&&<><div className="ed-eyebrow">STATE OPERATIONS</div><h2>Daily overview</h2>
-   <div className="v3-metrics"><div><strong>{attendance.filter(r=>r.volunteer_minutes===null).length}</strong><span>Attendance to verify</span></div><div><strong>{upcoming.length}</strong><span>Upcoming company events</span></div><div><strong>{workspace?.members?.filter(m=>m.level==="employee").length||0}</strong><span>Employees in your state</span></div></div>
+   <div className="v3-metrics"><div><strong>{attendance.filter(r=>r.attendance_status?r.attendance_status==="unmarked":r.volunteer_minutes===null).length}</strong><span>Attendance to verify</span></div><div><strong>{upcoming.length}</strong><span>Upcoming company events</span></div><div><strong>{workspace?.members?.filter(m=>m.level==="employee").length||0}</strong><span>Employees in your state</span></div></div>
    <h3>Upcoming events</h3><div className="v3-list">{upcoming.slice(0,5).map(e=><button type="button" key={e.id} onClick={()=>onEvent(e.id)}><strong>{e.title}</strong><span>{new Date(e.startsAt).toLocaleDateString()}</span></button>)}{!upcoming.length&&<p>No upcoming events.</p>}</div>
   </>}
   {section!=="home"&&(root||countryAdmin||stateAdmin)&&<><div className="ed-eyebrow">{section==="hierarchy"?"ADMINISTRATION · SETUP":"DAILY OPERATIONS"}</div><h2>{section==="attendance"?"Attendance & contributions":section==="people"?"Employee provisioning":root?"Global hierarchy":"Country hierarchy"}</h2>
