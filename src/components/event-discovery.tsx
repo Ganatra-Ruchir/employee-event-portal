@@ -120,10 +120,11 @@ export function DiscoverHome({data,events,user,onOpen,onBrowse,onCategory,now,on
     if(e.status!=="published"||new Date(e.startsAt).getTime()<=now||seen.has(e.id))return false;
     seen.add(e.id);return true;
   }).sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime());
-  const selected=future.find(e=>e.category==="Volunteering"||e.category==="Environment")||future[0];
-  const topCards=future.filter(e=>e.id!==selected?.id).slice(0,6);
+  const joined=future.filter(e=>activeRegistrations(e.id,data).some(r=>r.userId===user.id));
+  const unjoined=future.filter(e=>!joined.some(j=>j.id===e.id));
+  const topCards=unjoined.slice(0,6);
+  const selected=unjoined.slice(6).find(e=>e.category==="Volunteering"||e.category==="Environment")||unjoined[6];
   const assigned=new Set([...(selected?[selected.id]:[]),...topCards.map(e=>e.id)]);
-  const joined=future.filter(e=>!assigned.has(e.id)&&activeRegistrations(e.id,data).some(r=>r.userId===user.id));
   for(const e of joined)assigned.add(e.id);
   const collect=(match:(e:PortalEvent)=>boolean)=>{
     const results=future.filter(e=>!assigned.has(e.id)&&match(e));
@@ -135,11 +136,7 @@ export function DiscoverHome({data,events,user,onOpen,onBrowse,onCategory,now,on
   const learning=collect(e=>["Education","Workshop","Town Hall"].includes(e.category));
   const coming=collect(()=>true);
   return <div className="ed-discover">
-    <section className="ed-meetup-hero">
-      <div className="ed-meetup-art" aria-hidden="true"><span className="ed-meetup-bubble bubble-a"><LandingArtwork scene="meet"/></span><span className="ed-meetup-bubble bubble-b"><LandingArtwork scene="impact"/></span></div>
-      <div className="ed-meetup-copy"><span className="ed-eyebrow">YOUR ORGANIZATION · YOUR COMMUNITY</span><h1>Meet. Connect. <span>Make an impact.</span></h1><p>Discover experiences worth sharing with colleagues, from volunteering and learning to team celebrations.</p><button type="button" className="ed-meetup-cta" onClick={onBrowse}>Explore all events <ArrowRight size={17}/></button></div>
-      <div className="ed-meetup-art" aria-hidden="true"><span className="ed-meetup-bubble bubble-c"><LandingArtwork scene="ideas"/></span><span className="ed-meetup-bubble bubble-d"><LandingArtwork scene="celebrate"/></span></div>
-    </section>
+
     <div className="ed-home-heading ed-home-heading-refined"><div><h2>Events from your organization</h2><p>Find your next experience and see who&apos;s going.</p></div><div className="ed-home-actions"><button type="button" className="ed-search-toggle" onClick={onSearch}><Search size={20}/><span>Search events</span></button><button type="button" className="ed-home-explore" onClick={onBrowse}>See all events <ArrowRight size={17}/></button></div></div>
     {topCards.length>0?<div className="ed-tile-grid ed-home-grid">{topCards.map(e=><EventTile key={e.id} event={e} data={data} onOpen={onOpen} now={now}/>)}</div>:future.length===0?<div className="ed-feature-empty"><h2>No upcoming events</h2><p>Published events from your organization will appear here.</p></div>:null}
     <div className="ed-home-more"><span>Explore more</span></div>
@@ -155,6 +152,11 @@ export function DiscoverHome({data,events,user,onOpen,onBrowse,onCategory,now,on
     <Section title="Volunteering" sub="Spend time on something that matters" items={volunteer} data={data} now={now} onOpen={onOpen} onMore={()=>onCategory("Volunteering")}/>
     <Section title="Learning" sub="Workshops, talks and new skills" items={learning} data={data} now={now} onOpen={onOpen} onMore={()=>onCategory("Education")}/>
     <Section title="Coming up" sub="More events on the calendar" items={coming} data={data} now={now} onOpen={onOpen} onMore={onBrowse}/>
+    <section className="ed-meetup-hero">
+      <div className="ed-meetup-art" aria-hidden="true"><span className="ed-meetup-bubble bubble-a"><LandingArtwork scene="meet"/></span><span className="ed-meetup-bubble bubble-b"><LandingArtwork scene="impact"/></span></div>
+      <div className="ed-meetup-copy"><span className="ed-eyebrow">YOUR ORGANIZATION · YOUR COMMUNITY</span><h1>Meet. Connect. <span>Make an impact.</span></h1><p>Discover experiences worth sharing with colleagues, from volunteering and learning to team celebrations.</p><button type="button" className="ed-meetup-cta" onClick={onBrowse}>Explore all events <ArrowRight size={17}/></button></div>
+      <div className="ed-meetup-art" aria-hidden="true"><span className="ed-meetup-bubble bubble-c"><LandingArtwork scene="ideas"/></span><span className="ed-meetup-bubble bubble-d"><LandingArtwork scene="celebrate"/></span></div>
+    </section>
   </div>;
 }
 export function DiscoverBrowse({data,events,onOpen,search,setSearch,category,setCategory,timeFilter,setTimeFilter,placesOnly,setPlacesOnly,now,searchOpen,setSearchOpen}:{data:PortalData;events:PortalEvent[];onOpen:(e:PortalEvent)=>void;search:string;setSearch:(s:string)=>void;category:string;setCategory:(s:string)=>void;timeFilter:string;setTimeFilter:(s:string)=>void;placesOnly:boolean;setPlacesOnly:(v:boolean)=>void;now:number;searchOpen:boolean;setSearchOpen:(value:boolean)=>void}){
