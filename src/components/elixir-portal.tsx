@@ -274,7 +274,7 @@ export default function ElixirPortal(){
   const [search,setSearch]=useState("");
   const [searchOpen,setSearchOpen]=useState(false);
   const [directorySearch,setDirectorySearch]=useState("");
-  const [signedOut,setSignedOut]=useState(false);
+  const [,setSignedOut]=useState(false);
   const [showAuth,setShowAuth]=useState(false);
   useEffect(()=>{void Promise.resolve().then(()=>{if(new URLSearchParams(window.location.search).get("auth")==="login")setShowAuth(true);});},[]);
   const [participantSearch,setParticipantSearch]=useState("");
@@ -429,7 +429,7 @@ export default function ElixirPortal(){
     if(u.mustChangePassword&&u.temporaryPasswordExpiresAt&&Date.parse(u.temporaryPasswordExpiresAt)<=Date.now())return "Temporary password expired. Ask your demo administrator to reset it.";
     const org=u.companyId?data.companies.find(c=>c.id===u.companyId):null;
     if(u.status==="suspended"||org?.status==="suspended")return "This account or company is suspended. Contact the platform administrator.";
-    setSession(u.id);setSignedOut(false);try{localStorage.setItem(SESSION,u.id);}catch{}
+    setSession(u.id);setSignedOut(false);setShowAuth(false);setNow(Date.now());try{localStorage.setItem(SESSION,u.id);}catch{}
     const requested=new URLSearchParams(window.location.search).get("event");
     const target=data.events.find(e=>e.id===requested);
     if(target&&eventAccess(u,target,data)){setSelectedEvent(target.id);setView("event");}
@@ -459,6 +459,7 @@ export default function ElixirPortal(){
     if(remote)return "Password reset by email is not yet available. Contact an administrator.";
     const u=data.users.find(x=>x.email.toLowerCase()===email.toLowerCase().trim());
     if(!u)return "If an account exists, its demonstration password has been reset.";
+    if(u.mustChangePassword||u.id.startsWith("EMP-"))return "Ask your administrator for a new temporary password."; 
     save({...data,users:data.users.map(p=>p.id===u.id?{...p,password:DEMO_PASSWORD}:p)});
     return "Local demo password reset to "+DEMO_PASSWORD+". No email was sent.";
   }
@@ -519,6 +520,7 @@ export default function ElixirPortal(){
   function changeRole(person:Person){
     if(remote){if(!window.confirm("Change admin access for "+person.fullName+"?"))return;void remoteAction("role",{userId:person.id},"Role updated.");return;}
     if(current?.role!=="company_admin"||person.companyId!==current.companyId||person.id===current.id||person.status==="suspended")return;
+    if(data.v3){flash("Use the V3 hierarchy workspace to assign administrators.");return;}
     const role=person.role==="employee"?"company_admin":"employee";
     if(!window.confirm("Change "+person.fullName+" to "+roleName(role)+"?"))return;
     save({...data,users:data.users.map(x=>x.id===person.id?{...x,role}:x)});flash("Account role updated.");
@@ -679,7 +681,7 @@ export default function ElixirPortal(){
     <div className="ep-layout">
       <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
         <div className="ep-nav-title">{!remote&&previewActor(current,data).level==="state_admin"?"State admin":roleName(current.role)}</div>
-        {nav.map(v=><button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"?"Dashboard":"Discover"):pageName(v)}</button>)}
+        {nav.map(v=><button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):pageName(v)}</button>)}
         <div className="ep-side-bottom"><button className="ep-nav-link" onClick={logout}><LogOut size={17}/> Sign out</button></div>
       </nav>
       <main className="ep-main" id="main-content" tabIndex={-1}>
@@ -693,7 +695,7 @@ export default function ElixirPortal(){
         {view==="eventForm"&&editingEvent&&<EventEditor key={editingEvent.id} event={editingEvent} data={data} onSave={saveEvent} onBack={()=>goto("events")}/>}
         {view==="companyForm"&&<CompanyEditor key={editingCompany?.id||"new"} company={editingCompany||undefined} data={data} onSave={saveCompany} onBack={()=>goto("companies")}/>}
         {view==="home"&&<V3Workspace key={current.id} user={current} data={data} remote={remote} onEvent={openEvent} onSave={save} hash={encodePassword}/>}
-        {view==="home"&&current.role==="employee"&&<DiscoverHome
+        {view==="home"&&current.role==="employee"&&(remote||previewActor(current,data).level!=="state_admin")&&<DiscoverHome
           data={data} events={companyEvents} user={current} now={now}
           onOpen={e=>{openEvent(e.id);}}
           onBrowse={()=>goto("events")}
