@@ -16,14 +16,15 @@ export function WorkspaceSection({title,description,action,children}:{title:stri
 }
 export function PlatformOverview({data,onEvent,now}:{data:PortalData;onEvent:(event:PortalEvent)=>void;now:number}){
  const active=data.companies.filter(c=>c.status==="active");
- const attendees=data.registrations.filter(r=>r.status==="going").length;
+ const publishedUpcoming=new Set(data.events.filter(e=>e.status==="published"&&Date.parse(e.startsAt)>now).map(e=>e.id));
+ const attendees=data.registrations.filter(r=>r.status==="going"&&publishedUpcoming.has(r.eventId)).length;
  const upcoming=data.events.filter(e=>e.status==="published"&&Date.parse(e.startsAt)>now).sort((a,b)=>Date.parse(a.startsAt)-Date.parse(b.startsAt));
  const recent=data.registrations.filter(r=>r.status==="going").sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)).slice(0,5);
  return <div className="aw-root">
   <WorkspaceHeading eyebrow="ELIXIR FOUNDATION · PLATFORM" title="Platform overview" description="Monitor upcoming events and registration activity across partners."/>
   <div className="aw-metric-grid">
    <Metric icon={CalendarDays} value={upcoming.length} label="Upcoming events" detail="Published and scheduled"/>
-   <Metric icon={TicketCheck} value={attendees} label="Active RSVPs" detail="Currently going"/>
+   <Metric icon={TicketCheck} value={attendees} label="Upcoming RSVPs" detail="Confirmed future registrations"/>
    <Metric icon={Users} value={data.users.length} label="Accounts" detail="Across partner organizations"/>
    <Metric icon={Building2} value={active.length} label="Active organizations" detail={data.companies.length+" total"}/>
   </div>
@@ -40,7 +41,7 @@ export function CompanyOverview({data,current,company,now,onEvent}:{data:PortalD
  const events=data.events.filter(e=>e.companyId===company.id);
  const upcoming=events.filter(e=>e.status==="published"&&new Date(e.startsAt).getTime()>now).sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime());
  const drafts=events.filter(e=>e.status==="draft");
- const attending=events.reduce((sum,e)=>sum+activeRegistrations(e.id,data).length,0);
+ const attending=upcoming.reduce((sum,e)=>sum+activeRegistrations(e.id,data).length,0);
  const members=data.users.filter(u=>u.companyId===company.id);
  // Anything a host should act on: drafts (especially ones whose date has passed), closed registration with empty seats, nearly full events.
  const attention=(e:PortalEvent):string|null=>{
@@ -59,9 +60,9 @@ export function CompanyOverview({data,current,company,now,onEvent}:{data:PortalD
    <WorkspaceHeading eyebrow={company.name.toUpperCase()+" · ORGANIZER"} title={"Good to see you, "+current.fullName.split(" ")[0]} description="Your events, attendees and next steps."/>
    <div className="aw-metric-grid">
     <Metric icon={CalendarDays} value={upcoming.length} label="Upcoming events" detail="Published and scheduled"/>
-    <Metric icon={Clock3} value={drafts.length} label="Draft events" detail="Not yet published"/>
-    <Metric icon={TicketCheck} value={attending} label="People going" detail="Across company events"/>
+    <Metric icon={TicketCheck} value={attending} label="Upcoming RSVPs" detail="Confirmed future registrations"/>
     <Metric icon={Users} value={members.length} label="Team members" detail="In your organization"/>
+    <Metric icon={Clock3} value={drafts.length} label="Draft events" detail="Not yet published"/>
    </div>
    <div className="aw-two-col">
     <WorkspaceSection title="Needs your attention" description="Drafts, closed registration and full events">
