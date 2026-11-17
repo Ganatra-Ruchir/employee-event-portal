@@ -721,12 +721,14 @@ export default function ElixirPortal(){
           onCompanies={()=>goto("companies")}
           onInvites={()=>goto("invitations")}
           onUsers={()=>goto("users")}
+          onEvents={()=>goto("events")} onEvent={e=>openEvent(e.id)} now={now}
         />}
         {view==="home"&&current.role==="company_admin"&&company&&<CompanyOverview
           data={data} current={current} company={company} now={now}
           onCreate={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),contactEmail:current.email});goto("eventForm");}}
           onEvents={()=>goto("events")}
           onPeople={()=>goto("people")}
+          onAttendance={isCountryAdmin?()=>goto("attendance"):undefined}
           onEvent={e=>openEvent(e.id)}
         />}
         {view==="events"&&(current.role==="company_admin"||current.role==="platform_admin")&&<>
