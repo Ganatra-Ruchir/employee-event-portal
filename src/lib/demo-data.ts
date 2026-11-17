@@ -1,3 +1,4 @@
+import {DEMO_GOALS} from "./employee-impact";
 import {DEMO_PASSWORD,type PortalData,type Person,type PortalEvent,type RegistrationStatus} from "./portal-model";
 import type {PreviewState} from "./v3-preview";
 export const DEMO_DATA_VERSION=1;
@@ -66,7 +67,7 @@ export function createDemoData(now=Date.now()):PortalData{
   activities.forEach(([title,category,description],ei)=>{
    const past=ei<14,day=past?-(125-ei*9):3+(ei-14)*6,minutes=90+(ei%4)*30,city=org.locations[ei%3][1+ei%2],eventId=org.id+"-event-"+(ei+1),status:PortalEvent["status"]=ei===22?"draft":ei===23?"cancelled":"published",format:PortalEvent["format"]=ei%7===6?"online":ei%5===4?"hybrid":"in_person";
    const startsAt=date(day,10),endsAt=new Date(Date.parse(startsAt)+minutes*60000).toISOString(),capacity=ei===16?20:ei%3===0?45:40;
-   const event:PortalEvent={id:eventId,companyId:org.id,title,summary:description,description:description+" This is a fictional demo activity for the Employee Volunteer System. Bring any materials listed by the organizer and follow the event briefing.",category,format,location:format==="online"?"":city+" · Demo community venue",onlineLink:format==="in_person"?"":"https://meeting.example.com/"+eventId,startsAt,endsAt,capacity,deadline:date(day-1,17),contactEmail:"country@"+domain,status,cancellationReason:status==="cancelled"?"Demo: venue unavailable":"",createdBy:managerId,waitlistEnabled:true};
+   const event:PortalEvent={primarySdg:DEMO_GOALS[ei],id:eventId,companyId:org.id,title,summary:description,description:description+" This is a fictional demo activity for the Employee Volunteer System. Bring any materials listed by the organizer and follow the event briefing.",category,format,location:format==="online"?"":city+" · Demo community venue",onlineLink:format==="in_person"?"":"https://meeting.example.com/"+eventId,startsAt,endsAt,capacity,deadline:date(day-1,17),contactEmail:"country@"+domain,status,cancellationReason:status==="cancelled"?"Demo: venue unavailable":"",createdBy:managerId,waitlistEnabled:true};
    if(ei%4===2)event.speakers=[{id:eventId+"-speaker-1",name:"Demo Facilitator "+(ei+1),jobTitle:"Community Program Facilitator",company:org.name,talkTitle:"Introduction and practical activities",bio:"Fictional facilitator profile for testing the speaker gallery.",agendaSlot:"10:00 AM – Orientation"},{id:eventId+"-speaker-2",name:"Demo Volunteer Lead "+(ei+1),jobTitle:"Volunteer Coordinator",company:org.name,talkTitle:"Team participation and impact",bio:"Sample speaker profile for preview only.",agendaSlot:"10:45 AM – Guided activity"}];
    data.events.push(event);
    if(status!=="published")return;

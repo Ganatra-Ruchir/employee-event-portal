@@ -33,6 +33,7 @@ export type PortalEvent = {
   id:string; companyId:string; title:string; summary:string; description:string; category:string; format:EventFormat;
   location:string; onlineLink:string; startsAt:string; endsAt:string; capacity:number; deadline:string;
   contactEmail:string; status:EventStatus; cancellationReason:string; createdBy:string;
+  primarySdg?:number;
   waitlistEnabled?:boolean;
   bannerDataUrl?:string;
   bannerStorageKey?:string;

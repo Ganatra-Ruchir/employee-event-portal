@@ -4,6 +4,7 @@ import type {Person,PortalData} from "@/lib/portal-model";
 import {previewWorkspace,previewAction} from "@/lib/v3-preview";
 import CountryHierarchy from "@/components/country-hierarchy";
 import EventAttendance from "@/components/event-attendance";
+import ImpactCharts from "@/components/impact-charts";
 type Row=Record<string,string|number|null>;
 type Workspace={level:"root"|"country_admin"|"state_admin"|"employee";scope?:Row|null;countries?:Row[];states?:Row[];branches?:Row[];members?:Row[];attendance?:Row[];contributions?:Row[]};
 const str=(v:unknown)=>String(v??"");
@@ -30,8 +31,6 @@ export default function V3Workspace({user,data,remote,onEvent,onSave,hash,sectio
  const verified=[...(workspace?.contributions||[])].sort((a,b)=>Date.parse(str(b.starts_at))-Date.parse(str(a.starts_at)));
  const nextEvents=upcoming.filter(e=>registered.has(e.id));
  const hours=verified.reduce((sum,r)=>sum+Number(r.volunteer_minutes||0),0)/60;
- const monthly=Array.from({length:6},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-5+i);const y=d.getFullYear(),m=d.getMonth();return {label:d.toLocaleDateString("en",{month:"short"}),hours:verified.reduce((sum,r)=>{const t=new Date(str(r.starts_at));return sum+(t.getFullYear()===y&&t.getMonth()===m?Number(r.volunteer_minutes||0)/60:0);},0)};});
- const maxHours=Math.max(1,...monthly.map(m=>m.hours));
  const [showAllContributions,setShowAllContributions]=useState(false);
  async function submit(e:React.FormEvent){
   e.preventDefault();setBusy(true);setIssue("");setSuccess("");setCredentials(null);
@@ -52,8 +51,9 @@ export default function V3Workspace({user,data,remote,onEvent,onSave,hash,sectio
   {section==="home"&&user.role==="employee"&&!stateAdmin&&<><div className="ed-eyebrow">MY VOLUNTEERING JOURNEY</div><h2>My impact dashboard</h2>
    <div className="v3-metrics"><div><strong>{workspace?verified.length:"—"}</strong><span>Verified events attended</span></div><div><strong>{workspace?Number(hours.toFixed(2)):"—"}</strong><span>Verified volunteer hours</span></div><div><strong>{upcoming.filter(e=>registered.has(e.id)).length}</strong><span>Upcoming registrations</span></div></div>
    {!workspace&&<p>Verified attendance is unavailable. Registrations are not counted as attendance.</p>}
+   <ImpactCharts data={data} userId={user.id} companyId={user.companyId} verified={verified} available={!!workspace}/>
    <h3>My next registered events</h3>{nextEvents.length?<div className="v3-list">{nextEvents.slice(0,5).map(e=><button type="button" key={e.id} onClick={()=>onEvent(e.id)}><strong>{e.title}</strong><span>{new Date(e.startsAt).toLocaleDateString()} · {registered.has(e.id)?"Registered":"Explore event"}</span></button>)}</div>:<p>No upcoming registrations. Find opportunities under Events.</p>}
-   {verified.length>0&&<><div className="cc-impact-chart"><h3>Monthly verified volunteer hours</h3><div className="cc-impact-bars" role="img" aria-label={monthly.map(m=>m.label+": "+m.hours.toFixed(1)+" hours").join(", ")}>{monthly.map((m,i)=><div className="cc-impact-column" key={i}><span>{Number(m.hours.toFixed(1))}h</span><div className="cc-impact-track"><div style={{height:(m.hours/maxHours*100)+"%"}}/></div><small>{m.label}</small></div>)}</div></div><h3>My verified contributions</h3><div className="v3-list">{(showAllContributions?verified:verified.slice(0,6)).map(r=><div key={str(r.id)}><strong>{r.title} · {Number((Number(r.volunteer_minutes)/60).toFixed(2))} hours</strong><span>{new Date(str(r.starts_at)).toLocaleDateString("en-IN")} · {r.contribution||"Attendance verified"}</span></div>)}</div>{verified.length>6&&<button type="button" className="ep-button secondary" onClick={()=>setShowAllContributions(x=>!x)}>{showAllContributions?"Show recent contributions":"Show all "+verified.length+" contributions"}</button>}</>}
+   {verified.length>0&&<><h3>My verified contributions</h3><div className="v3-list">{(showAllContributions?verified:verified.slice(0,6)).map(r=><div key={str(r.id)}><strong>{r.title} · {Number((Number(r.volunteer_minutes)/60).toFixed(2))} hours</strong><span>{new Date(str(r.starts_at)).toLocaleDateString("en-IN")} · {r.contribution||"Attendance verified"}</span></div>)}</div>{verified.length>6&&<button type="button" className="ep-button secondary" onClick={()=>setShowAllContributions(x=>!x)}>{showAllContributions?"Show recent contributions":"Show all "+verified.length+" contributions"}</button>}</>}
   </>}
   {section==="home"&&stateAdmin&&<><div className="ed-eyebrow">STATE OPERATIONS</div><h2>Daily overview</h2>
    <div className="v3-metrics"><div><strong>{attendance.filter(r=>r.attendance_status?r.attendance_status==="unmarked":r.volunteer_minutes===null).length}</strong><span>Attendance to verify</span></div><div><strong>{upcoming.length}</strong><span>Upcoming company events</span></div><div><strong>{workspace?.members?.filter(m=>m.level==="employee").length||0}</strong><span>Employees in your state</span></div></div>

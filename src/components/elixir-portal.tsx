@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import PublicLanding from "@/components/public-landing";
 import V3Workspace from "@/components/v3-workspace";
+import {SDG_NAMES,eventGoal} from "@/lib/employee-impact";
 import {previewActor} from "@/lib/v3-preview";
 import {createDemoData,DEMO_DATA_VERSION} from "@/lib/demo-data";
 import {DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
@@ -150,6 +151,7 @@ function EventEditor({event,data,onSave,onBack}:{event:PortalEvent;data:PortalDa
         <FormRow label="Category"><select value={form.category} onChange={e=>update("category",e.target.value)}>{CATEGORIES.map(x=><option key={x}>{x}</option>)}</select></FormRow>
         <FormRow label="Format"><select value={form.format} onChange={e=>update("format",e.target.value as EventFormat)}><option value="in_person">In person</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></FormRow>
       </div>
+      <FormRow label="Primary sustainable development goal (SDG)"><select value={eventGoal(form)||0} onChange={e=>update("primarySdg",Number(e.target.value))}><option value={0}>Not assigned</option>{SDG_NAMES.map((name,i)=><option key={i} value={i+1}>SDG {i+1} — {name}</option>)}</select></FormRow>
       {form.format!=="online"&&<FormRow label="Venue or address"><input required value={form.location} onChange={e=>update("location",e.target.value)}/></FormRow>}
       {form.format!=="in_person"&&<FormRow label="Online meeting link (HTTPS)"><input type="url" required value={form.onlineLink} onChange={e=>update("onlineLink",e.target.value)} placeholder="https://example.com/meeting"/></FormRow>}
       <div className="ep-form-grid">
