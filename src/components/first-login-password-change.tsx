@@ -22,7 +22,7 @@ export function FirstLoginPasswordChange({person,onSave,onLogout}:Props){
  }
  return <main style={{minHeight:"100vh",background:"#f4f7fc",display:"grid",placeItems:"center",padding:16,color:"#1b2940"}}>
   <section style={{width:"min(100%,440px)",padding:"clamp(22px,4vw,36px)",borderRadius:16,background:"#fff",boxShadow:"0 10px 30px #1833520d",border:"1px solid #e1e7ef",display:"grid",gap:15}}>
-   <span style={{display:"flex",gap:9,alignItems:"center",fontWeight:850,color:"#2659bb"}}><ShieldCheck size={22}/> Elixir Events Portal</span>
+   <span style={{display:"flex",gap:9,alignItems:"center",fontWeight:850,color:"#2659bb"}}><ShieldCheck size={22}/> Employee Volunteer System</span>
    <span style={{fontSize:11,fontWeight:800,letterSpacing:1.2,color:"#315eaa"}}>FIRST SIGN-IN SECURITY</span>
    <h1 style={{margin:0,fontSize:28,letterSpacing:"-.8px"}}>Set your own password</h1>
    <p style={{margin:0,fontSize:13,lineHeight:1.6,color:"#60728c"}}>Welcome, {person.fullName}. Your Company Admin created this account. Replace the temporary password now to start using your company events. No OTP is needed.</p>

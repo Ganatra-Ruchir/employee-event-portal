@@ -197,3 +197,9 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .cc-city-popup li.active,.cc-city-popup li:hover{background:var(--cc-soft)}
 .cc-city-popup p{padding:10px;margin:0;font-size:12px;color:var(--cc-muted)}
 @media(max-width:650px){.ep-shell .cc-location-form .cc-form-step:first-child .v3-form{grid-template-columns:1fr}}
+
+/* Longer product name, without overflowing mobile headers. */
+.ep-shell .ep-brand{min-width:0;white-space:normal;line-height:1.2}
+.ep-shell .ep-context{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.landing-editorial .landing-brand{white-space:normal;line-height:1.2;font-size:clamp(16px,2vw,23px)}
+@media(max-width:640px){.ep-shell .ep-brand{font-size:13px!important;gap:6px}.ep-shell .cc-brand-mark{width:28px;height:28px}.landing-editorial .landing-brand{font-size:16px!important}.landing-editorial .landing-brand>span:last-child{max-width:155px}}

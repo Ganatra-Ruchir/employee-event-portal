@@ -1,4 +1,4 @@
-# Elixir Events Portal
+# Employee Volunteer System
 
 Next.js event management for Elixir Foundation and its partner organizations, with distinct interfaces for **Platform Admin**, **Organization Admin**, and **Employee**.
 

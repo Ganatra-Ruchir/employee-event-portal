@@ -71,7 +71,7 @@ function Action({children,onClick,kind="primary",disabled=false,type="button"}:{
 function calendarStamp(iso:string){return new Date(iso).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");}
 function calendarText(s:string){return s.replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");}
 function saveCalendarEvent(event:PortalEvent){
-  const contents=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Elixir Foundation//Events Portal//EN",
+  const contents=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Elixir Foundation//Employee Volunteer System//EN",
     "BEGIN:VEVENT","UID:"+event.id+"@elixir-events.example",
     "DTSTAMP:"+calendarStamp(new Date().toISOString()),
     "DTSTART:"+calendarStamp(event.startsAt),"DTEND:"+calendarStamp(event.endsAt),
@@ -219,7 +219,7 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
   return <div className="ep-auth-layout ep-auth-v2">
     <main className="ep-auth-card" id="sign-in">
       {onBack&&<button type="button" className="ep-back" onClick={onBack}><ArrowLeft size={16}/> Back to events home</button>}
-      <div className="ep-auth-heading"><span className="ep-login-mark" aria-hidden="true">E</span><span className="ep-product-name">Elixir Events Portal</span></div>
+      <div className="ep-auth-heading"><span className="ep-login-mark" aria-hidden="true">E</span><span className="ep-product-name">Employee Volunteer System</span></div>
       <div className="ep-auth-intro">
         <span className="ed-eyebrow">{mode==="login"?"WELCOME BACK":mode==="signup"?"JOIN YOUR COMPANY":mode==="forgot"?"ACCOUNT RECOVERY":"EMAIL VERIFICATION"}</span>
         <h1>{mode==="login"?"Sign in to your events":mode==="signup"?"Join your team":mode==="forgot"?(remoteMode?"Forgot your password?":"Reset your demo password"):"Verify your demo email"}</h1>
@@ -246,7 +246,7 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
       </div>
       <p className="ep-auth-footnote">{"Your organization’s event workspace"}</p>
     </main>
-    <aside className="ep-auth-aside" aria-label="About Elixir events">
+    <aside className="ep-auth-aside" aria-label="About Employee Volunteer System">
       <div className="ep-auth-aside-content"><span className="ep-auth-side-label">EVENTS THAT BRING TEAMS TOGETHER</span>
       <h2>Good events start with people.</h2><p>Volunteering, learning and connecting—with everything your team needs in one place.</p>
       <div className="ep-auth-feature-card"><div className="ep-auth-card-art"><span>COMMUNITY</span><strong>Make room for meaningful moments.</strong></div>
@@ -372,10 +372,10 @@ export default function ElixirPortal(){
   const flash=(message:string)=>{setNotice(message);};
   const current=data.users.find(p=>p.id===session)||null;
   const company=current?.companyId?data.companies.find(c=>c.id===current.companyId)||null:null;
-  const portalBrand=current?.role==="platform_admin"?"Elixir Events Portal":`${company?.name||"Organization"} Events Portal`;
+  const portalBrand=company?.name?`Employee Volunteer System | ${company.name}`:"Employee Volunteer System";
   useEffect(()=>{
     document.title=portalBrand;
-    return ()=>{document.title="Elixir Events Portal";};
+    return ()=>{document.title="Employee Volunteer System";};
   },[portalBrand]);
   const blocked=Boolean(current&&(current.status==="suspended"||(current.companyId&&(!company||company.status==="suspended"))));
   const events=current?.role==="platform_admin"?data.events:current?.companyId?data.events.filter(e=>e.companyId===current.companyId):[];
@@ -575,7 +575,7 @@ export default function ElixirPortal(){
   }
   async function copyInvitation(invitation:Invitation){
     const companyName=data.companies.find(c=>c.id===invitation.companyId)?.name||"your organization";
-    const instructions="You have an invitation to join "+companyName+" as a company administrator. Sign up with "+invitation.email+" at "+window.location.origin+"/signup, verify your work email, then contact the Elixir portal administrator to activate your admin role.";
+    const instructions="You have an invitation to join "+companyName+" as a company administrator. Sign up with "+invitation.email+" at "+window.location.origin+"/signup, verify your work email, then contact the portal administrator to activate your admin role.";
     try{await navigator.clipboard.writeText(instructions);setNotice("Invitation instructions copied. No email has been sent.");}
     catch{setNotice("Unable to copy invitation instructions in this browser.");}
   }
@@ -680,7 +680,7 @@ export default function ElixirPortal(){
   return <div className="ep-shell">
     <a className="ep-skip" href="#main-content">Skip to main content</a>
     <header className="ep-topbar">
-      <div className="ep-top-left"><button className="ep-menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Elixir Events</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
+      <div className="ep-top-left"><button className="ep-menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Employee Volunteer System</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
       <div className="ep-top-right">{current.role==="employee"&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
     </header>
     <div className="ep-layout">
