@@ -20,7 +20,7 @@ import {FirstLoginPasswordChange} from "@/components/first-login-password-change
 import {EmployeeEventNotifications} from "@/components/employee-event-notifications";
 import {
   ArrowLeft, ArrowRight, CalendarDays, MapPin, ChevronRight,
-  Download, LogOut, Menu, Plus, Search, X, LayoutDashboard, Building2, Users, ClipboardList, Mail, UserRound
+  Download, LogOut, Menu, Plus, Search, X, LayoutDashboard, Building2, Users, ClipboardList, Mail, UserRound, Network, UserRoundCheck
 } from "lucide-react";
 import {
   activeRegistrations, canCancel, canRegister, cancelLocally, CATEGORIES, dateText, DEMO_PASSWORD,
@@ -30,7 +30,7 @@ import {
 } from "@/lib/portal-model";
 import type { Company, EventFormat, EventStatus, Invitation, Person, PortalData, PortalEvent, Role } from "@/lib/portal-model";
 
-type View="home"|"events"|"registrations"|"people"|"companies"|"invitations"|"users"|"profile"|"event"|"eventForm"|"companyForm";
+type View="home"|"events"|"registrations"|"people"|"companies"|"invitations"|"users"|"profile"|"attendance"|"hierarchy"|"event"|"eventForm"|"companyForm";
 type AuthView="login"|"signup"|"verify"|"forgot";
 const STORE="elixir-events-data-v3",SESSION="elixir-events-session-v2";
 /** New events default to 09:00–12:00 local time one week from today, never a fixed date that goes stale. */
@@ -47,7 +47,7 @@ const initialEvent=(companyId:string,userId:string):PortalEvent=>({
 const roleName=(role:Role)=>role==="platform_admin"?"Platform admin":role==="company_admin"?"Company admin":"Employee";
 const pageName=(view:View)=>({
   home:"Discover",events:"Events",registrations:"My events",people:"People",companies:"Companies",
-  invitations:"Invitations",users:"Accounts",profile:"Profile",event:"Event details",eventForm:"Event form",companyForm:"Company form"
+  invitations:"Invitations",users:"Accounts",profile:"Profile & settings",attendance:"Attendance",hierarchy:"Hierarchy",event:"Event details",eventForm:"Event form",companyForm:"Company form"
 })[view];
 const emailOk=(e:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 const parseDomains=(s:string)=>[...new Set(s.split(/[,\s]+/).map(x=>x.trim().toLowerCase()).filter(Boolean))];
@@ -380,18 +380,21 @@ export default function ElixirPortal(){
   const blocked=Boolean(current&&(current.status==="suspended"||(current.companyId&&(!company||company.status==="suspended"))));
   const events=current?.role==="platform_admin"?data.events:current?.companyId?data.events.filter(e=>e.companyId===current.companyId):[];
   const companyEvents=events;
-  const nav:(View[]) = current?.role==="platform_admin"?["home","companies","invitations","users","profile"]:
-    current?.role==="company_admin"?["home","events","registrations","people","profile"]:["home","events","registrations","profile"];
+  const isStateAdmin=Boolean(current&&!remote&&previewActor(current,data).level==="state_admin");
+  const isCountryAdmin=Boolean(current&&(remote?current.role==="company_admin":previewActor(current,data).level==="country_admin"));
+  const dailyNav:View[]=current?.role==="platform_admin"?["home","events","users"]:isStateAdmin?["home","events","attendance","people"]:current?.role==="company_admin"?["home","events",...(isCountryAdmin?["attendance" as View]:[]),"people","registrations"]:["home","events","registrations"];
+  const settingsNav:View[]=current?.role==="platform_admin"?["companies","invitations","hierarchy","profile"]:isCountryAdmin?["hierarchy","profile"]:["profile"];
+  const nav=[...dailyNav,...settingsNav];
   useEffect(()=>{
     if(!ready||!current)return;
     const restore=()=>{
       const slug=window.location.pathname.split("/").filter(Boolean)[0]||"";
       const eventId=new URLSearchParams(window.location.search).get("event");
       if(eventId){const target=data.events.find(e=>e.id===eventId);if(target&&eventAccess(current,target,data)){setSelectedEvent(eventId);setView("event");return;}}
-      const routes:Record<string,View>={overview:"home",events:"events",registrations:"registrations",people:"people",companies:"companies",invitations:"invitations",accounts:"users",profile:"profile"};
+      const routes:Record<string,View>={overview:"home",events:"events",registrations:"registrations",people:"people",companies:"companies",invitations:"invitations",accounts:"users",profile:"profile",attendance:"attendance",hierarchy:"hierarchy"};
       const requested=routes[slug];
       if(requested&&nav.includes(requested))setView(requested);
-      else if(!slug)setView("home");
+      else setView("home");
     };
     restore();window.addEventListener("popstate",restore);return ()=>window.removeEventListener("popstate",restore);
   },[ready,current?.id,nav.join(",")]);
@@ -681,11 +684,11 @@ export default function ElixirPortal(){
     <div className="ep-layout">
       <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
         <div className="ep-nav-title">{!remote&&previewActor(current,data).level==="state_admin"?"State admin":roleName(current.role)}</div>
-        {nav.map(v=><button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):pageName(v)}</button>)}
+        {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
         <div className="ep-side-bottom"><button className="ep-nav-link" onClick={logout}><LogOut size={17}/> Sign out</button></div>
       </nav>
       <main className="ep-main" id="main-content" tabIndex={-1}>
-        {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. No real accounts or shared database. <button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(seedPreview(structuredClone(initialData)));setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button></div>}
+        {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. No real accounts or shared database. {view==="profile"&&<button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(seedPreview(structuredClone(initialData)));setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button>}</div>}
         {notice&&<div className="ep-info ep-notice" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice("")}><X size={17}/></button></div>}
         {resetResult&&<div className="ep-reset-result" role="status">
           <div><strong>Temporary password for {resetResult.email}</strong><p>Give it to them privately. It is shown only once; they&apos;ll choose a new password when they sign in.</p></div>
@@ -694,7 +697,7 @@ export default function ElixirPortal(){
         </div>}
         {view==="eventForm"&&editingEvent&&<EventEditor key={editingEvent.id} event={editingEvent} data={data} onSave={saveEvent} onBack={()=>goto("events")}/>}
         {view==="companyForm"&&<CompanyEditor key={editingCompany?.id||"new"} company={editingCompany||undefined} data={data} onSave={saveCompany} onBack={()=>goto("companies")}/>}
-        {view==="home"&&<V3Workspace key={current.id} user={current} data={data} remote={remote} onEvent={openEvent} onSave={save} hash={encodePassword}/>}
+        {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isCountryAdmin||isStateAdmin)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} onEvent={openEvent} onSave={save} hash={encodePassword} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"} onNavigate={goto}/> }
         {view==="home"&&current.role==="employee"&&(remote||previewActor(current,data).level!=="state_admin")&&<DiscoverHome
           data={data} events={companyEvents} user={current} now={now}
           onOpen={e=>{openEvent(e.id);}}
@@ -726,9 +729,9 @@ export default function ElixirPortal(){
           onPeople={()=>goto("people")}
           onEvent={e=>openEvent(e.id)}
         />}
-        {view==="events"&&current.role==="company_admin"&&<>
-          <WorkspaceHeading eyebrow={(company?.name||"COMPANY").toUpperCase()+" · EVENT MANAGEMENT"} title="Manage events" description="Plan, publish and manage events for your organization."
-            action={<Action onClick={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),contactEmail:current.email});goto("eventForm");}}><Plus size={17}/> Create event</Action>}/>
+        {view==="events"&&(current.role==="company_admin"||current.role==="platform_admin")&&<>
+          <WorkspaceHeading eyebrow={(company?.name||"COMPANY").toUpperCase()+" · EVENT MANAGEMENT"} title={current.role==="platform_admin"?"All partner events":"Manage events"} description={current.role==="platform_admin"?"Track events across partner organizations.":"Plan, publish and manage events for your organization."}
+            action={current.role==="company_admin"?<Action onClick={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),contactEmail:current.email});goto("eventForm");}}><Plus size={17}/> Create event</Action>:undefined}/>
           <div className="aw-browse-bar"><strong>{filteredEvents.length} events</strong><button className="ed-search-toggle" type="button" aria-expanded={searchOpen} onClick={()=>setSearchOpen(v=>!v)}>{searchOpen?<X size={19}/>:<Search size={19}/>}<span>{searchOpen?"Close filters":"Search & filters"}</span></button></div>
           {searchOpen&&<div className="ep-filters aw-filter-panel">
             <FormRow label="Search events"><div className="ep-search"><Search size={18}/><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search titles, places and categories"/></div></FormRow>
@@ -737,13 +740,13 @@ export default function ElixirPortal(){
             <label className="ep-check"><input type="checkbox" checked={placesOnly} onChange={e=>setPlacesOnly(e.target.checked)}/> Spots available</label>
             <button className="aw-clear" onClick={()=>{setSearch("");setCategory("All");setPlacesOnly(false);setTimeFilter("Upcoming");}}>Clear</button>
           </div>}
-          {filteredEvents.length?<div className="ed-tile-grid">{filteredEvents.map(e=><EventTile key={e.id} event={e} data={data} now={now} onOpen={event=>openEvent(event.id)}/>)}</div>:<EmptyState title="No matching events" description="Try another filter or create a new event."/>}
+          {filteredEvents.length?<div className="ed-tile-grid">{filteredEvents.map(e=><EventTile key={e.id} event={e} data={data} now={now} showHost={current.role==="platform_admin"} onOpen={event=>openEvent(event.id)}/>)}</div>:<EmptyState title="No matching events" description="Try another search or filter."/>}
         </>}
         {view==="event"&&selected&&(eventAccess(current,selected,data))&&<>
           <button className="ep-back" onClick={()=>goto("events")}><ArrowLeft size={16}/> Back to events</button>
-          <div className="ep-banner ed-event-detail-preview"><EventCover event={selected} wide/></div>
           <div className="ep-page-head"><div><div className="ep-event-label">{selected.category} · {selected.format.replace("_"," ")}</div><h1>{selected.title}</h1><p>{selected.summary}</p></div><Chip tone={selected.status==="published"?"green":selected.status==="cancelled"?"red":"neutral"}>{selected.status}</Chip></div>
           <EventQuickActions event={selected}/>
+          <div className="ep-banner ed-event-detail-preview"><EventCover event={selected} wide/></div>
           {selected.status==="cancelled"&&<div className="ep-error" role="status">Event cancelled. {selected.cancellationReason||"Contact the organiser for details."}</div>}
           <div className="ep-detail-layout"><article className="ep-panel ep-detail-copy">
               <div className="ed-detail-keyfacts"><span><CalendarDays size={19}/>{dateText(selected.startsAt)}</span><span><MapPin size={19}/>{selected.format==="online"?"Online event":selected.location}</span></div>
@@ -755,22 +758,21 @@ export default function ElixirPortal(){
                 <div><dt>Available places</dt><dd>{remainingPlaces(selected,data)} of {selected.capacity}</dd></div>
                 {selected.deadline&&<div><dt>Registration closes</dt><dd>{dateText(selected.deadline)}</dd></div>}
               </dl>
-<section className="ep-panel ep-detail-side ed-linktree-registration ed-rsvp-below-about"><div className="ed-rsvp-pill">JOIN THE EVENT</div><h2>Registration</h2><p className="ed-rsvp-invite">Be part of something meaningful.</p>
+
+
+            </article>
+            <aside className="ep-detail-right"><section className="ep-panel ep-detail-side ed-linktree-registration cc-priority-registration"><div className="ed-rsvp-pill">JOIN THE EVENT</div><h2>Registration</h2><p className="ed-rsvp-invite">Be part of something meaningful.</p>
               <div className="ed-rsvp-count"><strong>{remainingPlaces(selected,data)}</strong><span>spots left of {selected.capacity}</span></div>
               <div className="ed-rsvp-progress" role="progressbar" aria-label="Reserved places" aria-valuenow={activeRegistrations(selected.id,data).length} aria-valuemax={selected.capacity} aria-valuemin={0}><span style={{width:(100*activeRegistrations(selected.id,data).length/selected.capacity)+"%"}}/></div>
               <p>{activeRegistrations(selected.id,data).length} going</p>
               {waitlistedRegistrations(selected.id,data).length>0&&<p>{waitlistedRegistrations(selected.id,data).length} on the waitlist</p>}
-              {data.registrations.some(r=>r.eventId===selected.id&&r.userId===current.id&&(r.status==="going"||r.status==="waitlisted"))?
+              {current.role==="platform_admin"?<div className="ep-hint">Registration monitoring only</div>:data.registrations.some(r=>r.eventId===selected.id&&r.userId===current.id&&(r.status==="going"||r.status==="waitlisted"))?
                 <><div className="ep-success">{waitlistPosition(selected.id,current.id,data)>0?"You're #"+waitlistPosition(selected.id,current.id,data)+" on the waitlist":"You're going"}</div><Action kind="secondary" onClick={()=>modifyRegistration(selected,true)} disabled={!!canCancel(current,selected,data)}>Cancel RSVP</Action></>:
                 ["closed","started","cancelled","draft"].includes(registrationState(selected,data,now))?
                 <div className="ep-registration-closed" role="status"><strong>{registrationLabel(selected,data,now)}</strong><span>{canRegister(current,selected,data)||"Registration is not open."}</span></div>:
                 <><Action disabled={!!canRegister(current,selected,data)} onClick={()=>modifyRegistration(selected,false)}>{remainingPlaces(selected,data)===0?"Join waitlist":"Attend"}</Action>{canRegister(current,selected,data)&&<p className="ep-hint">{canRegister(current,selected,data)}</p>}</>}
               {current.role==="company_admin"&&<div className="ep-admin-actions"><h3>Manage event</h3><Action kind="secondary" onClick={()=>{setEditingEvent(selected);goto("eventForm");}}>Edit event</Action>{selected.status!=="cancelled"&&<Action kind="danger" onClick={()=>cancelEvent(selected)}>Cancel event</Action>}</div>}
-            </section>
-
-            </article>
-            <aside className="ep-detail-right">            {(selected.speakers||[]).length>0&&<div className="ed-detail-speakers"><SpeakerGallery speakers={selected.speakers||[]}/></div>}
-            </aside>
+            </section></aside>
           </div>
           <footer className="ed-event-bottom-info">
             <div className="ed-bottom-host"><span>Hosted by:</span> <strong>{data.companies.find(c=>c.id===selected.companyId)?.name||"Event organization"}</strong></div>
@@ -797,6 +799,7 @@ export default function ElixirPortal(){
           {activeRegistrations(selected.id,data).length?<div className="ep-table-scroll"><table><thead><tr><th>Employee</th><th>Department</th><th>Registered</th><th>Action</th></tr></thead><tbody>{activeRegistrations(selected.id,data).filter(r=>{const p=data.users.find(u=>u.id===r.userId);return [p?.fullName,p?.email,p?.department].join(" ").toLowerCase().includes(participantSearch.toLowerCase());}).map(r=>{const p=data.users.find(u=>u.id===r.userId);return <tr key={r.id}><td><b>{p?.fullName}</b><small>{p?.email}</small></td><td>{p?.department}</td><td>{shortDate(r.createdAt)}</td><td><button onClick={()=>removeParticipant(selected,r.userId)}>Remove</button></td></tr>;})}</tbody></table></div>:<EmptyState title="No participants" description="Employee registrations will appear here."/>}
           </section>}
         </>}
+        {view==="event"&&selected&&eventAccess(current,selected,data)&&(selected.speakers||[]).length>0&&<div className="ed-detail-speakers cc-speakers-secondary"><SpeakerGallery speakers={selected.speakers||[]}/></div>}
         {view==="event"&&(!selected||!eventAccess(current,selected,data))&&<EmptyState title="Event not available" description="The event was not found or you do not have access."/>}
         {view==="registrations"&&<>
           <WorkspaceHeading eyebrow="YOUR PARTICIPATION" title="My events" description="The events you joined, waitlisted and cancelled."/>
