@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import type {Person,PortalData} from "@/lib/portal-model";
 import {previewWorkspace,previewAction} from "@/lib/v3-preview";
+import CountryHierarchy from "@/components/country-hierarchy";
 type Row=Record<string,string|number|null>;
 type Workspace={level:"root"|"country_admin"|"state_admin"|"employee";scope?:Row|null;countries?:Row[];states?:Row[];branches?:Row[];members?:Row[];attendance?:Row[];contributions?:Row[]};
 const str=(v:unknown)=>String(v??"");
@@ -41,6 +42,7 @@ export default function V3Workspace({user,data,remote,onEvent,onSave,hash,sectio
  if(section!=="home"&&!workspace&&!issue)return <section className="ep-panel"><p>Loading workspace…</p></section>;
  if(section==="hierarchy"&&!root&&!countryAdmin)return <section className="ep-panel"><p>Hierarchy settings are not available for this account.</p></section>;
  if((section==="attendance"||section==="people")&&!countryAdmin&&!stateAdmin)return <section className="ep-panel"><p>This workspace is not available for this account.</p></section>;
+ if(section==="hierarchy"&&countryAdmin&&!remote)return <CountryHierarchy user={user} data={data} onSave={onSave} hash={hash}/>;
  return <section className="ep-panel v3-workspace">
   {section==="home"&&user.role==="employee"&&!stateAdmin&&<><div className="ed-eyebrow">MY VOLUNTEERING JOURNEY</div><h2>My impact dashboard</h2>
    <div className="v3-metrics"><div><strong>{workspace?verified.length:"—"}</strong><span>Verified events attended</span></div><div><strong>{workspace?Number(hours.toFixed(2)):"—"}</strong><span>Verified volunteer hours</span></div><div><strong>{upcoming.filter(e=>registered.has(e.id)).length}</strong><span>Upcoming registrations</span></div></div>
