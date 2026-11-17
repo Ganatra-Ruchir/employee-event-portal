@@ -23,3 +23,6 @@
 .join-page .join-panel form>button,.join-page .join-done>button{background:var(--elixir-green-dark)!important;color:#fff!important}
 .join-page .join-steps span.active{background:var(--elixir-pink-soft)!important;color:var(--elixir-pink-dark)!important;border-color:var(--elixir-pink-line)!important}
 .join-page input:focus-visible,.join-page button:focus-visible{outline-color:var(--elixir-green-dark)!important}
+
+/* Fluid onboarding width; keep fields in aligned columns without double gaps. */
+.join-wrap{width:100%;max-width:none!important;padding:12px 16px!important}.join-top{margin-bottom:10px!important}.join-grid{gap:10px!important;grid-template-columns:minmax(0,1.4fr) minmax(250px,.6fr)}.join-panel,.join-aside{min-width:0;padding:14px!important;gap:8px!important}.join-panel form{gap:8px!important}.join-panel form label{gap:4px!important;margin:0!important}.join-panel form input,.join-panel form select{min-width:0;width:100%;min-height:40px}.join-panel h1{font-size:clamp(24px,2vw,32px);line-height:1.2}.join-panel p{margin:0!important}.join-steps{gap:4px!important;margin:0!important}@media(max-width:760px){.join-grid{grid-template-columns:minmax(0,1fr)}.join-wrap{padding:10px!important}}

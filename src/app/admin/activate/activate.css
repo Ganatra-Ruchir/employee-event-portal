@@ -7,3 +7,5 @@
 .admin-activation .admin-activation-icon{background:var(--elixir-pink-soft)!important;color:var(--elixir-pink-dark)!important}
 .admin-activation .admin-activation-eyebrow{color:var(--elixir-pink-dark)!important}
 .admin-activation .admin-activation-panel button[type=submit]{background:var(--elixir-green-dark)!important;color:white!important}
+
+.admin-activation{padding:12px!important}.admin-activation-panel{gap:10px!important;padding:16px!important}.admin-activation-panel form{gap:8px!important}.admin-activation-panel label{gap:4px!important;margin:0!important}.admin-activation-panel input{min-height:40px;width:100%;min-width:0;padding:8px 10px!important}

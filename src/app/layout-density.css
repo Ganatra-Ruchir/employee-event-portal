@@ -1,0 +1,128 @@
+/* Final shared layout contract. Loaded after legacy themes. Keep visual
+   tokens in elixir-brand.css; this file owns spacing and responsive geometry. */
+:root{--layout-gap:10px;--layout-pad:12px;--layout-field-gap:4px}
+.ep-shell .ep-layout{width:100%;max-width:none!important;min-width:0;gap:0!important}
+.ep-shell .ep-main{flex:1 1 0%;width:100%;max-width:none!important;min-width:0;margin:0!important;padding:12px 14px 16px!important;outline:none}
+.ep-shell .ep-main>*,.ep-shell .aw-root,.ep-shell .md-root,.ep-shell .ed-discover{min-width:0;max-width:none}
+.ep-shell .ep-main>div:not(.ep-demobar):not(.ep-notice):not(.ep-reset-result){min-width:0}
+.ep-shell .ep-topbar{padding-inline:14px!important;gap:12px}
+.ep-shell .ep-top-left,.ep-shell .ep-top-right{min-width:0;gap:10px}
+.ep-shell .ep-top-left{flex:1;overflow:hidden}
+.ep-shell .ep-top-right{flex:0 0 auto}
+.ep-shell .ep-brand{flex:0 1 auto;min-width:0;overflow-wrap:anywhere}
+.ep-shell .ep-context{min-width:0}
+.ep-shell .ep-sidebar{padding:8px!important;gap:2px;left:0}
+.ep-shell .ep-nav-title{padding:6px 10px}
+.ep-shell .ep-nav-link{min-height:40px;padding:8px 10px!important}
+.ep-shell .cc-nav-group-title{margin:8px 6px 3px;padding-top:8px}
+.ep-shell .ep-demobar{padding:6px 9px!important;margin:0 0 8px!important;line-height:1.45;flex-wrap:wrap}
+.ep-shell .ep-main .ep-panel,.ep-shell .ep-main .aw-section{padding:var(--layout-pad)!important;margin:0 0 var(--layout-gap)!important}
+.ep-shell .aw-root,.ep-shell .v3-workspace,.ep-shell .md-root{gap:var(--layout-gap)!important}
+.ep-shell .aw-root>.aw-section,.ep-shell .aw-two-col>.aw-section,.ep-shell .ep-panel .ep-panel,.ep-shell .ep-main .aw-profile-form{margin:0!important}
+.ep-shell .ep-panel:hover,.ep-shell .aw-company-card:hover,.ep-shell .aw-metric:hover{border-color:var(--cc-line)!important}
+.ep-shell .ep-main .ep-panel:focus-within{border-color:var(--cc-line)!important}
+.ep-shell .aw-heading,.ep-shell .aw-root>.aw-heading,.ep-shell .ep-page-head,.ep-shell .ed-browse-title,.ep-shell .ed-browse-title-row{margin:0 0 10px!important;padding:0!important;gap:10px;align-items:center}
+.ep-shell .aw-heading>div,.ep-shell .ep-page-head>div,.ep-shell .aw-section-heading>div{min-width:0}
+.ep-shell .aw-heading h1,.ep-shell .ep-page-head h1,.ep-shell .ed-browse-title h1{font-size:clamp(24px,1.9vw,32px)!important;line-height:1.2!important;margin:3px 0 4px!important;overflow-wrap:anywhere}
+.ep-shell .ep-main h2{font-size:19px!important;line-height:1.3;margin:0 0 6px}
+.ep-shell .ep-main h3{font-size:15px!important;line-height:1.35;margin:0 0 4px}
+.ep-shell .ep-main .ep-hint,.ep-shell .aw-heading p,.ep-shell .aw-section-heading p{margin:2px 0!important;line-height:1.45}
+.ep-shell .aw-section-heading,.ep-shell .ep-section-head,.ep-shell .ed-section-head{margin:0 0 8px!important;gap:8px;align-items:center;flex-wrap:wrap}
+.ep-shell .aw-metric-grid,.ep-shell .ep-stats,.ep-shell .v3-metrics,.ep-shell .aw-two-col,.ep-shell .ed-tile-grid,.ep-shell .md-person-grid,.ep-shell .md-company-grid,.ep-shell .ep-detail-layout,.ep-shell .ep-form-grid{gap:var(--layout-gap)!important;min-width:0}
+.ep-shell .aw-metric-grid,.ep-shell .ep-stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr));margin:0 0 10px!important}
+.ep-shell .aw-metric,.ep-shell .v3-metrics>div,.ep-shell .ep-stats>div{padding:10px 12px!important;min-height:0!important;gap:3px}
+.ep-shell .v3-metrics strong,.ep-shell .aw-metric strong,.ep-shell .ep-stats b{font-size:25px!important;line-height:1.15;font-variant-numeric:tabular-nums}
+.ep-shell .v3-metrics span,.ep-shell .aw-metric-label{line-height:1.35;overflow-wrap:anywhere}
+.ep-shell .ep-main .ep-form,.ep-shell .ep-main .ep-invite-form{width:100%;max-width:none!important;min-width:0;gap:8px!important}
+.ep-shell .ep-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.ep-shell .ep-field,.ep-shell .v3-form label,.ep-shell .cc-city-field,.ep-shell .cc-att-add label{min-width:0;gap:var(--layout-field-gap)!important;margin:0!important;line-height:1.35;font-size:13px}
+.ep-shell .ep-field>span,.ep-shell .v3-form label,.ep-shell .cc-city-field>label{text-align:left}
+.ep-shell .ep-field input:not([type=checkbox]),.ep-shell .ep-field select,.ep-shell .ep-field textarea,.ep-shell .v3-form input,.ep-shell .v3-form select,.ep-shell .v3-form textarea,.ep-shell .cc-city-combobox>input{width:100%;min-width:0;max-width:100%;min-height:38px;padding:8px 10px!important;font-size:14px;line-height:1.35}
+.ep-shell .ep-field textarea,.ep-shell .v3-form textarea{min-height:72px;resize:vertical}
+.ep-shell .ep-form .ep-actions{gap:8px;margin:4px 0 0;align-items:center}
+.ep-shell .ep-button,.ep-shell .aw-primary,.ep-shell .md-outline-action{min-height:38px;line-height:1.35;white-space:normal}
+.ep-shell .ep-check{margin:0!important;gap:6px;align-items:center;line-height:1.4}
+.ep-shell .aw-form-divider{margin:6px 0!important}
+.ep-shell .ep-filters,.ep-shell .ed-browse-controls{padding:10px!important;margin:0 0 10px!important;gap:8px!important;align-items:end}
+.ep-shell .ep-filters .ep-field:first-child{max-width:none!important;min-width:0;flex:1 1 220px}
+.ep-shell .ed-browse-controls label{gap:4px;min-width:0}
+.ep-shell .ed-browse-controls select,.ep-shell .ed-browse-controls input:not([type=checkbox]){min-height:38px;max-width:100%;font-size:14px;padding:7px 10px}
+.ep-shell .ed-browse-controls .ed-available{min-height:38px;white-space:normal}
+.ep-shell .md-toolbar,.ep-shell .aw-browse-bar,.ep-shell .ed-browse-row,.ep-shell .ep-people-toolbar{margin:0 0 8px!important;gap:8px!important;flex-wrap:wrap;align-items:center}
+.ep-shell .md-search,.ep-shell .ep-search,.ep-shell .md-person-profile>div{min-width:0}
+.ep-shell .md-search input,.ep-shell .ep-search input{min-width:0;width:100%}
+.ep-shell .md-person-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,245px),1fr))}
+.ep-shell .md-company-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.ep-shell .md-person,.ep-shell .md-company,.ep-shell .md-account,.ep-shell .md-invitation{min-width:0;min-height:0!important;gap:8px!important}
+.ep-shell .md-person-profile strong,.ep-shell .md-person-profile small,.ep-shell .md-person-email span,.ep-shell .md-domain,.ep-shell .md-account-company,.ep-shell .aw-reg-info{overflow-wrap:anywhere;min-width:0}
+.ep-shell .md-person-footer,.ep-shell .md-account-actions,.ep-shell .employee-list-actions{flex-wrap:wrap;gap:6px;min-width:0}
+.ep-shell .aw-list-panel,.ep-shell .aw-registration-list,.ep-shell .v3-list,.ep-shell .md-account-list{gap:5px!important;min-width:0}
+.ep-shell .v3-list>div,.ep-shell .v3-list>button,.ep-shell .aw-item,.ep-shell .aw-registration-row{padding:8px 10px!important;gap:4px;line-height:1.4}
+.ep-shell .aw-item,.ep-shell .aw-registration-row{align-items:center;gap:10px}
+.ep-shell .aw-item-copy,.ep-shell .aw-item-copy strong,.ep-shell .aw-reg-info strong{min-width:0;overflow-wrap:anywhere}
+.ep-shell .ep-table-scroll{width:100%;max-width:100%;min-width:0;overflow-x:auto}
+.ep-shell .ep-table-scroll th,.ep-shell .ep-table-scroll td{padding:8px 10px!important;text-align:left;vertical-align:middle;line-height:1.4;overflow-wrap:anywhere}
+.ep-shell .ep-table-scroll th{white-space:nowrap}
+.ep-shell .ep-table-scroll td small{margin-top:2px;line-height:1.35}
+.ep-shell .ep-table-scroll td button{min-height:36px;padding:6px 4px}
+.ep-shell .ep-participant-search{max-width:none;margin:0 0 8px}
+.ep-shell .ep-detail-layout{grid-template-columns:minmax(0,1.75fr) minmax(260px,1fr);align-items:start}
+.ep-shell .ep-detail-layout>*{min-width:0;max-width:100%}
+.ep-shell .ep-detail-copy,.ep-shell .ep-detail-side{padding:12px!important}
+.ep-shell .ep-detail-copy dl{margin:8px 0 0!important}
+.ep-shell .ep-detail-copy dl>div{padding:6px 0!important}
+.ep-shell .ep-banner{margin:8px 0 10px!important;max-height:280px}
+.ep-shell .ed-event-bottom-info{margin:8px 0!important;padding:8px 10px!important}
+.ep-shell .ed-tile-content{gap:6px!important;padding:10px!important}
+.ep-shell .cc-card-heading h3{font-size:15px!important;line-height:1.35!important}
+.ep-shell .ed-tile-cover{min-width:0}
+.ep-shell .ed-tile-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,245px),1fr))}
+.ep-shell .aw-profile-layout{grid-template-columns:minmax(210px,260px) minmax(0,1fr);align-items:start}
+.ep-shell .aw-profile-summary{padding:12px!important;min-width:0;gap:4px}
+.ep-shell .aw-profile-summary>p{margin:0 0 4px}
+.ep-shell .aw-profile-company{margin-top:5px;padding:8px 0 0;gap:2px}
+.ep-shell .cc-profile-photo-control{margin:4px 0 6px;gap:4px}
+.ep-shell .aw-invitation-layout{align-items:start}
+.ep-shell .se-root,.ep-shell .se-item-body,.ep-shell .se-fields,.ep-shell .se-fields-grid,.ep-shell .se-list{gap:8px!important}
+.ep-shell .se-root,.ep-shell .se-item-body{padding:10px!important}
+.ep-shell .se-empty{min-height:0!important;padding:12px!important}
+.ep-shell .sp-gallery{margin:10px 0!important}
+.ep-shell .cc-location-form,.ep-shell .cc-hierarchy-setup,.ep-shell .cc-attendance{gap:10px!important}
+.ep-shell .cc-form-step,.ep-shell .cc-location-directory{padding:10px!important}
+.ep-shell .cc-form-step>h3{margin:0 0 8px!important}
+.ep-shell .v3-form{gap:8px!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}
+.ep-shell .cc-att-add label{margin:0!important}
+.ep-shell .cc-att-extras,.ep-shell .cc-att-submit{padding-top:8px}
+.ep-shell .cc-att-search{width:min(100%,420px)}
+.ep-shell .cc-att-metrics{grid-template-columns:repeat(auto-fit,minmax(min(100%,125px),1fr))}
+.ep-shell .ep-footer{margin:8px 0 0!important;padding:8px 0!important}
+.ep-shell .ep-main .cc-impact-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}
+.ep-shell .cc-impact-grid .cc-impact-chart{height:auto;min-width:0;align-content:start;gap:5px;padding:10px}
+.ep-shell .cc-impact-chart>h3,.ep-shell .cc-impact-chart>.ep-hint{margin:0!important}
+.ep-shell .cc-impact-chart>.ep-hint{font-size:12px!important}
+.ep-shell .cc-pie-wrap{gap:7px}
+.ep-shell .cc-pie{width:min(100%,160px);margin:4px auto}
+.ep-shell .cc-polar{width:min(100%,180px);margin:0 auto}
+.ep-shell .cc-impact-grid .cc-impact-bars{gap:7px;margin:6px 0}
+.ep-shell .cc-impact-grid .cc-impact-track{height:136px}
+.ep-shell .cc-chart-legend{max-height:none;overflow:visible;gap:2px}
+.ep-shell .cc-chart-legend>div,.ep-shell .cc-chart-legend>button{padding:3px 1px;line-height:1.3;min-width:0}
+.ep-shell .cc-chart-legend span{overflow-wrap:anywhere;text-align:left}
+.ep-shell .cc-chart-legend strong{text-align:right;font-variant-numeric:tabular-nums}
+.ep-shell .cc-sdg-more{font-size:12px;color:var(--cc-dark);margin:0}
+.ep-shell .cc-sdg-more summary{cursor:pointer;padding:4px 0;font-weight:650}
+.ep-shell .cc-impact-grid>.cc-impact-chart:last-child{grid-column:auto}
+.landing-editorial .landing-header,.landing-editorial .landing-inner,.landing-editorial .landing-hero-wrap{max-width:none!important;width:100%;padding-inline:clamp(14px,2vw,28px)!important}
+.landing-editorial .landing-curations,.landing-editorial .landing-private-wrap{padding-block:16px!important}
+.landing-editorial .landing-curation-grid{gap:10px!important}
+.ep-auth-v2 .ep-auth-card{max-width:600px;padding:20px clamp(16px,3vw,36px)!important}
+.ep-auth-v2 .ep-auth-heading{margin-bottom:14px!important}
+.ep-auth-v2 .ep-auth-intro{margin-bottom:12px!important}
+.ep-auth-v2 .ep-auth-form{gap:8px!important}
+.ep-auth-v2 .ep-field{gap:4px!important;margin:0!important}
+.ep-auth-v2 .ep-field input{min-height:42px;padding:9px 11px}
+.ep-auth-v2 .ep-auth-aside{padding:clamp(20px,3vw,48px)!important}
+.ep-auth-v2 .ep-auth-footnote{margin:10px 0 0}
+@media(max-width:1250px){.ep-shell .ep-main .cc-impact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ep-shell .cc-impact-grid>.cc-impact-chart:last-child{grid-column:1/-1}}
+@media(max-width:900px){.ep-shell .ep-main{flex:1 1 auto;padding:10px!important}.ep-shell .ep-sidebar{padding:4px 8px!important;left:0;right:auto}.ep-shell .ep-topbar{padding-inline:10px!important}.ep-shell .ep-detail-layout{display:flex;flex-direction:column;gap:10px!important}.ep-shell .ep-detail-layout>.ep-detail-right{width:100%}.ep-shell .ep-detail-copy{width:100%}.ep-shell .aw-profile-layout{grid-template-columns:minmax(180px,220px) minmax(0,1fr)}}
+@media(max-width:680px){.ep-shell .ep-main{padding:8px!important}.ep-shell .ep-main .ep-panel,.ep-shell .ep-main .aw-section{padding:10px!important}.ep-shell .aw-heading,.ep-shell .ep-page-head,.ep-shell .ed-browse-title-row{align-items:flex-start;flex-wrap:wrap}.ep-shell .aw-two-col,.ep-shell .aw-profile-layout,.ep-shell .ep-form-grid,.ep-shell .ep-main .cc-impact-grid,.ep-shell .ed-tile-grid,.ep-shell .md-person-grid,.ep-shell .md-company-grid{grid-template-columns:minmax(0,1fr)}.ep-shell .cc-impact-grid>.cc-impact-chart:last-child{grid-column:auto}.ep-shell .ep-top-left{gap:6px}.ep-shell .ep-top-right{gap:5px}.ep-shell .ep-account>span:last-child{display:none}.ep-shell .ep-account{padding:4px!important}.ep-shell .ep-brand{font-size:13px!important}.ep-shell .ep-menu{display:none!important}.ep-shell .cc-att-add{grid-template-columns:minmax(0,1fr)}.ep-shell .ep-table-scroll table{min-width:560px}.ep-shell .ep-banner{max-height:200px}.ep-shell .ep-button,.ep-shell .aw-primary,.ep-shell .md-outline-action{min-height:42px}.ep-auth-v2 .ep-auth-aside{display:none!important}.ep-auth-v2 .ep-auth-card{max-width:100%;padding:16px!important}}

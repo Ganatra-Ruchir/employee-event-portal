@@ -16,3 +16,4 @@ import "./qa-fixes.css";
 import "./ux-fixes.css";
 
 import "./impact-workspace.css";
+import "./layout-density.css";
