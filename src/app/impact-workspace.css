@@ -67,3 +67,15 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 @media(max-width:900px){.ep-shell .ep-layout{flex-direction:column;align-items:stretch}.ep-shell .ep-sidebar{width:100%;flex:auto;min-height:0;max-height:none;top:64px;z-index:40;flex-direction:row!important;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:5px 12px!important;border-right:0!important;border-bottom:1px solid var(--cc-line)!important;mask-image:none!important;-webkit-mask-image:none!important}.ep-shell .ep-nav-title,.ep-shell .ep-side-bottom{display:none!important}.ep-shell .ep-nav-link{width:auto;flex:none;min-height:42px}.ep-shell .ep-nav-link.active{box-shadow:inset 0 -2px var(--cc-green)}.ep-shell .ep-main{width:100%;padding:18px 15px 92px!important}.ep-shell .ep-topbar{padding:0 14px!important}.ep-shell .ep-context{display:none}.ep-shell .ep-layout .ep-sidebar{transform:none!important}}
 @media(max-width:480px){.ep-shell .ep-panel{padding:14px!important}.ep-shell .ed-tile-grid{grid-template-columns:1fr}.ep-shell .ep-brand{font-size:15px!important}.ep-shell .ep-account span{max-width:80px}.ep-shell .ep-topbar{gap:8px}.ep-shell .ep-nav-link{font-size:12px!important}.ep-shell .ep-nav-link svg{width:16px;height:16px}}
 @media(prefers-reduced-motion:reduce){.ep-shell .ed-tile,.ep-shell .ep-nav-link,.ep-shell .ep-button{transition:none!important}}
+
+/* Frequency-first navigation. Setup never takes the first dashboard slot. */
+.cc-nav-entry{flex:none;min-width:0}
+.cc-nav-group-title{font-size:10px;font-weight:750;color:var(--cc-muted);text-transform:uppercase;letter-spacing:.07em;border-top:1px solid var(--cc-line);margin:15px 8px 8px;padding:14px 4px 0}
+.v3-daily-actions{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
+.ep-shell .cc-priority-registration{position:static;top:auto;text-align:left;margin:0!important}
+.ep-shell .cc-speakers-secondary{margin-top:20px}
+.ep-shell .cc-speakers-secondary .sp-gallery-strip{grid-template-columns:repeat(auto-fill,minmax(min(100%,255px),1fr))}
+.ep-shell .cc-speakers-secondary .sp-gallery-strip.sp-overflow{display:flex}
+.ep-shell .cc-speakers-secondary .sp-gallery-strip.sp-overflow .sp-card{min-width:min(100%,255px);flex-basis:255px}
+.ep-shell .ed-discover>.ed-meetup-hero{margin-top:24px!important}
+@media(max-width:900px){.ep-shell .cc-nav-entry{display:flex;align-items:center;flex:none}.cc-nav-group-title{font-size:0;align-self:stretch;margin:3px 5px;border-top:0;border-left:1px solid var(--cc-line);padding:0;line-height:0}.ep-shell .ep-detail-layout{display:flex;flex-direction:column;gap:14px}.ep-shell .ep-detail-layout>.ep-detail-right{order:-1;width:100%;display:block}.ep-shell .ep-detail-copy{width:100%}.ep-shell .cc-priority-registration{width:100%;margin-bottom:0!important}}
