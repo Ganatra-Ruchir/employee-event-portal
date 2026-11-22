@@ -59,7 +59,11 @@ export async function snapshot(current:Person):Promise<PortalData>{
     ?"SELECT e.payload FROM events e WHERE e.organization_id=$1 AND e.status='published' AND "+v4AudienceSql("e")+" ORDER BY e.starts_at"
     :"SELECT payload FROM events WHERE organization_id=$1 AND (status='published' OR $2=true) ORDER BY starts_at",
    admin?[]:process.env.PORTAL_V4_ENABLED==="true"&&current.role==="employee"?[current.companyId,current.id]:[current.companyId,current.role==="company_admin"]),
-  p.query(admin?"SELECT r.* FROM registrations r":"SELECT r.* FROM registrations r JOIN events e ON e.id=r.event_id WHERE e.organization_id=$1",admin?[]:[current.companyId]),
+  p.query(admin?"SELECT r.* FROM registrations r":
+   process.env.PORTAL_V4_ENABLED==="true"&&current.role==="employee"
+    ?"SELECT r.* FROM registrations r JOIN events e ON e.id=r.event_id WHERE e.organization_id=$1 AND e.status='published' AND "+v4AudienceSql("e")
+    :"SELECT r.* FROM registrations r JOIN events e ON e.id=r.event_id WHERE e.organization_id=$1",
+   admin?[]:process.env.PORTAL_V4_ENABLED==="true"&&current.role==="employee"?[current.companyId,current.id]:[current.companyId]),
   p.query(admin?"SELECT * FROM invitations":"SELECT * FROM invitations WHERE organization_id=$1",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM organization_domains":"SELECT * FROM organization_domains WHERE organization_id=$1",admin?[]:[current.companyId])
  ]);
