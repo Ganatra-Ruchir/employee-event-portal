@@ -112,7 +112,7 @@ try{
   const camp=await db.query("INSERT INTO csr_campaigns(id,organization_id,country_code,partner_id,title,description,primary_sdg,starts_on,ends_on,budget_inr,target_beneficiaries,status,created_by) VALUES($1,$2,'IN',$3,$4,$5,4,$6,$7,15000,200,'active',$8) ON CONFLICT(id) DO NOTHING RETURNING id",
   [campaign,id,partner,"Digital Inclusion Campaign — DEMO","Fictional annual corporate volunteering campaign",day(-30),day(90),admin]);count.campaigns+=camp.rowCount;
   await db.query("INSERT INTO csr_campaign_events(campaign_id,event_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",[campaign,past,id]);
-  for(const [i,metric,val] of [["reach","beneficiaries_reached",140],["sessions","sessions_delivered",4],["hours","volunteer_hours",11.25]]){
+  for(const [i,metric,val] of [["reach","beneficiaries_reached",140],["sessions","sessions_delivered",4],["hours","volunteer_hours",10.5]]){
    const r=await db.query("INSERT INTO csr_impact_records(id,organization_id,campaign_id,event_id,metric,metric_label,value,period_start,period_end,evidence_reference,status,recorded_by,verified_by,verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'verified',$11,$12,now()) ON CONFLICT(id) DO NOTHING RETURNING id",
    ["demo-v4-impact-"+org.slug+"-"+i,id,campaign,past,metric,metric.replaceAll("_"," "),val,day(-30),day(-1),"DEMO-EVIDENCE-NOT-REAL","demo-v4-user-"+org.slug+"-gj-admin",admin]);count.impact_records+=r.rowCount;
   }
