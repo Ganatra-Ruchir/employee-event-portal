@@ -23,13 +23,16 @@ export async function GET(req:NextRequest){
  try{
   const c=await context(req);if(!c)return fail("V4 preview not enabled or sign-in required",404);
   const {user,m,actor}=c,db=sqlPool(),s=actor.level==="state_admin"?m.state_id:null;
-  const [campaigns,impact,certificates,feedback]=await Promise.all([
+  const [campaigns,impact,certificates,feedback,events,states,branches]=await Promise.all([
    db.query("SELECT id,title,description,primary_sdg,starts_on,ends_on,status,target_beneficiaries,budget_inr,state_id FROM csr_campaigns WHERE organization_id=$1 AND country_code=$2 AND ($3::text IS NULL OR state_id IS NULL OR state_id=$3) ORDER BY created_at DESC LIMIT 100",[m.organization_id,m.country_code,s]),
    db.query("SELECT i.id,i.campaign_id,i.metric,i.metric_label,i.value,i.status,i.period_start,i.period_end FROM csr_impact_records i JOIN csr_campaigns c ON c.id=i.campaign_id WHERE i.organization_id=$1 AND c.country_code=$2 AND ($3::text IS NULL OR c.state_id IS NULL OR c.state_id=$3) AND ($4::text<>'employee' OR i.status='verified') ORDER BY i.created_at DESC LIMIT 100",[m.organization_id,m.country_code,s,actor.level]),
    db.query("SELECT c.id,c.certificate_number,c.event_id,c.issued_at,e.title FROM volunteer_certificates c JOIN events e ON e.id=c.event_id WHERE c.user_id=$1 AND e.organization_id=$2 AND c.revoked_at IS NULL ORDER BY c.issued_at DESC LIMIT 100",[user.id,m.organization_id]),
-   db.query("SELECT event_id,rating,comments,updated_at FROM event_feedback WHERE user_id=$1 ORDER BY updated_at DESC LIMIT 100",[user.id])
+   db.query("SELECT event_id,rating,comments,updated_at FROM event_feedback WHERE user_id=$1 ORDER BY updated_at DESC LIMIT 100",[user.id]),
+   c.manager?db.query("SELECT e.id,e.title,COALESCE(a.audience,'company') AS audience,a.state_id,a.branch_id FROM events e LEFT JOIN event_audiences a ON a.event_id=e.id WHERE e.organization_id=$1 AND e.created_by=$2 ORDER BY e.starts_at DESC LIMIT 100",[m.organization_id,user.id]):Promise.resolve({rows:[]}),
+   c.manager?db.query("SELECT id,name FROM v3_states WHERE organization_id=$1 AND country_code=$2 ORDER BY name",[m.organization_id,m.country_code]):Promise.resolve({rows:[]}),
+   c.manager?db.query("SELECT id,name,state_id FROM v3_branches WHERE organization_id=$1 AND country_code=$2 ORDER BY name",[m.organization_id,m.country_code]):Promise.resolve({rows:[]})
   ]);
-  return reply({level:actor.level,scope:m,campaigns:campaigns.rows,impact:impact.rows,certificates:certificates.rows,feedback:feedback.rows});
+  return reply({level:actor.level,scope:m,campaigns:campaigns.rows,impact:impact.rows,certificates:certificates.rows,feedback:feedback.rows,events:events.rows,states:states.rows,branches:branches.rows});
  }catch(e){console.error("CSR read failed",e);return fail("CSR database unavailable or migrations missing",503);}
 }
 export async function POST(req:NextRequest){
@@ -40,6 +43,33 @@ export async function POST(req:NextRequest){
   const {user,m,actor,manager}=c;
   const a=await req.json();if(!a||typeof a!=="object")return fail("Invalid JSON");
   const action=txt(a.action,40),db=sqlPool();
+  if(action==="setAudience"){
+   if(actor.level!=="country_admin")return fail("Only country administrators can set event audiences",403);
+   const eventId=txt(a.event_id,120),audience=txt(a.audience,20);
+   if(!["company","country","state","branch","invited"].includes(audience))return fail("Invalid audience");
+   const state=audience==="state"||audience==="branch"?txt(a.state_id,120):null;
+   const branch=audience==="branch"?txt(a.branch_id,120):null;
+   if((audience==="state"||audience==="branch")&&!state||audience==="branch"&&!branch)return fail("Choose an assigned state and branch");
+   const country=["country","state","branch"].includes(audience)?m.country_code:null;
+   const invites=audience==="invited"?(Array.isArray(a.user_ids)?a.user_ids:[]):[];
+   if(invites.length>250||invites.some((x:unknown)=>typeof x!=="string"||x.length>120)||new Set(invites).size!==invites.length)return fail("Invalid invitee list");
+   const client=await db.connect();
+   try{
+    await client.query("BEGIN");
+    const event=await client.query("SELECT id FROM events WHERE id=$1 AND organization_id=$2 AND created_by=$3 FOR UPDATE",[eventId,m.organization_id,user.id]);
+    if(!event.rowCount){await client.query("ROLLBACK");return fail("Only an event creator can configure its audience",403);}
+    if(invites.length){
+     const approved=await client.query("SELECT count(*)::int AS n FROM users u JOIN v3_memberships x ON x.user_id=u.id AND x.organization_id=u.organization_id WHERE u.id=ANY($1::text[]) AND u.organization_id=$2 AND x.country_code=$3 AND x.level='employee' AND u.status='active'",[invites,m.organization_id,m.country_code]);
+     if(approved.rows[0].n!==invites.length){await client.query("ROLLBACK");return fail("Invitees must be active employees in your country",403);}
+    }
+    await client.query("INSERT INTO event_audiences(event_id,organization_id,audience,country_code,state_id,branch_id,updated_by) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(event_id) DO UPDATE SET audience=excluded.audience,country_code=excluded.country_code,state_id=excluded.state_id,branch_id=excluded.branch_id,updated_by=excluded.updated_by,updated_at=now()",[eventId,m.organization_id,audience,country,state,branch,user.id]);
+    await client.query("DELETE FROM event_invitees WHERE event_id=$1",[eventId]);
+    for(const target of invites)await client.query("INSERT INTO event_invitees(event_id,user_id,invited_by) VALUES($1,$2,$3)",[eventId,target,user.id]);
+    await logAudit(client,user,"event.audience.set",eventId,m.organization_id);
+    await client.query("COMMIT");
+   }catch(e){await client.query("ROLLBACK");throw e;}finally{client.release();}
+   return reply({success:true});
+  }
   if(action==="createCampaign"){
    if(!manager)return fail("Administrator role required",403);
    const title=txt(a.title,180),start=day(a.starts_on),end=day(a.ends_on);
