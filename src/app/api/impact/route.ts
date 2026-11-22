@@ -23,16 +23,17 @@ export async function GET(req:NextRequest){
  try{
   const c=await context(req);if(!c)return fail("V4 preview not enabled or sign-in required",404);
   const {user,m,actor}=c,db=sqlPool(),s=actor.level==="state_admin"?m.state_id:null;
-  const [campaigns,impact,certificates,feedback,events,states,branches]=await Promise.all([
-   db.query("SELECT id,title,description,primary_sdg,starts_on,ends_on,status,target_beneficiaries,budget_inr,state_id FROM csr_campaigns WHERE organization_id=$1 AND country_code=$2 AND ($3::text IS NULL OR state_id IS NULL OR state_id=$3) ORDER BY created_at DESC LIMIT 100",[m.organization_id,m.country_code,s]),
+  const [campaigns,impact,certificates,feedback,events,states,branches,partners]=await Promise.all([
+   db.query("SELECT id,title,description,primary_sdg,starts_on,ends_on,status,target_beneficiaries,budget_inr,state_id,partner_id FROM csr_campaigns WHERE organization_id=$1 AND country_code=$2 AND ($3::text IS NULL OR state_id IS NULL OR state_id=$3) ORDER BY created_at DESC LIMIT 100",[m.organization_id,m.country_code,s]),
    db.query("SELECT i.id,i.campaign_id,i.metric,i.metric_label,i.value,i.status,i.period_start,i.period_end FROM csr_impact_records i JOIN csr_campaigns c ON c.id=i.campaign_id WHERE i.organization_id=$1 AND c.country_code=$2 AND ($3::text IS NULL OR c.state_id IS NULL OR c.state_id=$3) AND ($4::text<>'employee' OR i.status='verified') ORDER BY i.created_at DESC LIMIT 100",[m.organization_id,m.country_code,s,actor.level]),
    db.query("SELECT c.id,c.certificate_number,c.event_id,c.issued_at,e.title FROM volunteer_certificates c JOIN events e ON e.id=c.event_id WHERE c.user_id=$1 AND e.organization_id=$2 AND c.revoked_at IS NULL ORDER BY c.issued_at DESC LIMIT 100",[user.id,m.organization_id]),
    db.query("SELECT event_id,rating,comments,updated_at FROM event_feedback WHERE user_id=$1 ORDER BY updated_at DESC LIMIT 100",[user.id]),
    c.manager?db.query("SELECT e.id,e.title,COALESCE(a.audience,'company') AS audience,a.state_id,a.branch_id FROM events e LEFT JOIN event_audiences a ON a.event_id=e.id WHERE e.organization_id=$1 AND e.created_by=$2 ORDER BY e.starts_at DESC LIMIT 100",[m.organization_id,user.id]):Promise.resolve({rows:[]}),
    c.manager?db.query("SELECT id,name FROM v3_states WHERE organization_id=$1 AND country_code=$2 ORDER BY name",[m.organization_id,m.country_code]):Promise.resolve({rows:[]}),
-   c.manager?db.query("SELECT id,name,state_id FROM v3_branches WHERE organization_id=$1 AND country_code=$2 ORDER BY name",[m.organization_id,m.country_code]):Promise.resolve({rows:[]})
+   c.manager?db.query("SELECT id,name,state_id FROM v3_branches WHERE organization_id=$1 AND country_code=$2 ORDER BY name",[m.organization_id,m.country_code]):Promise.resolve({rows:[]}),
+   c.manager?db.query("SELECT id,name,kind,status,contact_email FROM csr_partners WHERE organization_id=$1 ORDER BY name LIMIT 100",[m.organization_id]):Promise.resolve({rows:[]})
   ]);
-  return reply({level:actor.level,scope:m,campaigns:campaigns.rows,impact:impact.rows,certificates:certificates.rows,feedback:feedback.rows,events:events.rows,states:states.rows,branches:branches.rows});
+  return reply({level:actor.level,scope:m,campaigns:campaigns.rows,impact:impact.rows,certificates:certificates.rows,feedback:feedback.rows,events:events.rows,states:states.rows,branches:branches.rows,partners:partners.rows});
  }catch(e){console.error("CSR read failed",e);return fail("CSR database unavailable or migrations missing",503);}
 }
 export async function POST(req:NextRequest){
@@ -43,6 +44,24 @@ export async function POST(req:NextRequest){
   const {user,m,actor,manager}=c;
   const a=await req.json();if(!a||typeof a!=="object")return fail("Invalid JSON");
   const action=txt(a.action,40),db=sqlPool();
+  if(action==="createPartner"){
+   if(actor.level!=="country_admin")return fail("Country administrator role required",403);
+   const name=txt(a.name,180),kind=txt(a.kind,30)||"ngo",email=txt(a.contact_email,255).toLowerCase();
+   if(name.length<2||!["ngo","school","government","community","other"].includes(kind)||email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return fail("Invalid partner details");
+   const id=randomUUID();
+   await db.query("INSERT INTO csr_partners(id,organization_id,name,kind,contact_email,created_by) VALUES($1,$2,$3,$4,$5,$6)",[id,m.organization_id,name,kind,email||null,user.id]);
+   await logAudit(db,user,"csr.partner.create",id,m.organization_id);return reply({success:true,id});
+  }
+  if(action==="reviewPartner"){
+   if(actor.level!=="country_admin")return fail("Country administrator role required",403);
+   const id=txt(a.id,120),status=txt(a.status,20);
+   if(!["verified","rejected"].includes(status))return fail("Invalid review status");
+   const record=(await db.query("SELECT id,created_by FROM csr_partners WHERE id=$1 AND organization_id=$2 AND status='pending'",[id,m.organization_id])).rows[0];
+   if(!record||record.created_by===user.id)return fail("A different administrator must review this pending partner",403);
+   const result=await db.query("UPDATE csr_partners SET status=$1,verification_notes=$2,verified_by=$3,verified_at=now() WHERE id=$4 AND organization_id=$5 AND status='pending' RETURNING id",[status,txt(a.notes,2000),user.id,id,m.organization_id]);
+   if(!result.rowCount)return fail("Partner already reviewed",409);
+   await logAudit(db,user,"csr.partner.review",id,m.organization_id);return reply({success:true});
+  }
   if(action==="setAudience"){
    if(actor.level!=="country_admin")return fail("Only country administrators can set event audiences",403);
    const eventId=txt(a.event_id,120),audience=txt(a.audience,20);
@@ -79,10 +98,12 @@ export async function POST(req:NextRequest){
    if(title.length<3||!start||!end||end<start||(sdg!==null&&(!Number.isInteger(sdg)||sdg<1||sdg>17))||(target!==null&&(!Number.isInteger(target)||target<0))||!Number.isFinite(budget)||budget<0||budget>1e10)return fail("Invalid campaign details");
    const state=actor.level==="state_admin"?m.state_id:txt(a.state_id,120)||null;
    const branch=txt(a.branch_id,120)||null;
+   const partner=txt(a.partner_id,120)||null;
+   if(partner){const approved=await db.query("SELECT 1 FROM csr_partners WHERE id=$1 AND organization_id=$2 AND status='verified'",[partner,m.organization_id]);if(!approved.rowCount)return fail("Choose a verified partner",403);}
    if(branch&&!state)return fail("Select a state before branch");
    const id=randomUUID();
-   await db.query("INSERT INTO csr_campaigns(id,organization_id,country_code,state_id,branch_id,title,description,primary_sdg,starts_on,ends_on,budget_inr,target_beneficiaries,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)",
-   [id,m.organization_id,m.country_code,state,branch,title,txt(a.description,5000),sdg,start,end,budget,target,user.id]);
+   await db.query("INSERT INTO csr_campaigns(id,organization_id,country_code,state_id,branch_id,partner_id,title,description,primary_sdg,starts_on,ends_on,budget_inr,target_beneficiaries,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)",
+   [id,m.organization_id,m.country_code,state,branch,partner,title,txt(a.description,5000),sdg,start,end,budget,target,user.id]);
    await logAudit(db,user,"csr.campaign.create",id,m.organization_id);return reply({success:true,id});
   }
   if(action==="recordImpact"||action==="verifyImpact"){
