@@ -14,8 +14,10 @@ export function sqlPool(){
  if(!pool){
   const url=process.env.DATABASE_URL!;
   const privateRailway=new URL(url).hostname.endsWith(".railway.internal");
-  const sslMode=process.env.DATABASE_SSL_MODE||(privateRailway?"disable":"verify-full");
-  if(!["disable","verify-full"].includes(sslMode)||sslMode==="disable"&&!privateRailway)throw new Error("Public database connections require verified TLS");
+  const host=new URL(url).hostname;
+  const disposableLocalCI=process.env.CI==="true" && process.env.ALLOW_INSECURE_STAGING_DB==="true" && ["localhost","127.0.0.1","::1"].includes(host);
+  const sslMode=process.env.DATABASE_SSL_MODE||(privateRailway||disposableLocalCI?"disable":"verify-full");
+  if(!["disable","verify-full"].includes(sslMode)||sslMode==="disable"&&!privateRailway&&!disposableLocalCI)throw new Error("Public database connections require verified TLS");
   const ssl=sslMode==="disable"?false:{rejectUnauthorized:true,ca:process.env.DATABASE_CA_CERT?.replace(/\\n/g,"\n")};
   pool=new Pool({connectionString:url,max:6,idleTimeoutMillis:10000,connectionTimeoutMillis:8000,ssl});
  }
