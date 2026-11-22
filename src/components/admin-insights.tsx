@@ -19,7 +19,7 @@ export default function AdminInsights({data,events,now}:{data:PortalData;events:
  const root=useRef<HTMLElement>(null);
  useEffect(()=>{
   const el=root.current;if(!el)return;
-  if(typeof IntersectionObserver==="undefined"){setVisible(true);return;}
+  if(typeof IntersectionObserver==="undefined"){const frame=window.requestAnimationFrame(()=>setVisible(true));return ()=>window.cancelAnimationFrame(frame);}
   const observer=new IntersectionObserver(items=>{
    if(items.some(item=>item.isIntersecting)){setVisible(true);observer.disconnect();}
   },{threshold:.08});
