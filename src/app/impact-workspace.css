@@ -263,3 +263,25 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .landing-editorial .landing-overline-dot{background:var(--elixir-pink)!important}
 .landing-editorial .landing-curation:nth-child(even) .landing-curation-icon,.landing-editorial .landing-private-symbol{background:var(--elixir-pink-soft)!important;color:var(--elixir-pink-dark)!important}
 @media(max-width:900px){.ep-shell .ep-nav-link.active{box-shadow:inset 0 -3px var(--elixir-pink)}}
+
+
+/* Progressive analytics animation: preserve actual data and keep motion optional. */
+.ep-shell .evs-animated-charts .cc-pie{clip-path:circle(75% at 50% 50%);transition:clip-path .9s cubic-bezier(.18,.7,.2,1)}
+.ep-shell .evs-animated-charts:not(.is-visible) .cc-pie{clip-path:circle(0% at 50% 50%)}
+.ep-shell .evs-animated-charts .cc-impact-track>div{transform-origin:bottom;transform:scaleY(1);transition:transform .85s cubic-bezier(.19,.7,.25,1)}
+.ep-shell .evs-animated-charts:not(.is-visible) .cc-impact-track>div{transform:scaleY(0)}
+.ep-shell .evs-animated-charts .cc-impact-column:nth-child(2) .cc-impact-track>div{transition-delay:65ms}
+.ep-shell .evs-animated-charts .cc-impact-column:nth-child(3) .cc-impact-track>div{transition-delay:130ms}
+.ep-shell .evs-animated-charts .cc-impact-column:nth-child(4) .cc-impact-track>div{transition-delay:195ms}
+.ep-shell .evs-animated-charts .cc-impact-column:nth-child(5) .cc-impact-track>div{transition-delay:260ms}
+.ep-shell .evs-animated-charts .cc-impact-column:nth-child(6) .cc-impact-track>div{transition-delay:325ms}
+.ep-shell .evs-animated-charts .cc-polar{transform:scale(1);opacity:1;transition:transform .8s cubic-bezier(.18,.7,.2,1),opacity .8s}
+.ep-shell .evs-animated-charts:not(.is-visible) .cc-polar{transform:scale(.85);opacity:.2}
+.ep-shell .evs-animated-charts .cc-polar path{transition:opacity .25s,filter .25s}
+.ep-shell .evs-animated-charts .cc-polar path:hover{filter:drop-shadow(0 2px 3px #1b4b2450)}
+.ep-shell .evs-animated-charts .cc-impact-column:hover .cc-impact-track>div{filter:brightness(1.15)}
+@media(prefers-reduced-motion:reduce){
+ .ep-shell .evs-animated-charts .cc-pie{clip-path:none!important;transition:none!important}
+ .ep-shell .evs-animated-charts .cc-impact-track>div{transform:none!important;transition:none!important}
+ .ep-shell .evs-animated-charts .cc-polar{transform:none!important;opacity:1!important;transition:none!important}
+}
