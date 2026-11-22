@@ -114,7 +114,7 @@ try{
   await db.query("INSERT INTO csr_campaign_events(campaign_id,event_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",[campaign,past,id]);
   for(const [i,metric,val] of [["reach","beneficiaries_reached",140],["sessions","sessions_delivered",4],["hours","volunteer_hours",11.25]]){
    const r=await db.query("INSERT INTO csr_impact_records(id,organization_id,campaign_id,event_id,metric,metric_label,value,period_start,period_end,evidence_reference,status,recorded_by,verified_by,verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'verified',$11,$12,now()) ON CONFLICT(id) DO NOTHING RETURNING id",
-   ["demo-v4-impact-"+org.slug+"-"+i,id,campaign,past,metric,metric.replaceAll("_"," "),val,day(-30),day(-1),"DEMO-EVIDENCE-NOT-REAL",all[0].id,admin]);count.impact_records+=r.rowCount;
+   ["demo-v4-impact-"+org.slug+"-"+i,id,campaign,past,metric,metric.replaceAll("_"," "),val,day(-30),day(-1),"DEMO-EVIDENCE-NOT-REAL","demo-v4-user-"+org.slug+"-gj-admin",admin]);count.impact_records+=r.rowCount;
   }
  }
  await db.query("COMMIT");
