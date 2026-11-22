@@ -16,7 +16,7 @@ export default function ImpactCharts({data,userId,companyId,verified,available,n
  useEffect(()=>{
   const el=chartRef.current;
   if(!el)return;
-  if(!("IntersectionObserver" in window)){setAnimated(true);return;}
+  if(!("IntersectionObserver" in window)){const frame=window.requestAnimationFrame(()=>setAnimated(true));return ()=>window.cancelAnimationFrame(frame);}
   const observer=new IntersectionObserver(entries=>{
    if(entries.some(entry=>entry.isIntersecting)){setAnimated(true);observer.disconnect();}
   },{threshold:.08});
