@@ -4,6 +4,7 @@ import {randomUUID} from "node:crypto";
 import {databaseEnabled,sqlPool,passwordHash,passwordValid,makeToken,hashToken,getSession,snapshot,logAudit,toPerson} from "@/lib/db/server";
 import {validateEvent,isPersonalDomain} from "@/lib/portal-model";
 import {storeEventImages} from "@/lib/media/server";
+import {v4AudienceSql} from "@/lib/db/event-audience";
 import type {Person,PortalEvent,Company} from "@/lib/portal-model";
 
 export const runtime="nodejs";
@@ -354,6 +355,10 @@ export async function POST(req:NextRequest){
     const previous=await client.query("SELECT * FROM registrations WHERE event_id=$1 AND user_id=$2",[eventId,employeeId]);
     const oldStatus=previous.rows[0]?.status;
     if(action==="register"){
+      if(process.env.PORTAL_V4_ENABLED==="true"){
+       const audience=await client.query("SELECT 1 FROM events e WHERE e.id=$1 AND "+v4AudienceSql("e"),[eventId,user.id]);
+       if(!audience.rowCount){await client.query("ROLLBACK");return error("This event is not available for your location or invitation",403);}
+      }
       if(user.role==="platform_admin"||user.companyId!==event.organization_id||!user.verified||event.status!=="published"||new Date(event.starts_at)<=new Date()||event.payload.deadline&&new Date(event.payload.deadline)<=new Date()){
        await client.query("ROLLBACK");return error("Registration unavailable",409);
       }
