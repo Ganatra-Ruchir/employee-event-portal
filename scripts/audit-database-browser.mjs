@@ -108,7 +108,7 @@ try{
  const accounts=[
   {name:"root",email:email.root,orgs:2,events:3},
   {name:"country A",email:email.countryA,orgs:1,events:2},
-  {name:"state A",email:email.stateA,orgs:1,events:1},
+  {name:"state A",email:email.stateA,orgs:1,events:2},
   {name:"Gujarat employee",email:email.employeeA,orgs:1,events:2},
   {name:"Maharashtra employee",email:email.employeeOther,orgs:1,events:1},
   {name:"company B employee",email:email.employeeB,orgs:1,events:1}
@@ -134,6 +134,32 @@ try{
    assert.equal(unauthorized.status(),404,"root cannot enter scoped CSR workspace");
    const privateCert=await context.request.get(base+"/certificates/"+ids.certA);
    assert.equal(privateCert.status(),404,"root may not fetch employee certificate");
+   const applicationDomain="company-"+suffix+".example",applicationEmail="director@"+applicationDomain;
+   const application=await context.request.post(base+"/api/company-applications",{
+    headers:{Origin:base},data:{organization_name:"CI Volunteer Company",domain:applicationDomain,contact_name:"Demo Company Owner",contact_email:applicationEmail,country_code:"IN",city:"Ahmedabad",employee_band:"51-200",message:"Disposable CI registration test"}
+   });
+   assert.equal(application.status(),202,"public company application can be submitted");
+   const queue=await context.request.get(base+"/api/company-applications");
+   assert.equal(queue.status(),200,"root sees new applications");
+   const rows=(await queue.json()).applications;
+   const pending=rows.find(x=>x.domain===applicationDomain&&x.status==="pending");
+   assert.ok(pending,"pending request is visible to root");
+   const refused=await context.request.patch(base+"/api/company-applications",{headers:{Origin:base},data:{id:pending.id,decision:"approved",review_note:"Verified CI request only",confirmOwnership:false}});
+   assert.equal(refused.status(),400,"approval requires independent ownership confirmation");
+   const approved=await context.request.patch(base+"/api/company-applications",{headers:{Origin:base},data:{id:pending.id,decision:"approved",review_note:"CI fixture: company details independently checked",confirmOwnership:true}});
+   assert.equal(approved.status(),200,"root approves request");
+   const org=(await db.query("SELECT o.id FROM organizations o JOIN organization_domains d ON d.organization_id=o.id WHERE d.domain=$1",[applicationDomain])).rows[0];
+   assert.ok(org,"workspace created on approval");
+   const invited=(await db.query("SELECT id FROM invitations WHERE email=$1 AND organization_id=$2 AND accepted=false",[applicationEmail,org.id])).rowCount;
+   assert.equal(invited,1,"admin is invited but not automatically activated");
+   const promoted=(await db.query("SELECT count(*)::int AS n FROM users WHERE email=$1",[applicationEmail])).rows[0].n;
+   assert.equal(promoted,0,"unverified contact is not provisioned");
+   await db.query("DELETE FROM invitations WHERE email=$1 AND organization_id=$2",[applicationEmail,org.id]);
+   await db.query("DELETE FROM audit_logs WHERE organization_id=$1",[org.id]);
+   await db.query("DELETE FROM company_applications WHERE id=$1",[pending.id]);
+   await db.query("DELETE FROM v3_countries WHERE organization_id=$1",[org.id]);
+   await db.query("DELETE FROM organization_domains WHERE organization_id=$1",[org.id]);
+   await db.query("DELETE FROM organizations WHERE id=$1",[org.id]);
   }else{
    const csr=await context.request.get(base+"/api/impact");
    assert.equal(csr.status(),200,account.name+" CSR scope");
