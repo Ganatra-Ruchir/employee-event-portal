@@ -1,5 +1,10 @@
 # Employee Volunteer System
 
+> **V4 development branch:** Railway PostgreSQL integration and CSR workflows are under review. This is NOT the production branch. Real employee data must not be imported until migration, permissions, authentication and browser acceptance checks pass.
+>
+> [Railway PostgreSQL V4 setup and readiness guide](docs/RAILWAY_POSTGRES_V4.md) · [CSR workspace source](src/app/impact/page.tsx) · [Migration 091](db/migrations/091_railway_csr_volunteering.sql)
+
+
 Next.js event management for Elixir Foundation and its partner organizations, with distinct interfaces for **Platform Admin**, **Organization Admin**, and **Employee**.
 
 ## Environments
