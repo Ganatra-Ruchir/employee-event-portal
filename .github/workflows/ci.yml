@@ -1,4 +1,4 @@
-name: Verify browser-only portal
+name: Verify volunteer portal
 on:
   push:
     branches: [main, 'feature/**']
@@ -69,3 +69,35 @@ jobs:
           node scripts/audit-impact-layout.mjs
         env:
           NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "false"
+
+      - name: Build database-backed staging preview
+        run: npm run build
+        env:
+          NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "true"
+          NEXT_PUBLIC_PORTAL_V4_ENABLED: "true"
+          PORTAL_BACKEND_MODE: database
+          PORTAL_V3_ENABLED: "true"
+          PORTAL_V4_ENABLED: "true"
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+          DATABASE_SSL_MODE: disable
+          ALLOW_INSECURE_STAGING_DB: "true"
+      - name: Authenticated PostgreSQL browser audit
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 3001 > /tmp/portal-database-audit.log 2>&1 &
+          ready=0
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:3001/api/portal/health >/dev/null; then ready=1; break; fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then cat /tmp/portal-database-audit.log; exit 1; fi
+          node scripts/audit-database-browser.mjs
+        env:
+          CI_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+          DATABASE_SSL_MODE: disable
+          ALLOW_INSECURE_STAGING_DB: "true"
+          PORTAL_BACKEND_MODE: database
+          PORTAL_V3_ENABLED: "true"
+          PORTAL_V4_ENABLED: "true"
+          NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "true"
+          NEXT_PUBLIC_PORTAL_V4_ENABLED: "true"
