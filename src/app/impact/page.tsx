@@ -2,7 +2,7 @@
 import {useCallback,useEffect,useState,type FormEvent,type MouseEvent} from "react";
 import Link from "next/link";
 type Row=Record<string,string|number|null>;
-type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];scope?:Row};
+type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];roster:Row[];scope?:Row};
 const metrics=["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"];
 const today=()=>new Date().toISOString().slice(0,10);
 export default function CSRImpactPage(){
@@ -12,6 +12,7 @@ export default function CSRImpactPage(){
  const [feedback,setFeedback]=useState({event_id:"",rating:"5",comments:""});
  const [partner,setPartner]=useState({name:"",kind:"ngo",contact_email:""});
  const [audience,setAudience]=useState({event_id:"",audience:"company",state_id:"",branch_id:"",user_ids:""});
+ const [selectedAttendee,setSelectedAttendee]=useState(""),[attendance,setAttendance]=useState({status:"present",volunteer_minutes:"0",contribution:""});
  const refresh=useCallback(async()=>{const r=await fetch("/api/impact",{cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");setData(j);},[]);
  useEffect(()=>{let active=true;fetch("/api/impact",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");return j;}).then(j=>{if(active)setData(j);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Unable to load");});return()=>{active=false;};},[]);
  async function submit(e:FormEvent<HTMLFormElement>|MouseEvent<HTMLButtonElement>,action:string,args:Record<string,unknown>){
@@ -74,6 +75,18 @@ export default function CSRImpactPage(){
      {audience.audience==="invited"&&<label>Employee account IDs (comma-separated)<textarea value={audience.user_ids} onChange={e=>setAudience(v=>({...v,user_ids:e.target.value}))} placeholder="Add employee IDs from the People directory"/></label>}
      <button className="ep-button primary" disabled={busy}>Save event audience</button>
     </form>
+   </section>}
+   {manager&&<section className="ep-panel"><h2>Attendance & certificates</h2>
+    <p>Verify registered volunteers after their event starts. Certificates become available after the event has ended and attendance is marked present.</p>
+    {data.roster.length?<form className="v3-form" onSubmit={e=>{const record=data.roster.find(x=>String(x.event_id)+":"+String(x.user_id)===selectedAttendee);if(!record){e.preventDefault();return;}void submit(e,"verifyAttendance",{event_id:record.event_id,user_id:record.user_id,...attendance,volunteer_minutes:Number(attendance.volunteer_minutes)});}}>
+     <label>Registered attendee<select required value={selectedAttendee} onChange={e=>{const value=e.target.value;setSelectedAttendee(value);const row=data.roster.find(x=>String(x.event_id)+":"+String(x.user_id)===value);if(row)setAttendance({status:String(row.attendance_status||"present"),volunteer_minutes:String(row.volunteer_minutes||0),contribution:""});}}><option value="">Choose an attendee</option>{data.roster.map(row=><option key={String(row.event_id)+":"+String(row.user_id)} value={String(row.event_id)+":"+String(row.user_id)}>{row.full_name} · {row.title} · {row.attendance_status||"unmarked"}</option>)}</select></label>
+     <label>Attendance<select value={attendance.status} onChange={e=>setAttendance(v=>({...v,status:e.target.value}))}><option value="present">Present</option><option value="absent">Absent</option></select></label>
+     {attendance.status==="present"&&<><label>Volunteer minutes<input type="number" required min="0" max="10080" value={attendance.volunteer_minutes} onChange={e=>setAttendance(v=>({...v,volunteer_minutes:e.target.value}))}/></label><label>Contribution note<textarea maxLength={1000} value={attendance.contribution} onChange={e=>setAttendance(v=>({...v,contribution:e.target.value}))}/></label></>}
+     <button className="ep-button primary" disabled={busy}>Save attendance</button>
+     {data.roster.filter(x=>String(x.event_id)+":"+String(x.user_id)===selectedAttendee).map(x=><div key={String(x.event_id)}>
+       {x.certificate_number?<p>Certificate already issued: {x.certificate_number}</p>:x.attendance_status==="present"&&new Date(String(x.ends_at))<=new Date()?<button type="button" className="ep-button secondary" disabled={busy} onClick={e=>void submit(e,"issueCertificate",{event_id:x.event_id,user_id:x.user_id})}>Issue volunteer certificate</button>:<p>Certificate available after verified attendance and event completion.</p>}
+      </div>)}
+    </form>:<p>No started events with registered volunteers are available in your scope.</p>}
    </section>}
    <section className="ep-panel"><h2>Reported impact</h2>
     {data.impact.length?<div className="v3-list">{data.impact.map(i=><div key={String(i.id)}><strong>{i.value} · {String(i.metric).replaceAll("_"," ")}</strong><span>{i.status} · {String(i.period_start).slice(0,10)} to {String(i.period_end).slice(0,10)}</span>{manager&&i.status==="draft"&&<form onSubmit={e=>void submit(e,"verifyImpact",{id:i.id})}><button className="ep-button secondary" disabled={busy}>Verify (different reviewer only)</button></form>}</div>)}</div>:<p>No impact records yet. Only independently verified values contribute to the KPIs.</p>}
