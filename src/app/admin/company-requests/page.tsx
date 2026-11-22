@@ -1,5 +1,5 @@
 "use client";
-import {useCallback,useEffect,useMemo,useState,type FormEvent} from "react";
+import {useCallback,useEffect,useMemo,useState} from "react";
 import Link from "next/link";
 import {ArrowLeft,Building2,CheckCircle2,ChevronDown,Clock3,Globe2,Mail,ShieldCheck,ShieldAlert,XCircle} from "lucide-react";
 import "../../onboarding.css";
@@ -14,8 +14,7 @@ export default function CompanyRequestsPage(){
  useEffect(()=>{let active=true;fetch("/api/company-applications",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load requests");return j;}).then(j=>{if(active)setItems(j.applications||[])}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Could not load requests")}).finally(()=>{if(active)setLoading(false)});return()=>{active=false};},[]);
  const shown=useMemo(()=>items.filter(x=>filter==="all"||x.status===filter),[items,filter]);
  const counts=useMemo(()=>({pending:items.filter(x=>x.status==="pending").length,approved:items.filter(x=>x.status==="approved").length,rejected:items.filter(x=>x.status==="rejected").length}),[items]);
- async function decide(e:FormEvent<HTMLFormElement>,id:string,decision:"approved"|"rejected"){
-  e.preventDefault();setBusy(true);setError("");setNotice("");
+ async function decide(id:string,decision:"approved"|"rejected"){setBusy(true);setError("");setNotice("");
   if(decision==="approved"&&!confirmed){setError("Confirm the company ownership review first.");setBusy(false);return;}
   try{
    const r=await fetch("/api/company-applications",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,decision,review_note:note,confirmOwnership:confirmed})});
@@ -45,11 +44,11 @@ export default function CompanyRequestsPage(){
       {x.status!=="pending"?<p className="onboard-reviewed"><CheckCircle2 size={15}/> {x.review_note||"Reviewed"}{x.organization_id?" · Workspace created":""}</p>:
        <>
         <button type="button" className="onboard-review-toggle" aria-expanded={selected===x.id} onClick={()=>{const isOpen=selected===x.id;setSelected(isOpen?null:x.id);setNote("");setConfirmed(false);setError("");}}>Review application <ChevronDown size={17}/></button>
-        {selected===x.id&&<form onSubmit={e=>decide(e,x.id,"approved")} className="onboard-review-panel">
+        {selected===x.id&&<form onSubmit={e=>{e.preventDefault();void decide(x.id,"approved");}} className="onboard-review-panel">
          <div className="onboard-review-warning"><ShieldAlert size={19}/><p><strong>Verify before approval.</strong> Check the company name, domain and nominated contact using independent information. An application alone is not proof of ownership.</p></div>
          <label>Review note <textarea required minLength={5} maxLength={2000} value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="Record why this company is eligible, or why it should be rejected."/></label>
          <label className="onboard-confirm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/><span>I checked the company and work domain before approving.</span></label>
-         <div className="onboard-review-actions"><button disabled={busy||!confirmed||note.trim().length<5} type="submit" className="onboard-submit">{busy?"Saving…":"Approve & create workspace"}<CheckCircle2 size={17}/></button><button disabled={busy||note.trim().length<5} type="button" className="onboard-reject" onClick={e=>void decide(e as unknown as FormEvent<HTMLFormElement>,x.id,"rejected")}>Reject application <XCircle size={17}/></button></div>
+         <div className="onboard-review-actions"><button disabled={busy||!confirmed||note.trim().length<5} type="submit" className="onboard-submit">{busy?"Saving…":"Approve & create workspace"}<CheckCircle2 size={17}/></button><button disabled={busy||note.trim().length<5} type="button" className="onboard-reject" onClick={()=>void decide(x.id,"rejected")}>Reject application <XCircle size={17}/></button></div>
          <small>Approval creates a company and invitation only. The contact must separately verify their email through company signup. No email is automatically sent from this screen.</small>
         </form>}
        </>}
