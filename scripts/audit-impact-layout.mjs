@@ -12,6 +12,7 @@ const fixture=level=>({
  level,currentUserId:"ci-demo-employee",scope:{state_id:"state-1",branch_id:"branch-1"},
  campaigns:[{id:"camp-1",title:"Test Campaign",status:"active",primary_sdg:4,starts_on:"2026-01-01",ends_on:"2026-12-31",description:"Sample campaign"}],
  impact:[{id:"impact-1",metric:"beneficiaries_reached",value:20,status:"verified",period_start:"2026-01-01",period_end:"2026-01-31"}],
+ verifiedTotals:{beneficiaries_reached:20,volunteer_hours:3},
  certificates:[],feedback:[],
  eligibleFeedbackEvents:[{id:"event-1",title:"Completed Volunteer Workshop",ends_at:"2026-11-01T10:00:00Z"}],
  events:[{id:"event-1",title:"Completed Volunteer Workshop",audience:"company"}],
