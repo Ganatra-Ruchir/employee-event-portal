@@ -10,5 +10,5 @@ export function v4AudienceSql(eventAlias:"e"|"events",userParameter:"$2"="$2"){
  "(a.audience='country' AND m.country_code=a.country_code) OR " +
  "(a.audience='state' AND m.country_code=a.country_code AND m.state_id=a.state_id) OR " +
  "(a.audience='branch' AND m.country_code=a.country_code AND m.state_id=a.state_id AND m.branch_id=a.branch_id)" +
- "))))))";
+ ")))))";
 }
