@@ -5,7 +5,7 @@ import "../portal.css";
 import "../impact-workspace.css";
 import "./impact.css";
 type Row=Record<string,string|number|null>;
-type Workspace={level:string;currentUserId:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];eligibleFeedbackEvents:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];roster:Row[];scope?:Row};
+type Workspace={level:string;currentUserId:string;verifiedTotals:Record<string,number>;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];eligibleFeedbackEvents:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];roster:Row[];scope?:Row};
 const metrics=["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"];
 const today=()=>new Date().toISOString().slice(0,10);
 export default function CSRImpactPage(){
@@ -30,7 +30,7 @@ export default function CSRImpactPage(){
   }catch(e){setError(e instanceof Error?e.message:"Unable to save");}finally{setBusy(false);}
  }
  const manager=data?.level==="country_admin"||data?.level==="state_admin";
- const total=(metric:string)=>data?.impact.filter(r=>r.metric===metric&&r.status==="verified").reduce((sum,r)=>sum+Number(r.value||0),0)||0;
+ const total=(metric:string)=>Number(data?.verifiedTotals?.[metric]||0);
  return <main className="ep-main ep-shell csr-page" style={{maxWidth:1280,margin:"0 auto",padding:"20px 16px"}}>
   <p><Link href="/">← Back to Employee Volunteer System</Link></p>
   <div className="ed-eyebrow">EMPLOYEE VOLUNTEER SYSTEM · VERIFIED SOCIAL IMPACT</div>
