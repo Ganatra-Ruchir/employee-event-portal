@@ -20,7 +20,7 @@ export default function CSRImpactPage(){
    const r=await fetch("/api/impact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...args})});
    const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to save");
    setNotice("Saved successfully.");await refresh();
-   if(action==="createCampaign")setCampaign({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:""});
+   if(action==="createCampaign")setCampaign({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:"",partner_id:""});
    if(action==="recordImpact")setImpact(old=>({...old,value:"",evidence_reference:""}));
   }catch(e){setError(e instanceof Error?e.message:"Unable to save");}finally{setBusy(false);}
  }
