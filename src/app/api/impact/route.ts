@@ -47,7 +47,7 @@ export async function POST(req:NextRequest){
   if(action==="createPartner"){
    if(actor.level!=="country_admin")return fail("Country administrator role required",403);
    const name=txt(a.name,180),kind=txt(a.kind,30)||"ngo",email=txt(a.contact_email,255).toLowerCase();
-   if(name.length<2||!["ngo","school","government","community","other"].includes(kind)||email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return fail("Invalid partner details");
+   if(name.length<2||!["ngo","school","government","community","other"].includes(kind)||email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return fail("Invalid partner details");
    const id=randomUUID();
    await db.query("INSERT INTO csr_partners(id,organization_id,name,kind,contact_email,created_by) VALUES($1,$2,$3,$4,$5,$6)",[id,m.organization_id,name,kind,email||null,user.id]);
    await logAudit(db,user,"csr.partner.create",id,m.organization_id);return reply({success:true,id});
