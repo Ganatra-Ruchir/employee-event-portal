@@ -1,5 +1,5 @@
 "use client";
-import {useCallback,useEffect,useState,type FormEvent} from "react";
+import {useCallback,useEffect,useState,type FormEvent,type MouseEvent} from "react";
 import Link from "next/link";
 type Row=Record<string,string|number|null>;
 type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];scope?:Row};
@@ -14,7 +14,7 @@ export default function CSRImpactPage(){
  const [audience,setAudience]=useState({event_id:"",audience:"company",state_id:"",branch_id:"",user_ids:""});
  const refresh=useCallback(async()=>{const r=await fetch("/api/impact",{cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");setData(j);},[]);
  useEffect(()=>{let active=true;fetch("/api/impact",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");return j;}).then(j=>{if(active)setData(j);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Unable to load");});return()=>{active=false;};},[]);
- async function submit(e:FormEvent<HTMLFormElement>,action:string,args:Record<string,unknown>){
+ async function submit(e:FormEvent<HTMLFormElement>|MouseEvent<HTMLButtonElement>,action:string,args:Record<string,unknown>){
   e.preventDefault();setBusy(true);setError("");setNotice("");
   try{
    const r=await fetch("/api/impact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...args})});
@@ -44,7 +44,7 @@ export default function CSRImpactPage(){
    </section>
    {data.level==="country_admin"&&<section className="ep-panel"><h2>CSR partner onboarding</h2>
     <p>Register NGO, school, government or community partners. Another country administrator must verify a partner before linking it to a campaign.</p>
-    {data.partners.length>0&&<div className="v3-list">{data.partners.map(p=><div key={String(p.id)}><strong>{p.name}</strong><span>{p.kind} · {p.status}</span>{p.status==="pending"&&<button type="button" className="ep-button secondary" disabled={busy} onClick={e=>void submit(e as unknown as FormEvent<HTMLFormElement>,"reviewPartner",{id:p.id,status:"verified"})}>Verify partner (independent reviewer)</button>}</div>)}</div>}
+    {data.partners.length>0&&<div className="v3-list">{data.partners.map(p=><div key={String(p.id)}><strong>{p.name}</strong><span>{p.kind} · {p.status}</span>{p.status==="pending"&&<button type="button" className="ep-button secondary" disabled={busy} onClick={e=>void submit(e,"reviewPartner",{id:p.id,status:"verified"})}>Verify partner (independent reviewer)</button>}</div>)}</div>}
     <form className="v3-form" onSubmit={e=>void submit(e,"createPartner",partner)}>
      <label>Partner name<input required minLength={2} maxLength={180} value={partner.name} onChange={e=>setPartner(v=>({...v,name:e.target.value}))}/></label>
      <label>Partner type<select value={partner.kind} onChange={e=>setPartner(v=>({...v,kind:e.target.value}))}><option value="ngo">NGO</option><option value="school">School</option><option value="government">Government</option><option value="community">Community</option><option value="other">Other</option></select></label>
