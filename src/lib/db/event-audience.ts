@@ -1,5 +1,5 @@
 /** SQL predicate for V4 employee event audiences. Callers must also check the event organization. */
-export function v4AudienceSql(eventAlias:"e"|"events",userParameter:"$2"|" $2"="$2"){
+export function v4AudienceSql(eventAlias:"e"|"events",userParameter:"$2"="$2"){
  const e=eventAlias,u=userParameter.trim();
  return "(" +
  "NOT EXISTS (SELECT 1 FROM event_audiences a WHERE a.event_id="+e+".id) OR " +
