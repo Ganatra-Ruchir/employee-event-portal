@@ -156,7 +156,7 @@ try{
    await page.goto(base+"/admin/company-requests");
    await page.getByRole("heading",{name:"Company applications"}).waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),true,"root review mobile overflow");
-   assert.ok(await page.getByText("CI Volunteer Company").count()>=1,"root queue displays applicant");
+   await page.getByRole("heading",{name:"CI Volunteer Company"}).waitFor({timeout:15000});
 
    const refused=await context.request.patch(base+"/api/company-applications",{headers:{Origin:base},data:{id:pending.id,decision:"approved",review_note:"Verified CI request only",confirmOwnership:false}});
    assert.equal(refused.status(),400,"approval requires independent ownership confirmation");
