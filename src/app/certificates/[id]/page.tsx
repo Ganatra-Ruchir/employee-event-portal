@@ -1,4 +1,5 @@
 import {cookies} from "next/headers";
+import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
 import {getSession,databaseEnabled,sqlPool} from "@/lib/db/server";
 import PrintCertificate from "@/components/print-certificate";
@@ -25,7 +26,7 @@ export default async function CertificatePage({params}:{params:Promise<{id:strin
  return <main style={{background:"#f2f3f0",minHeight:"100vh",padding:"32px 12px",fontFamily:"Arial, sans-serif",color:"#383536"}}>
    <style>{`@media print {body{background:#fff!important;} .certificate-print-controls{display:none!important;} .certificate-page{box-shadow:none!important;border:4px solid #51c220!important;max-width:100%!important;min-height:200mm!important;} @page{size:A4 landscape;margin:12mm;}}`}</style>
    <div className="certificate-print-controls" style={{maxWidth:990,margin:"0 auto 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-    <a href="/impact">← Back to impact workspace</a><PrintCertificate/>
+    <Link href="/impact">← Back to impact workspace</Link><PrintCertificate/>
    </div>
    <article className="certificate-page" style={{maxWidth:990,margin:"0 auto",padding:"55px 45px",background:"#fff",border:"5px solid #51c220",boxShadow:"0 12px 40px rgba(0,0,0,.07)",textAlign:"center",minHeight:610,boxSizing:"border-box"}}>
     <p style={{fontWeight:800,textTransform:"uppercase",letterSpacing:4,fontSize:16,color:"#51a622"}}>{cert.organization_name}</p>
