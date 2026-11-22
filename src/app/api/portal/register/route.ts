@@ -73,8 +73,10 @@ export async function POST(req:NextRequest){
      [company.rows[0].id,email]);
     if(authorized.rows.length===1){
      const invite=authorized.rows[0];
-     await client.query("UPDATE users SET role='company_admin' WHERE id=$1 AND role='employee' AND verified=true AND organization_id=$2",[userId,company.rows[0].id]);
-     await client.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,$3,'country_admin') ON CONFLICT(user_id) DO NOTHING",[userId,company.rows[0].id,invite.country_code]);
+     const promoted=await client.query("UPDATE users SET role='company_admin' WHERE id=$1 AND role='employee' AND verified=true AND organization_id=$2 RETURNING id",[userId,company.rows[0].id]);
+     if(!promoted.rowCount)throw new Error("Approved company contact cannot be promoted");
+     const membership=await client.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,$3,'country_admin') ON CONFLICT(user_id) DO NOTHING RETURNING user_id",[userId,company.rows[0].id,invite.country_code]);
+     if(!membership.rowCount)throw new Error("Existing membership requires manual administrator review");
      await client.query("UPDATE invitations SET accepted=true WHERE id=$1 AND accepted=false",[invite.invitation_id]);
      await client.query("INSERT INTO audit_logs(actor_user_id,organization_id,action,subject_id) VALUES($1,$2,'company_application.contact_verified',$3)",[userId,company.rows[0].id,invite.invitation_id]);
      elevated=true;
