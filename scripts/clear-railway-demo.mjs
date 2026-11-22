@@ -29,8 +29,8 @@ try{
   const q="(SELECT id FROM events WHERE organization_id=ANY($1::text[]))";
   const u="(SELECT id FROM users WHERE organization_id=ANY($1::text[]) OR id='demo-v4-user-root')";
   const c="(SELECT id FROM csr_campaigns WHERE organization_id=ANY($1::text[]))";
-  await step("DELETE FROM notification_outbox WHERE organization_id=ANY($1::text[]) OR recipient_id IN "+u+")",[orgs]);
-  await step("DELETE FROM sessions WHERE user_id IN "+u+")",[orgs]);
+  await step("DELETE FROM notification_outbox WHERE organization_id=ANY($1::text[]) OR recipient_id IN "+u",[orgs]);
+  await step("DELETE FROM sessions WHERE user_id IN "+u",[orgs]);
   await step("DELETE FROM volunteer_certificates WHERE event_id IN "+q+"",[orgs]);
   await step("DELETE FROM event_feedback WHERE event_id IN "+q+"",[orgs]);
   await step("DELETE FROM event_attendance WHERE event_id IN "+q+"",[orgs]);
@@ -39,7 +39,7 @@ try{
   await step("DELETE FROM event_audiences WHERE event_id IN "+q+"",[orgs]);
   await step("DELETE FROM registrations WHERE event_id IN "+q+"",[orgs]);
   await step("DELETE FROM csr_impact_records WHERE organization_id=ANY($1::text[])",[orgs]);
-  await step("DELETE FROM csr_campaign_events WHERE campaign_id IN "+c+") OR event_id IN "+q+"",[orgs]);
+  await step("DELETE FROM csr_campaign_events WHERE campaign_id IN "+c OR event_id IN "+q+"",[orgs]);
   await step("DELETE FROM csr_campaigns WHERE organization_id=ANY($1::text[])",[orgs]);
   await step("DELETE FROM csr_partners WHERE organization_id=ANY($1::text[])",[orgs]);
   await step("DELETE FROM events WHERE organization_id=ANY($1::text[])",[orgs]);
