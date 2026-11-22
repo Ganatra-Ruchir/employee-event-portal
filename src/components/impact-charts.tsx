@@ -1,5 +1,5 @@
 "use client";
-import {useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {employeeImpact} from "@/lib/employee-impact";
 import type {PortalData} from "@/lib/portal-model";
 type Row=Record<string,string|number|null>;
@@ -11,11 +11,23 @@ function sector(a:number,b:number,r:number){
 export default function ImpactCharts({data,userId,companyId,verified,available,now}:{data:PortalData;userId:string;companyId:string|null;verified:Row[];available:boolean;now:number}){
  const {goals,unassigned,outcomes,monthly,attended}=employeeImpact(data,userId,companyId,verified,now);
  const [active,setActive]=useState<number|null>(null);
+ const [animated,setAnimated]=useState(false);
+ const chartRef=useRef<HTMLDivElement>(null);
+ useEffect(()=>{
+  const el=chartRef.current;
+  if(!el)return;
+  if(!("IntersectionObserver" in window)){setAnimated(true);return;}
+  const observer=new IntersectionObserver(entries=>{
+   if(entries.some(entry=>entry.isIntersecting)){setAnimated(true);observer.disconnect();}
+  },{threshold:.08});
+  observer.observe(el);
+  return ()=>observer.disconnect();
+ },[]);
  const pie=[{name:"Present",value:outcomes.present,color:"#42763c"},{name:"Absent",value:outcomes.absent,color:"#c65b50"},{name:"Not marked",value:outcomes.unmarked,color:"#c5cbd0"}];
  const total=pie.reduce((s,x)=>s+x.value,0);let cursor=0;
  const segments=pie.map(p=>{const start=cursor;cursor+=total?p.value/total*100:0;return p.color+" "+start+"% "+cursor+"%";});
  const highest=Math.max(1,...goals.map(g=>g.count)),step=2*Math.PI/17,engaged=goals.filter(g=>g.count>0).sort((a,b)=>b.count-a.count||a.goal-b.goal),maxHours=Math.max(1,...monthly.map(m=>m.hours));
- return <div className="cc-impact-grid" aria-label="Employee impact analytics">
+ return <div ref={chartRef} className={"cc-impact-grid evs-animated-charts"+(animated?" is-visible":"")} aria-label="Employee impact analytics">
   <section className="cc-impact-chart"><h3>Attendance breakdown</h3><p className="ep-hint">Completed events you registered for</p>
    <div className="cc-chart-stage"><div className="cc-pie" role="img" aria-label={available?pie.map(p=>p.name+": "+p.value).join(", "):"Attendance unavailable"} style={{background:available&&total?"conic-gradient("+segments.join(",")+")":"#e5e9e4"}}/></div><div className="cc-chart-legend">{pie.map(p=><div key={p.name}><i style={{background:p.color}}/><span>{p.name}</span><strong>{available?p.value:"—"}</strong></div>)}</div>
    <p className="ep-hint">{!available?"Attendance unavailable.":total?Math.round(outcomes.present/total*100)+"% confirmed present · "+total+" completed registrations":"No completed registrations yet."} Walk-ins excluded.</p>
@@ -29,6 +41,6 @@ export default function ImpactCharts({data,userId,companyId,verified,available,n
    {engaged.length>3&&<details className="cc-sdg-more"><summary>All remaining goals ({engaged.length-3})</summary><div className="cc-chart-legend">{engaged.slice(3).map(g=><button key={g.goal} type="button" aria-pressed={active===g.goal} onClick={()=>setActive(v=>v===g.goal?null:g.goal)}><i style={{background:g.color}}/><span>{g.goal} · {g.name}</span><strong>{g.count}</strong></button>)}</div></details>}
    <p className="ep-hint">{engaged.length? "Top: "+engaged.filter(g=>g.count===engaged[0].count).map(g=>"SDG "+g.goal).join(", ")+" · "+engaged[0].count+" events each":"No tagged attendance yet."}{unassigned?" · "+unassigned+" without a goal":""}</p>
   </section>
-  <section className="cc-impact-chart"><h3>Monthly volunteer hours</h3><p className="ep-hint">Last six months · verified time</p><div className="cc-chart-stage"><div className="cc-impact-bars" role="img" aria-label={available?monthly.map(m=>m.label+": "+m.hours.toFixed(1)+" hours").join(", "):"Volunteer hours unavailable"}>{monthly.map((m,i)=><div className="cc-impact-column" key={i}><span>{available?Number(m.hours.toFixed(1))+"h":"—"}</span><div className="cc-impact-track"><div style={{height:(available?m.hours/maxHours*100:0)+"%"}}/></div><small>{m.label}</small></div>)}</div></div><p className="ep-hint">{available?attended+" verified events in all time":"Verified history unavailable"}</p></section>
+  <section className="cc-impact-chart"><h3>Monthly volunteer hours</h3><p className="ep-hint">Last six months · verified time</p><div className="cc-chart-stage"><div className="cc-impact-bars" role="img" aria-label={available?monthly.map(m=>m.label+": "+m.hours.toFixed(1)+" hours").join(", "):"Volunteer hours unavailable"}>{monthly.map((m,i)=><div className="cc-impact-column" key={i} title={m.label+": "+m.hours.toFixed(1)+" verified hours"}><span>{available?Number(m.hours.toFixed(1))+"h":"—"}</span><div className="cc-impact-track"><div style={{height:(available?m.hours/maxHours*100:0)+"%"}}/></div><small>{m.label}</small></div>)}</div></div><p className="ep-hint">{available?attended+" verified events in all time":"Verified history unavailable"}</p></section>
  </div>;
 }
