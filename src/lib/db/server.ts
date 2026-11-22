@@ -10,7 +10,14 @@ let pool:Pool|undefined;
 export function databaseEnabled(){return process.env.PORTAL_BACKEND_MODE==="database" && Boolean(process.env.DATABASE_URL);}
 export function sqlPool(){
  if(!databaseEnabled())throw new Error("Database mode is not configured");
- if(!pool)pool=new Pool({connectionString:process.env.DATABASE_URL,max:6,idleTimeoutMillis:10000,connectionTimeoutMillis:8000,ssl:{rejectUnauthorized:true}});
+ if(!pool){
+  const url=process.env.DATABASE_URL!;
+  const privateRailway=new URL(url).hostname.endsWith(".railway.internal");
+  const sslMode=process.env.DATABASE_SSL_MODE||(privateRailway?"disable":"verify-full");
+  if(!["disable","verify-full"].includes(sslMode)||sslMode==="disable"&&!privateRailway)throw new Error("Public database connections require verified TLS");
+  const ssl=sslMode==="disable"?false:{rejectUnauthorized:true,ca:process.env.DATABASE_CA_CERT?.replace(/\\n/g,"\n")};
+  pool=new Pool({connectionString:url,max:6,idleTimeoutMillis:10000,connectionTimeoutMillis:8000,ssl});
+ }
  return pool;
 }
 export const makeToken=()=>randomBytes(32).toString("base64url");
