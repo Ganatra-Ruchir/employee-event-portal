@@ -105,6 +105,14 @@ try{
  await db.connect();
  await seed();seeded=true;
  browser=await chromium.launch({headless:true});
+ const visitor=await browser.newPage({viewport:{width:390,height:844}});
+ await visitor.goto(base+"/",{waitUntil:"domcontentloaded"});
+ await visitor.getByRole("link",{name:/Register company/i}).first().waitFor();
+ assert.equal(await visitor.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),true,"public landing mobile overflow");
+ await visitor.goto(base+"/companies/register",{waitUntil:"domcontentloaded"});
+ await visitor.getByRole("heading",{name:"Register your company"}).waitFor();
+ assert.equal(await visitor.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),true,"company registration mobile overflow");
+ await visitor.close();
  const accounts=[
   {name:"root",email:email.root,orgs:2,events:3},
   {name:"country A",email:email.countryA,orgs:1,events:2},
@@ -144,6 +152,11 @@ try{
    const rows=(await queue.json()).applications;
    const pending=rows.find(x=>x.domain===applicationDomain&&x.status==="pending");
    assert.ok(pending,"pending request is visible to root");
+   await page.goto(base+"/admin/company-requests");
+   await page.getByRole("heading",{name:"Company applications"}).waitFor();
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),true,"root review mobile overflow");
+   assert.ok(await page.getByText("CI Volunteer Company").count()>=1,"root queue displays applicant");
+
    const refused=await context.request.patch(base+"/api/company-applications",{headers:{Origin:base},data:{id:pending.id,decision:"approved",review_note:"Verified CI request only",confirmOwnership:false}});
    assert.equal(refused.status(),400,"approval requires independent ownership confirmation");
    const approved=await context.request.patch(base+"/api/company-applications",{headers:{Origin:base},data:{id:pending.id,decision:"approved",review_note:"CI fixture: company details independently checked",confirmOwnership:true}});
