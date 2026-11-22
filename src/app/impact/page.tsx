@@ -110,7 +110,7 @@ export default function CSRImpactPage(){
     </form>
    </section>}
    <section className="ep-panel"><h2>My certificates</h2>
-    {data.certificates.length?<div className="v3-list">{data.certificates.map(x=><div key={String(x.id)}><strong>{x.title}</strong><span>{x.certificate_number} · {String(x.issued_at).slice(0,10)}</span></div>)}</div>:<p>No certificates issued yet. Certificates require verified attendance for a completed event.</p>}
+    {data.certificates.length?<div className="v3-list">{data.certificates.map(x=><div key={String(x.id)}><strong>{x.title}</strong><span>{x.certificate_number} · {String(x.issued_at).slice(0,10)}</span><Link href={"/certificates/"+String(x.id)} className="ep-button secondary">View / print certificate</Link></div>)}</div>:<p>No certificates issued yet. Certificates require verified attendance for a completed event.</p>}
    </section>
   </>}
  </main>;
