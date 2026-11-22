@@ -27,6 +27,7 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif}
 .ep-shell .aw-heading h1,.ep-shell .ep-page-head h1,.ep-shell .ed-browse-title-row h1{font-size:clamp(25px,2.45vw,38px)!important;letter-spacing:-.045em!important;font-weight:850!important;color:#1d442b!important}
 .ep-shell .aw-heading p,.ep-shell .ep-page-head p{max-width:740px!important;color:#60776a!important;font-size:13px!important}
 .ep-shell .ed-eyebrow,.ep-shell .ep-event-label{color:#d73276!important;font-weight:850!important;letter-spacing:.09em}
+.ep-shell .aw-root>.aw-heading,.ep-shell .ep-main>.aw-heading,.ep-shell .ep-main>.ep-page-head{padding:clamp(18px,2.1vw,30px)!important}
 .ep-shell .aw-heading-action{position:relative;z-index:1}
 .ep-shell .aw-metric-grid,.ep-shell .v3-metrics,.ep-shell .ep-stats{gap:12px!important}
 .ep-shell .aw-metric,.ep-shell .v3-metrics>div,.ep-shell .ep-stats>div{
@@ -181,6 +182,7 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif}
 @media(max-width:760px){
  .ep-shell .ep-main{padding:13px!important}
  .ep-shell .aw-heading,.ep-shell .ep-page-head,.ep-shell .ed-browse-title-row{align-items:stretch!important;flex-direction:column;padding:18px!important;gap:12px!important}
+ .ep-shell .aw-root>.aw-heading,.ep-shell .ep-main>.aw-heading,.ep-shell .ep-main>.ep-page-head{padding:18px!important}
  .ep-shell .aw-heading-action{align-self:flex-start}
  .ep-shell .aw-metric-grid,.ep-shell .v3-metrics,.ep-shell .ep-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  .ep-shell .v3-form{grid-template-columns:minmax(0,1fr)}

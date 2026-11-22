@@ -4,6 +4,7 @@ import Link from "next/link";
 import "../portal.css";
 import "../impact-workspace.css";
 import "./impact.css";
+import "../evs-pages.css";
 type Row=Record<string,string|number|null>;
 type Workspace={level:string;currentUserId:string;verifiedTotals:Record<string,number>;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];eligibleFeedbackEvents:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];roster:Row[];scope?:Row};
 const metrics=["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"];

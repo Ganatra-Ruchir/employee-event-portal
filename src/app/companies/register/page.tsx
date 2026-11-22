@@ -3,6 +3,7 @@ import {useState,type FormEvent} from "react";
 import Link from "next/link";
 import {ArrowLeft,ArrowRight,Building2,CheckCircle2,LockKeyhole,ShieldCheck,UsersRound} from "lucide-react";
 import "../../onboarding.css";
+import "../../evs-pages.css";
 
 const countries=[["IN","India"],["US","United States"],["GB","United Kingdom"],["CA","Canada"],["AU","Australia"],["AE","United Arab Emirates"],["SG","Singapore"]];
 type Application={organization_name:string;domain:string;contact_name:string;contact_email:string;country_code:string;city:string;website:string;employee_band:string;message:string;website_confirmation:string};

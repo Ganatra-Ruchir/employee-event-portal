@@ -3,6 +3,7 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import Link from "next/link";
 import {ArrowLeft,Building2,CheckCircle2,ChevronDown,Clock3,Globe2,Mail,ShieldCheck,ShieldAlert,XCircle} from "lucide-react";
 import "../../onboarding.css";
+import "../../evs-pages.css";
 type Application={id:string;organization_name:string;domain:string;contact_name:string;contact_email:string;country_code:string;country_name:string;city:string;website:string|null;employee_band:string;message:string;status:"pending"|"approved"|"rejected";review_note:string;created_at:string;reviewed_at:string|null;organization_id:string|null};
 export default function CompanyRequestsPage(){
  const [items,setItems]=useState<Application[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState(""),[selected,setSelected]=useState<string|null>(null),[note,setNote]=useState(""),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[filter,setFilter]=useState<"all"|"pending"|"approved"|"rejected">("pending");
