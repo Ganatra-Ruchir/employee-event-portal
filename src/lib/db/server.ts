@@ -4,6 +4,7 @@ import {randomBytes,scrypt as scryptCallback,timingSafeEqual,createHash} from "n
 import {promisify} from "node:util";
 import type {PortalData,Person,PortalEvent,Company,Registration,Invitation} from "@/lib/portal-model";
 import {hydrateEventImages,avatarSignedUrl} from "@/lib/media/server";
+import {v4AudienceSql} from "@/lib/db/event-audience";
 
 const scrypt=promisify(scryptCallback);
 let pool:Pool|undefined;
@@ -53,7 +54,11 @@ export async function snapshot(current:Person):Promise<PortalData>{
  const [companies,users,events,registrations,invitations,domains]=await Promise.all([
   p.query(admin?"SELECT * FROM organizations ORDER BY name":"SELECT * FROM organizations WHERE id=$1 ORDER BY name",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM users ORDER BY full_name":"SELECT * FROM users WHERE organization_id=$1 ORDER BY full_name",admin?[]:[current.companyId]),
-  p.query(admin?"SELECT payload FROM events ORDER BY starts_at":"SELECT payload FROM events WHERE organization_id=$1 AND (status='published' OR $2=true) ORDER BY starts_at",admin?[]:[current.companyId,current.role==="company_admin"]),
+  p.query(admin?"SELECT payload FROM events ORDER BY starts_at":
+   process.env.PORTAL_V4_ENABLED==="true"&&current.role==="employee"
+    ?"SELECT e.payload FROM events e WHERE e.organization_id=$1 AND e.status='published' AND "+v4AudienceSql("e")+" ORDER BY e.starts_at"
+    :"SELECT payload FROM events WHERE organization_id=$1 AND (status='published' OR $2=true) ORDER BY starts_at",
+   admin?[]:process.env.PORTAL_V4_ENABLED==="true"&&current.role==="employee"?[current.companyId,current.id]:[current.companyId,current.role==="company_admin"]),
   p.query(admin?"SELECT r.* FROM registrations r":"SELECT r.* FROM registrations r JOIN events e ON e.id=r.event_id WHERE e.organization_id=$1",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM invitations":"SELECT * FROM invitations WHERE organization_id=$1",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM organization_domains":"SELECT * FROM organization_domains WHERE organization_id=$1",admin?[]:[current.companyId])
