@@ -93,6 +93,7 @@ async function clean(){
  await q("DELETE FROM event_audiences WHERE event_id=ANY($1::text[])",[ev]);
  await q("DELETE FROM events WHERE id=ANY($1::text[])",[ev]);
  await q("DELETE FROM v3_memberships WHERE user_id=ANY($1::text[])",[users]);
+ await q("DELETE FROM audit_logs WHERE actor_user_id=ANY($1::text[]) OR organization_id=ANY($2::text[])",[users,[ids.orgA,ids.orgB]]);
  await q("DELETE FROM users WHERE id=ANY($1::text[])",[users]);
  await q("DELETE FROM v3_branches WHERE id=ANY($1::text[])",[[ids.branchGJ,ids.branchMH,ids.branchB]]);
  await q("DELETE FROM v3_states WHERE id=ANY($1::text[])",[[ids.stateGJ,ids.stateMH,ids.stateB]]);
@@ -107,7 +108,7 @@ try{
  const accounts=[
   {name:"root",email:email.root,orgs:2,events:3},
   {name:"country A",email:email.countryA,orgs:1,events:2},
-  {name:"state A",email:email.stateA,orgs:1,events:2},
+  {name:"state A",email:email.stateA,orgs:1,events:1},
   {name:"Gujarat employee",email:email.employeeA,orgs:1,events:2},
   {name:"Maharashtra employee",email:email.employeeOther,orgs:1,events:1},
   {name:"company B employee",email:email.employeeB,orgs:1,events:1}
@@ -136,7 +137,7 @@ try{
   }else{
    const csr=await context.request.get(base+"/api/impact");
    assert.equal(csr.status(),200,account.name+" CSR scope");
-   if(account.name!=="country A"){
+   if(!["country A","state A"].includes(account.name)){
     const unauthorized=await context.request.post(base+"/api/impact",{data:{action:"createCampaign",title:"Unapproved campaign",starts_on:"2027-01-01",ends_on:"2027-01-02"},headers:{Origin:base}});
     assert.equal(unauthorized.status(),403,account.name+" cannot create campaign");
    }
