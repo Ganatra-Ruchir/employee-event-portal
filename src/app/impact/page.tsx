@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useState,type FormEvent} from "react";
 type Row=Record<string,string|number|null>;
-type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];scope?:Row};
+type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];scope?:Row};
 const metrics=["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"];
 const today=()=>new Date().toISOString().slice(0,10);
 export default function CSRImpactPage(){
@@ -9,6 +9,7 @@ export default function CSRImpactPage(){
  const [campaign,setCampaign]=useState({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:""});
  const [impact,setImpact]=useState({campaign_id:"",metric:"beneficiaries_reached",metric_label:"",value:"",period_start:"",period_end:"",evidence_reference:""});
  const [feedback,setFeedback]=useState({event_id:"",rating:"5",comments:""});
+ const [audience,setAudience]=useState({event_id:"",audience:"company",state_id:"",branch_id:"",user_ids:""});
  const refresh=useCallback(async()=>{const r=await fetch("/api/impact",{cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");setData(j);},[]);
  useEffect(()=>{refresh().catch(e=>setError(e instanceof Error?e.message:"Unable to load"));},[refresh]);
  async function submit(e:FormEvent<HTMLFormElement>,action:string,args:Record<string,unknown>){
@@ -46,6 +47,19 @@ export default function CSRImpactPage(){
      <div className="ep-form-grid"><label>Starts<input type="date" required value={campaign.starts_on} onChange={e=>setCampaign(v=>({...v,starts_on:e.target.value}))}/></label><label>Ends<input type="date" required min={campaign.starts_on||today()} value={campaign.ends_on} onChange={e=>setCampaign(v=>({...v,ends_on:e.target.value}))}/></label></div>
      <div className="ep-form-grid"><label>Primary SDG (1–17)<input type="number" min="1" max="17" value={campaign.primary_sdg} onChange={e=>setCampaign(v=>({...v,primary_sdg:e.target.value}))}/></label><label>Target beneficiaries<input type="number" min="0" value={campaign.target_beneficiaries} onChange={e=>setCampaign(v=>({...v,target_beneficiaries:e.target.value}))}/></label></div>
      <button className="ep-button primary" disabled={busy}>Create campaign</button>
+    </form>
+   </section>}
+   {data.level==="country_admin"&&<section className="ep-panel"><h2>Event audience</h2>
+    <p>Choose exactly who can discover and register for the event. Existing company-wide events remain visible unless you narrow their audience.</p>
+    <form className="v3-form" onSubmit={e=>void submit(e,"setAudience",{...audience,state_id:audience.state_id||null,branch_id:audience.branch_id||null,user_ids:audience.user_ids.split(",").map(x=>x.trim()).filter(Boolean)})}>
+     <label>Your event<select required value={audience.event_id} onChange={e=>setAudience(v=>({...v,event_id:e.target.value}))}><option value="">Choose an event</option>{data.events.map(ev=><option key={String(ev.id)} value={String(ev.id)}>{ev.title} · currently {ev.audience}</option>)}</select></label>
+     <label>Audience<select value={audience.audience} onChange={e=>setAudience(v=>({...v,audience:e.target.value}))}>
+      <option value="company">Everyone in company</option><option value="country">Your country</option><option value="state">Selected state</option><option value="branch">Selected branch</option><option value="invited">Invited employees only</option>
+     </select></label>
+     {["state","branch"].includes(audience.audience)&&<label>State<select required value={audience.state_id} onChange={e=>setAudience(v=>({...v,state_id:e.target.value,branch_id:""}))}><option value="">Select a state</option>{data.states.map(st=><option key={String(st.id)} value={String(st.id)}>{st.name}</option>)}</select></label>}
+     {audience.audience==="branch"&&<label>Branch<select required value={audience.branch_id} onChange={e=>setAudience(v=>({...v,branch_id:e.target.value}))}><option value="">Select a branch</option>{data.branches.filter(b=>b.state_id===audience.state_id).map(b=><option key={String(b.id)} value={String(b.id)}>{b.name}</option>)}</select></label>}
+     {audience.audience==="invited"&&<label>Employee account IDs (comma-separated)<textarea value={audience.user_ids} onChange={e=>setAudience(v=>({...v,user_ids:e.target.value}))} placeholder="Add employee IDs from the People directory"/></label>}
+     <button className="ep-button primary" disabled={busy}>Save event audience</button>
     </form>
    </section>}
    <section className="ep-panel"><h2>Reported impact</h2>
