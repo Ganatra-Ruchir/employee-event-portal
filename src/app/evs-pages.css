@@ -12,8 +12,8 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif}
 .ep-shell .ep-nav-link{position:relative;min-height:43px;border-radius:10px!important;transition:background .18s,transform .18s,color .18s}
 .ep-shell .ep-nav-link.active,.ep-shell .ep-nav-link[aria-current="page"]{background:#e8f4e9!important;color:#215a30!important;box-shadow:inset 3px 0 #45a05c!important}
 .ep-shell .ep-nav-link.active::after,.ep-shell .ep-nav-link[aria-current="page"]::after{content:"";position:absolute;right:11px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--evs-page-pink)}
-.ep-shell .ep-main{background:radial-gradient(circle at 97% 0%,#e9f2e9 0,transparent 370px),#f6f9f5!important;padding:clamp(14px,1.9vw,27px)!important;min-height:calc(100vh - 64px)}
-.ep-shell .ep-main>*{max-width:1600px;margin-left:auto;margin-right:auto}
+.ep-shell .ep-main{background:radial-gradient(circle at 97% 0%,#e9f2e9 0,transparent 370px),#f6f9f5!important;padding:14px!important;min-height:calc(100vh - 64px)}
+.ep-shell .ep-main>*{max-width:none;min-width:0}
 .ep-shell .aw-heading,.ep-shell .ep-page-head,.ep-shell .ed-browse-title-row{
  display:flex;gap:18px!important;align-items:center!important;justify-content:space-between;
  margin-bottom:15px!important;padding:clamp(18px,2.1vw,30px)!important;
@@ -198,6 +198,35 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif}
  .evs-insights-period{width:100%}
  .evs-insights-period button{flex:1}
 }
+
+/* Route-level finishes: common tokens, deliberate hierarchy per workspace. */
+.ep-shell .ep-main[data-evs-view="events"] .aw-browse-bar{background:#fff!important;padding:12px 15px!important;margin-bottom:11px!important}
+.ep-shell .ep-main[data-evs-view="events"] .aw-browse-bar strong{color:#275333;font-size:13px}
+.ep-shell .ep-main[data-evs-view="events"] .ed-search-toggle{border-radius:9px!important}
+.ep-shell .ep-main[data-evs-view="event"] .ep-back{display:inline-flex;align-items:center;gap:8px;margin-bottom:11px;font-weight:750;color:#2d6840!important}
+.ep-shell .ep-main[data-evs-view="event"] .ep-detail-layout{align-items:start!important;gap:15px!important}
+.ep-shell .ep-main[data-evs-view="event"] .ep-participants{margin-top:12px!important}
+.ep-shell .ep-main[data-evs-view="registrations"] .aw-registration-list{display:grid;gap:9px}
+.ep-shell .ep-main[data-evs-view="registrations"] .aw-registration-row{background:#fff!important;border:1px solid #e3ece2!important;padding:12px!important;box-shadow:0 5px 17px #244c2b0a}
+.ep-shell .ep-main[data-evs-view="registrations"] .aw-reg-date{border-radius:10px!important;background:#edf6e9!important;color:#2c653a!important}
+.ep-shell .ep-main[data-evs-view="profile"] .aw-profile-layout{gap:13px!important;align-items:start}
+.ep-shell .ep-main[data-evs-view="profile"] .aw-profile-summary{border-top:4px solid #79b47a!important}
+.ep-shell .ep-main[data-evs-view="profile"] .aw-profile-form{padding:19px!important}
+.ep-shell .ep-main[data-evs-view="people"] .employee-list-stats{background:#f1f8ef;border-radius:12px;padding:12px}
+.ep-shell .ep-main[data-evs-view="people"] .ep-people-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ep-shell .ep-main[data-evs-view="companies"] .md-company-grid{gap:13px!important}
+.ep-shell .ep-main[data-evs-view="companies"] .md-company{border-top:3px solid #69ae71!important}
+.ep-shell .ep-main[data-evs-view="users"] .md-account-list{gap:9px!important}
+.ep-shell .ep-main[data-evs-view="invitations"] .aw-invitation-layout{align-items:start;gap:14px!important}
+.ep-shell .ep-main[data-evs-view="attendance"] .v3-metrics>div:first-child{border-top:3px solid #e83e80!important}
+.ep-shell .ep-main[data-evs-view="hierarchy"] .v3-form{background:#f8fcf7!important}
+.ep-shell .ep-main[data-evs-view="hierarchy"] .v3-list>div{background:linear-gradient(90deg,#f1f8ef,#fff)!important}
+.ep-shell .ep-main[data-evs-view="eventForm"] .ep-form-grid,.ep-shell .ep-main[data-evs-view="companyForm"] .ep-form-grid{gap:13px!important}
+.ep-shell .ep-main[data-evs-view="eventForm"] .ep-panel,.ep-shell .ep-main[data-evs-view="companyForm"] .ep-panel{border-left:3px solid #8ec18e!important}
+@media(max-width:760px){
+ .ep-shell .ep-main[data-evs-view="event"] .ep-detail-layout,.ep-shell .ep-main[data-evs-view="profile"] .aw-profile-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
+}
+
 @media(prefers-reduced-motion:reduce){
  html{scroll-behavior:auto}
  .ep-shell *, .ep-shell *::before,.ep-shell *::after,.csr-page *, .onboard-page *,.evs-admin-insights *{animation:none!important;transition:none!important}
