@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {randomUUID} from "node:crypto";
 import {databaseEnabled,getSession,sqlPool,logAudit} from "@/lib/db/server";
 import {sameOrigin} from "@/lib/http";
+import {writeVerifiedAttendance} from "@/lib/db/attendance-sync";
 import {canManageScope,type V3Actor,type V3Membership,type V3Scope} from "@/lib/v3-permissions";
 
 export const runtime="nodejs";
@@ -23,18 +24,19 @@ export async function GET(req:NextRequest){
  try{
   const c=await context(req);if(!c)return fail("V4 preview not enabled or sign-in required",404);
   const {user,m,actor}=c,db=sqlPool(),s=actor.level==="country_admin"?null:m.state_id,b=actor.level==="employee"?m.branch_id:null;
-  const [campaigns,impact,certificates,feedback,events,states,branches,partners,roster]=await Promise.all([
+  const [campaigns,impact,certificates,feedback,events,states,branches,partners,roster,eligibleFeedbackEvents]=await Promise.all([
    db.query("SELECT id,title,description,primary_sdg,starts_on,ends_on,status,target_beneficiaries,budget_inr,state_id,partner_id FROM csr_campaigns WHERE organization_id=$1 AND country_code=$2 AND ($3::text IS NULL OR state_id IS NULL OR state_id=$3) AND ($4::text IS NULL OR branch_id IS NULL OR branch_id=$4) ORDER BY created_at DESC LIMIT 100",[m.organization_id,m.country_code,s,b]),
-   db.query("SELECT i.id,i.campaign_id,i.metric,i.metric_label,i.value,i.status,i.period_start,i.period_end FROM csr_impact_records i JOIN csr_campaigns c ON c.id=i.campaign_id WHERE i.organization_id=$1 AND c.country_code=$2 AND ($3::text IS NULL OR c.state_id IS NULL OR c.state_id=$3) AND ($5::text IS NULL OR c.branch_id IS NULL OR c.branch_id=$5) AND ($4::text<>'employee' OR i.status='verified') ORDER BY i.created_at DESC LIMIT 100",[m.organization_id,m.country_code,s,actor.level,b]),
+   db.query("SELECT i.id,i.campaign_id,i.metric,i.metric_label,i.value,i.status,i.period_start,i.period_end,i.recorded_by,CASE WHEN $4::text='employee' THEN NULL ELSE i.evidence_reference END AS evidence_reference FROM csr_impact_records i JOIN csr_campaigns c ON c.id=i.campaign_id WHERE i.organization_id=$1 AND c.country_code=$2 AND ($3::text IS NULL OR c.state_id IS NULL OR c.state_id=$3) AND ($5::text IS NULL OR c.branch_id IS NULL OR c.branch_id=$5) AND ($4::text<>'employee' OR i.status='verified') ORDER BY i.created_at DESC LIMIT 100",[m.organization_id,m.country_code,s,actor.level,b]),
    db.query("SELECT c.id,c.certificate_number,c.event_id,c.issued_at,e.title FROM volunteer_certificates c JOIN events e ON e.id=c.event_id JOIN event_attendance a ON a.event_id=c.event_id AND a.user_id=c.user_id AND a.status='present' WHERE c.user_id=$1 AND e.organization_id=$2 AND e.ends_at<=now() AND c.revoked_at IS NULL ORDER BY c.issued_at DESC LIMIT 100",[user.id,m.organization_id]),
    db.query("SELECT event_id,rating,comments,updated_at FROM event_feedback WHERE user_id=$1 ORDER BY updated_at DESC LIMIT 100",[user.id]),
    c.manager?db.query("SELECT e.id,e.title,COALESCE(a.audience,'company') AS audience,a.state_id,a.branch_id FROM events e LEFT JOIN event_audiences a ON a.event_id=e.id WHERE e.organization_id=$1 AND e.created_by=$2 ORDER BY e.starts_at DESC LIMIT 100",[m.organization_id,user.id]):Promise.resolve({rows:[]}),
    c.manager?db.query("SELECT id,name FROM v3_states WHERE organization_id=$1 AND country_code=$2 ORDER BY name",[m.organization_id,m.country_code]):Promise.resolve({rows:[]}),
    c.manager?db.query("SELECT id,name,state_id FROM v3_branches WHERE organization_id=$1 AND country_code=$2 ORDER BY name",[m.organization_id,m.country_code]):Promise.resolve({rows:[]}),
    c.manager?db.query("SELECT id,name,kind,status,contact_email FROM csr_partners WHERE organization_id=$1 ORDER BY name LIMIT 100",[m.organization_id]):Promise.resolve({rows:[]}),
-   c.manager?db.query("SELECT r.event_id,r.user_id,u.full_name,u.email,e.title,e.ends_at,t.status AS attendance_status,COALESCE(v.volunteer_minutes,0) AS volunteer_minutes,cert.certificate_number FROM registrations r JOIN events e ON e.id=r.event_id JOIN users u ON u.id=r.user_id AND u.organization_id=e.organization_id JOIN v3_memberships em ON em.user_id=u.id AND em.organization_id=e.organization_id AND em.level='employee' LEFT JOIN event_attendance t ON t.event_id=r.event_id AND t.user_id=r.user_id LEFT JOIN v3_contributions v ON v.event_id=r.event_id AND v.user_id=r.user_id LEFT JOIN volunteer_certificates cert ON cert.event_id=r.event_id AND cert.user_id=r.user_id AND cert.revoked_at IS NULL WHERE e.organization_id=$1 AND em.country_code=$2 AND ($3::text IS NULL OR em.state_id=$3) AND r.status='going' AND e.status='published' AND e.starts_at<=now() ORDER BY e.starts_at DESC,u.full_name LIMIT 250",[m.organization_id,m.country_code,s]):Promise.resolve({rows:[]})
+   c.manager?db.query("SELECT r.event_id,r.user_id,u.full_name,u.email,e.title,e.ends_at,t.status AS attendance_status,COALESCE(v.volunteer_minutes,0) AS volunteer_minutes,cert.certificate_number FROM registrations r JOIN events e ON e.id=r.event_id JOIN users u ON u.id=r.user_id AND u.organization_id=e.organization_id JOIN v3_memberships em ON em.user_id=u.id AND em.organization_id=e.organization_id AND em.level='employee' LEFT JOIN event_attendance t ON t.event_id=r.event_id AND t.user_id=r.user_id LEFT JOIN v3_contributions v ON v.event_id=r.event_id AND v.user_id=r.user_id LEFT JOIN volunteer_certificates cert ON cert.event_id=r.event_id AND cert.user_id=r.user_id AND cert.revoked_at IS NULL WHERE e.organization_id=$1 AND em.country_code=$2 AND ($3::text IS NULL OR em.state_id=$3) AND r.status='going' AND e.status='published' AND e.starts_at<=now() ORDER BY e.starts_at DESC,u.full_name LIMIT 250",[m.organization_id,m.country_code,s]):Promise.resolve({rows:[]}),
+   actor.level==="employee"?db.query("SELECT e.id,e.title,e.ends_at FROM events e JOIN event_attendance a ON a.event_id=e.id AND a.user_id=$1 AND a.status='present' JOIN registrations r ON r.event_id=e.id AND r.user_id=$1 AND r.status='going' WHERE e.organization_id=$2 AND e.status='published' AND e.ends_at<=now() ORDER BY e.ends_at DESC LIMIT 100",[user.id,m.organization_id]):Promise.resolve({rows:[]})
   ]);
-  return reply({level:actor.level,scope:m,campaigns:campaigns.rows,impact:impact.rows,certificates:certificates.rows,feedback:feedback.rows,events:events.rows,states:states.rows,branches:branches.rows,partners:partners.rows,roster:roster.rows});
+  return reply({level:actor.level,currentUserId:user.id,scope:m,campaigns:campaigns.rows,impact:impact.rows,certificates:certificates.rows,feedback:feedback.rows,events:events.rows,states:states.rows,branches:branches.rows,partners:partners.rows,roster:roster.rows,eligibleFeedbackEvents:eligibleFeedbackEvents.rows});
  }catch(e){console.error("CSR read failed",e);return fail("CSR database unavailable or migrations missing",503);}
 }
 export async function POST(req:NextRequest){
@@ -107,20 +109,31 @@ export async function POST(req:NextRequest){
    [id,m.organization_id,m.country_code,state,branch,partner,title,txt(a.description,5000),sdg,start,end,budget,target,user.id]);
    await logAudit(db,user,"csr.campaign.create",id,m.organization_id);return reply({success:true,id});
   }
-  if(action==="recordImpact"||action==="verifyImpact"){
+  if(action==="recordImpact"||action==="verifyImpact"||action==="updateImpactEvidence"){
    if(!manager)return fail("Administrator role required",403);
    const id=txt(a.id,120),campaignId=txt(a.campaign_id,120);
    if(action==="recordImpact"){
     const cRow=(await db.query("SELECT organization_id,country_code,state_id,branch_id FROM csr_campaigns WHERE id=$1",[campaignId])).rows[0];
     if(!cRow||!canManageScope(actor,cRow as V3Scope))return fail("Campaign outside assigned scope",403);
     const metric=txt(a.metric,40),value=Number(a.value),start=day(a.period_start),end=day(a.period_end);
+    const evidence=txt(a.evidence_reference,1000);
     if(!["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"].includes(metric)||!Number.isFinite(value)||value<0||!start||!end||end<start)return fail("Invalid impact entry");
+    if(evidence.length<6)return fail("Add an evidence reference before submitting the result");
     const newId=randomUUID();await db.query("INSERT INTO csr_impact_records(id,organization_id,campaign_id,metric,metric_label,value,period_start,period_end,evidence_reference,recorded_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
-    [newId,m.organization_id,campaignId,metric,txt(a.metric_label,120),value,start,end,txt(a.evidence_reference,1000)||null,user.id]);
+    [newId,m.organization_id,campaignId,metric,txt(a.metric_label,120),value,start,end,evidence,user.id]);
     await logAudit(db,user,"csr.impact.record",newId,m.organization_id);return reply({success:true,id:newId});
    }
-   const record=(await db.query("SELECT i.id,i.recorded_by,c.organization_id,c.country_code,c.state_id,c.branch_id FROM csr_impact_records i JOIN csr_campaigns c ON c.id=i.campaign_id WHERE i.id=$1 AND i.status='draft'",[id])).rows[0];
+   if(action==="updateImpactEvidence"){
+     const reference=txt(a.evidence_reference,1000);
+     if(reference.length<6)return fail("Evidence reference must contain at least six characters");
+     const own=(await db.query("SELECT i.id,i.recorded_by,c.organization_id,c.country_code,c.state_id,c.branch_id FROM csr_impact_records i JOIN csr_campaigns c ON c.id=i.campaign_id WHERE i.id=$1 AND i.status='draft'",[id])).rows[0];
+     if(!own||own.recorded_by!==user.id||!canManageScope(actor,own as V3Scope))return fail("Only the original reporter can update draft evidence",403);
+     await db.query("UPDATE csr_impact_records SET evidence_reference=$1 WHERE id=$2 AND status='draft' AND recorded_by=$3",[reference,id,user.id]);
+     await logAudit(db,user,"csr.impact.evidence",id,m.organization_id);return reply({success:true});
+    }
+    const record=(await db.query("SELECT i.id,i.recorded_by,i.evidence_reference,c.organization_id,c.country_code,c.state_id,c.branch_id FROM csr_impact_records i JOIN csr_campaigns c ON c.id=i.campaign_id WHERE i.id=$1 AND i.status='draft'",[id])).rows[0];
    if(!record||record.recorded_by===user.id||!canManageScope(actor,record as V3Scope))return fail("A different authorized reviewer must verify this record",403);
+    if(!record.evidence_reference||String(record.evidence_reference).trim().length<6)return fail("An evidence reference is required before verification",409);
    const result=await db.query("UPDATE csr_impact_records SET status='verified',verified_by=$1,verified_at=now() WHERE id=$2 AND status='draft' RETURNING id",[user.id,id]);
    if(!result.rowCount)return fail("Already reviewed",409);
    await logAudit(db,user,"csr.impact.verify",id,m.organization_id);return reply({success:true});
@@ -151,9 +164,7 @@ export async function POST(req:NextRequest){
    const client=await db.connect();
    try{
     await client.query("BEGIN");
-    await client.query("INSERT INTO event_attendance(event_id,user_id,status,verified_by) VALUES($1,$2,$3,$4) ON CONFLICT(event_id,user_id) DO UPDATE SET status=excluded.status,verified_by=excluded.verified_by,verified_at=now()",[eventId,employeeId,status,user.id]);
-    if(status==="present")await client.query("INSERT INTO v3_contributions(event_id,user_id,volunteer_minutes,contribution,verified_by) VALUES($1,$2,$3,$4,$5) ON CONFLICT(event_id,user_id) DO UPDATE SET volunteer_minutes=excluded.volunteer_minutes,contribution=excluded.contribution,verified_by=excluded.verified_by,verified_at=now()",[eventId,employeeId,minutes,txt(a.contribution,1000),user.id]);
-    else await client.query("DELETE FROM v3_contributions WHERE event_id=$1 AND user_id=$2",[eventId,employeeId]);
+    await writeVerifiedAttendance(client,{eventId,userId:employeeId,status:status as "present"|"absent",minutes,contribution:txt(a.contribution,1000),verifiedBy:user.id});
     await logAudit(client,user,"csr.attendance.verify",eventId+":"+employeeId,m.organization_id);
     await client.query("COMMIT");
    }catch(e){await client.query("ROLLBACK");throw e;}finally{client.release();}
