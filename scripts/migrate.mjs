@@ -5,13 +5,21 @@ import pg from "pg";
 
 // Run manually against an empty staging database. Never migrate production in this script.
 const connectionString=process.env.DATABASE_URL_UNPOOLED||process.env.DIRECT_URL||process.env.DATABASE_PUBLIC_URL||process.env.DATABASE_URL;
-const forbidden=process.env.VERCEL_ENV==="production"||process.env.RAILWAY_ENVIRONMENT_NAME==="production";
+const host=connectionString?new URL(connectionString).hostname:"";
+const privateRailway=host.endsWith(".railway.internal");
+// Railway's first environment is named "production" even when the entire project
+// is explicitly used solely for staging. Permit this exception only for a
+// separately authorized staging project and a private PostgreSQL connection.
+const approvedIsolatedRailwayStaging=privateRailway &&
+ process.env.RAILWAY_PROJECT_ID &&
+ process.env.RAILWAY_PROJECT_ID===process.env.PORTAL_APPROVED_STAGING_PROJECT_ID &&
+ process.env.PORTAL_STAGING_DATABASE_ONLY==="true";
+const forbidden=process.env.VERCEL_ENV==="production" ||
+ (process.env.RAILWAY_ENVIRONMENT_NAME==="production"&&!approvedIsolatedRailwayStaging);
 if(!connectionString||forbidden||process.env.ALLOW_STAGING_MIGRATIONS!=="true"){
- console.error("Refused: supply a Railway staging connection and ALLOW_STAGING_MIGRATIONS=true; production is blocked.");
+ console.error("Refused: migrations require a dedicated staging project and ALLOW_STAGING_MIGRATIONS=true; all production databases are blocked.");
  process.exit(1);
 }
-const host=new URL(connectionString).hostname;
-const privateRailway=host.endsWith(".railway.internal");
 const mode=process.env.DATABASE_SSL_MODE||(privateRailway?"disable":"verify-full");
 if(!["disable","verify-full"].includes(mode)||mode==="disable"&&!privateRailway&&process.env.ALLOW_INSECURE_STAGING_DB!=="true"){
  console.error("Unsafe SSL configuration: TLS verification is required for public databases.");
