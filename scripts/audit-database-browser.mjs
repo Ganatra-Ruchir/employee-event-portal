@@ -108,7 +108,7 @@ try{
  const accounts=[
   {name:"root",email:email.root,orgs:2,events:3},
   {name:"country A",email:email.countryA,orgs:1,events:2},
-  {name:"state A",email:email.stateA,orgs:1,events:2},
+  {name:"state A",email:email.stateA,orgs:1,events:1},
   {name:"Gujarat employee",email:email.employeeA,orgs:1,events:2},
   {name:"Maharashtra employee",email:email.employeeOther,orgs:1,events:1},
   {name:"company B employee",email:email.employeeB,orgs:1,events:1}
