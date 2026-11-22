@@ -1,5 +1,6 @@
 "use client";
 import {useCallback,useEffect,useState,type FormEvent} from "react";
+import Link from "next/link";
 type Row=Record<string,string|number|null>;
 type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];scope?:Row};
 const metrics=["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"];
@@ -11,7 +12,7 @@ export default function CSRImpactPage(){
  const [feedback,setFeedback]=useState({event_id:"",rating:"5",comments:""});
  const [audience,setAudience]=useState({event_id:"",audience:"company",state_id:"",branch_id:"",user_ids:""});
  const refresh=useCallback(async()=>{const r=await fetch("/api/impact",{cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");setData(j);},[]);
- useEffect(()=>{refresh().catch(e=>setError(e instanceof Error?e.message:"Unable to load"));},[refresh]);
+ useEffect(()=>{let active=true;fetch("/api/impact",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");return j;}).then(j=>{if(active)setData(j);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Unable to load");});return()=>{active=false;};},[]);
  async function submit(e:FormEvent<HTMLFormElement>,action:string,args:Record<string,unknown>){
   e.preventDefault();setBusy(true);setError("");setNotice("");
   try{
@@ -25,11 +26,11 @@ export default function CSRImpactPage(){
  const manager=data?.level==="country_admin"||data?.level==="state_admin";
  const total=(metric:string)=>data?.impact.filter(r=>r.metric===metric&&r.status==="verified").reduce((sum,r)=>sum+Number(r.value||0),0)||0;
  return <main className="ep-main" style={{maxWidth:1280,margin:"0 auto",padding:"20px 16px"}}>
-  <p><a href="/">← Back to Employee Volunteer System</a></p>
+  <p><Link href="/">← Back to Employee Volunteer System</Link></p>
   <div className="ed-eyebrow">ELIXIR FOUNDATION · VERIFIED SOCIAL IMPACT</div>
   <h1>CSR & volunteer impact</h1>
   <p>Campaigns, independently verified outcomes, volunteer attendance and certificates. Pending figures do not count toward verified totals.</p>
-  {error&&<p role="alert" className="ep-error">{error} {data===null&&<a href="/login">Sign in</a>}</p>}
+  {error&&<p role="alert" className="ep-error">{error} {data===null&&<Link href="/login">Sign in</Link>}</p>}
   {notice&&<p role="status" className="ep-success">{notice}</p>}
   {data&&<>
    <div className="v3-metrics">
