@@ -8,7 +8,7 @@ export const dynamic="force-dynamic";
 export default async function CertificatePage({params}:{params:Promise<{id:string}>}){
  if(process.env.PORTAL_V4_ENABLED!=="true"||!databaseEnabled())notFound();
  const {id}=await params;
- if(!/^[a-z0-9-]{20,100}$/i.test(id))notFound();
+ if(!/^[a-z0-9-]{12,100}$/i.test(id))notFound();
  const token=(await cookies()).get("elixir_session")?.value;
  const current=await getSession(token);
  if(!current)redirect("/login");
