@@ -41,6 +41,10 @@ jobs:
           ALLOW_STAGING_MIGRATIONS: "true"
           RAILWAY_ENVIRONMENT_NAME: ci
 
+      - name: Verify V4 event audience isolation on PostgreSQL
+        run: npx tsx --test tests/v4-db-integration.test.ts
+        env:
+          CI_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
