@@ -4,7 +4,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS company_applications (
   id text PRIMARY KEY,
   organization_name text NOT NULL CHECK(length(btrim(organization_name)) BETWEEN 3 AND 160),
-  domain text NOT NULL CHECK(domain=lower(domain) AND domain ~ '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'),
+  domain text NOT NULL CHECK(domain=lower(domain) AND domain ~ '^[a-z0-9-]+([.][a-z0-9-]+)+$'),
   contact_name text NOT NULL CHECK(length(btrim(contact_name)) BETWEEN 2 AND 100),
   contact_email text NOT NULL CHECK(contact_email=lower(contact_email) AND length(contact_email)<=255),
   country_code text NOT NULL CHECK(country_code ~ '^[A-Z]{2}$'),
