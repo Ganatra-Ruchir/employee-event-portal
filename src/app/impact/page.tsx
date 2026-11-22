@@ -2,14 +2,15 @@
 import {useCallback,useEffect,useState,type FormEvent} from "react";
 import Link from "next/link";
 type Row=Record<string,string|number|null>;
-type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];scope?:Row};
+type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];scope?:Row};
 const metrics=["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"];
 const today=()=>new Date().toISOString().slice(0,10);
 export default function CSRImpactPage(){
  const [data,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false);
- const [campaign,setCampaign]=useState({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:""});
+ const [campaign,setCampaign]=useState({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:"",partner_id:""});
  const [impact,setImpact]=useState({campaign_id:"",metric:"beneficiaries_reached",metric_label:"",value:"",period_start:"",period_end:"",evidence_reference:""});
  const [feedback,setFeedback]=useState({event_id:"",rating:"5",comments:""});
+ const [partner,setPartner]=useState({name:"",kind:"ngo",contact_email:""});
  const [audience,setAudience]=useState({event_id:"",audience:"company",state_id:"",branch_id:"",user_ids:""});
  const refresh=useCallback(async()=>{const r=await fetch("/api/impact",{cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");setData(j);},[]);
  useEffect(()=>{let active=true;fetch("/api/impact",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");return j;}).then(j=>{if(active)setData(j);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Unable to load");});return()=>{active=false;};},[]);
@@ -41,10 +42,21 @@ export default function CSRImpactPage(){
    <section className="ep-panel"><h2>Campaigns</h2>
     {data.campaigns.length?<div className="v3-list">{data.campaigns.map(c=><div key={String(c.id)}><strong>{c.title}</strong><span>{c.status} · SDG {c.primary_sdg??"not assigned"} · {String(c.starts_on).slice(0,10)}–{String(c.ends_on).slice(0,10)}</span><p>{c.description}</p></div>)}</div>:<p>No campaigns are recorded for your location yet.</p>}
    </section>
+   {data.level==="country_admin"&&<section className="ep-panel"><h2>CSR partner onboarding</h2>
+    <p>Register NGO, school, government or community partners. Another country administrator must verify a partner before linking it to a campaign.</p>
+    {data.partners.length>0&&<div className="v3-list">{data.partners.map(p=><div key={String(p.id)}><strong>{p.name}</strong><span>{p.kind} · {p.status}</span>{p.status==="pending"&&<button type="button" className="ep-button secondary" disabled={busy} onClick={e=>void submit(e as unknown as FormEvent<HTMLFormElement>,"reviewPartner",{id:p.id,status:"verified"})}>Verify partner (independent reviewer)</button>}</div>)}</div>}
+    <form className="v3-form" onSubmit={e=>void submit(e,"createPartner",partner)}>
+     <label>Partner name<input required minLength={2} maxLength={180} value={partner.name} onChange={e=>setPartner(v=>({...v,name:e.target.value}))}/></label>
+     <label>Partner type<select value={partner.kind} onChange={e=>setPartner(v=>({...v,kind:e.target.value}))}><option value="ngo">NGO</option><option value="school">School</option><option value="government">Government</option><option value="community">Community</option><option value="other">Other</option></select></label>
+     <label>Contact email (optional)<input type="email" value={partner.contact_email} onChange={e=>setPartner(v=>({...v,contact_email:e.target.value}))}/></label>
+     <button className="ep-button primary" disabled={busy}>Register partner</button>
+    </form>
+   </section>}
    {manager&&<section className="ep-panel"><h2>Create campaign</h2>
     <form className="v3-form" onSubmit={e=>void submit(e,"createCampaign",{...campaign,primary_sdg:campaign.primary_sdg||null,target_beneficiaries:campaign.target_beneficiaries||null})}>
      <label>Campaign title<input required minLength={3} maxLength={180} value={campaign.title} onChange={e=>setCampaign(v=>({...v,title:e.target.value}))}/></label>
      <label>Description<textarea maxLength={5000} value={campaign.description} onChange={e=>setCampaign(v=>({...v,description:e.target.value}))}/></label>
+     <label>Verified partner (optional)<select value={campaign.partner_id} onChange={e=>setCampaign(v=>({...v,partner_id:e.target.value}))}><option value="">No partner selected</option>{data.partners.filter(p=>p.status==="verified").map(p=><option key={String(p.id)} value={String(p.id)}>{p.name}</option>)}</select></label>
      <div className="ep-form-grid"><label>Starts<input type="date" required value={campaign.starts_on} onChange={e=>setCampaign(v=>({...v,starts_on:e.target.value}))}/></label><label>Ends<input type="date" required min={campaign.starts_on||today()} value={campaign.ends_on} onChange={e=>setCampaign(v=>({...v,ends_on:e.target.value}))}/></label></div>
      <div className="ep-form-grid"><label>Primary SDG (1–17)<input type="number" min="1" max="17" value={campaign.primary_sdg} onChange={e=>setCampaign(v=>({...v,primary_sdg:e.target.value}))}/></label><label>Target beneficiaries<input type="number" min="0" value={campaign.target_beneficiaries} onChange={e=>setCampaign(v=>({...v,target_beneficiaries:e.target.value}))}/></label></div>
      <button className="ep-button primary" disabled={busy}>Create campaign</button>
