@@ -1,18 +1,22 @@
 "use client";
 import {useCallback,useEffect,useState,type FormEvent,type MouseEvent} from "react";
 import Link from "next/link";
+import "../portal.css";
+import "../impact-workspace.css";
+import "./impact.css";
 type Row=Record<string,string|number|null>;
-type Workspace={level:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];roster:Row[];scope?:Row};
+type Workspace={level:string;currentUserId:string;campaigns:Row[];impact:Row[];certificates:Row[];feedback:Row[];eligibleFeedbackEvents:Row[];events:Row[];states:Row[];branches:Row[];partners:Row[];roster:Row[];scope?:Row};
 const metrics=["beneficiaries_reached","sessions_delivered","volunteer_hours","trees_planted","other"];
 const today=()=>new Date().toISOString().slice(0,10);
 export default function CSRImpactPage(){
  const [data,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false);
- const [campaign,setCampaign]=useState({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:"",partner_id:""});
+ const [campaign,setCampaign]=useState({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:"",partner_id:"",state_id:"",branch_id:""});
  const [impact,setImpact]=useState({campaign_id:"",metric:"beneficiaries_reached",metric_label:"",value:"",period_start:"",period_end:"",evidence_reference:""});
  const [feedback,setFeedback]=useState({event_id:"",rating:"5",comments:""});
  const [partner,setPartner]=useState({name:"",kind:"ngo",contact_email:""});
  const [audience,setAudience]=useState({event_id:"",audience:"company",state_id:"",branch_id:"",user_ids:""});
  const [selectedAttendee,setSelectedAttendee]=useState(""),[attendance,setAttendance]=useState({status:"present",volunteer_minutes:"0",contribution:""});
+ const [draftEvidence,setDraftEvidence]=useState<Record<string,string>>({});
  const refresh=useCallback(async()=>{const r=await fetch("/api/impact",{cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");setData(j);},[]);
  useEffect(()=>{let active=true;fetch("/api/impact",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Could not load CSR workspace");return j;}).then(j=>{if(active)setData(j);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Unable to load");});return()=>{active=false;};},[]);
  async function submit(e:FormEvent<HTMLFormElement>|MouseEvent<HTMLButtonElement>,action:string,args:Record<string,unknown>){
@@ -21,15 +25,15 @@ export default function CSRImpactPage(){
    const r=await fetch("/api/impact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...args})});
    const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to save");
    setNotice("Saved successfully.");await refresh();
-   if(action==="createCampaign")setCampaign({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:"",partner_id:""});
+   if(action==="createCampaign")setCampaign({title:"",description:"",starts_on:"",ends_on:"",primary_sdg:"",target_beneficiaries:"",partner_id:"",state_id:"",branch_id:""});
    if(action==="recordImpact")setImpact(old=>({...old,value:"",evidence_reference:""}));
   }catch(e){setError(e instanceof Error?e.message:"Unable to save");}finally{setBusy(false);}
  }
  const manager=data?.level==="country_admin"||data?.level==="state_admin";
  const total=(metric:string)=>data?.impact.filter(r=>r.metric===metric&&r.status==="verified").reduce((sum,r)=>sum+Number(r.value||0),0)||0;
- return <main className="ep-main" style={{maxWidth:1280,margin:"0 auto",padding:"20px 16px"}}>
+ return <main className="ep-main ep-shell csr-page" style={{maxWidth:1280,margin:"0 auto",padding:"20px 16px"}}>
   <p><Link href="/">← Back to Employee Volunteer System</Link></p>
-  <div className="ed-eyebrow">ELIXIR FOUNDATION · VERIFIED SOCIAL IMPACT</div>
+  <div className="ed-eyebrow">EMPLOYEE VOLUNTEER SYSTEM · VERIFIED SOCIAL IMPACT</div>
   <h1>CSR & volunteer impact</h1>
   <p>Campaigns, independently verified outcomes, volunteer attendance and certificates. Pending figures do not count toward verified totals.</p>
   {error&&<p role="alert" className="ep-error">{error} {data===null&&<Link href="/login">Sign in</Link>}</p>}
@@ -58,6 +62,10 @@ export default function CSRImpactPage(){
      <label>Campaign title<input required minLength={3} maxLength={180} value={campaign.title} onChange={e=>setCampaign(v=>({...v,title:e.target.value}))}/></label>
      <label>Description<textarea maxLength={5000} value={campaign.description} onChange={e=>setCampaign(v=>({...v,description:e.target.value}))}/></label>
      <label>Verified partner (optional)<select value={campaign.partner_id} onChange={e=>setCampaign(v=>({...v,partner_id:e.target.value}))}><option value="">No partner selected</option>{data.partners.filter(p=>p.status==="verified").map(p=><option key={String(p.id)} value={String(p.id)}>{p.name}</option>)}</select></label>
+     <div className="ep-form-grid">
+       {data.level==="country_admin"&&<label>Campaign state<select value={campaign.state_id} onChange={e=>setCampaign(v=>({...v,state_id:e.target.value,branch_id:""}))}><option value="">All states in country</option>{data.states.map(st=><option key={String(st.id)} value={String(st.id)}>{st.name}</option>)}</select></label>}
+       <label>Campaign branch<select value={campaign.branch_id} disabled={data.level==="country_admin"&&!campaign.state_id} onChange={e=>setCampaign(v=>({...v,branch_id:e.target.value}))}><option value="">All branches in scope</option>{data.branches.filter(b=>b.state_id===(data.level==="state_admin"?data.scope?.state_id:campaign.state_id)).map(b=><option key={String(b.id)} value={String(b.id)}>{b.name}</option>)}</select></label>
+     </div>
      <div className="ep-form-grid"><label>Starts<input type="date" required value={campaign.starts_on} onChange={e=>setCampaign(v=>({...v,starts_on:e.target.value}))}/></label><label>Ends<input type="date" required min={campaign.starts_on||today()} value={campaign.ends_on} onChange={e=>setCampaign(v=>({...v,ends_on:e.target.value}))}/></label></div>
      <div className="ep-form-grid"><label>Primary SDG (1–17)<input type="number" min="1" max="17" value={campaign.primary_sdg} onChange={e=>setCampaign(v=>({...v,primary_sdg:e.target.value}))}/></label><label>Target beneficiaries<input type="number" min="0" value={campaign.target_beneficiaries} onChange={e=>setCampaign(v=>({...v,target_beneficiaries:e.target.value}))}/></label></div>
      <button className="ep-button primary" disabled={busy}>Create campaign</button>
@@ -89,7 +97,14 @@ export default function CSRImpactPage(){
     </form>:<p>No started events with registered volunteers are available in your scope.</p>}
    </section>}
    <section className="ep-panel"><h2>Reported impact</h2>
-    {data.impact.length?<div className="v3-list">{data.impact.map(i=><div key={String(i.id)}><strong>{i.value} · {String(i.metric).replaceAll("_"," ")}</strong><span>{i.status} · {String(i.period_start).slice(0,10)} to {String(i.period_end).slice(0,10)}</span>{manager&&i.status==="draft"&&<form onSubmit={e=>void submit(e,"verifyImpact",{id:i.id})}><button className="ep-button secondary" disabled={busy}>Verify (different reviewer only)</button></form>}</div>)}</div>:<p>No impact records yet. Only independently verified values contribute to the KPIs.</p>}
+    {data.impact.length?<div className="v3-list">{data.impact.map(i=><div key={String(i.id)}><strong>{i.value} · {String(i.metric).replaceAll("_"," ")}</strong><span>{i.status} · {String(i.period_start).slice(0,10)} to {String(i.period_end).slice(0,10)}</span>
+    {manager&&i.status==="draft"&&<div className="csr-review">
+      {i.evidence_reference?<p>Evidence: {i.evidence_reference}</p>:<p>Evidence missing — verification is blocked.</p>}
+      {!i.evidence_reference&&i.recorded_by===data.currentUserId&&<form onSubmit={e=>void submit(e,"updateImpactEvidence",{id:i.id,evidence_reference:draftEvidence[String(i.id)]||""})}><label>Add evidence reference<input required minLength={6} maxLength={1000} value={draftEvidence[String(i.id)]||""} onChange={e=>setDraftEvidence(v=>({...v,[String(i.id)]:e.target.value}))}/></label><button className="ep-button secondary" disabled={busy}>Save evidence</button></form>}
+      {i.evidence_reference&&i.recorded_by!==data.currentUserId&&<form onSubmit={e=>void submit(e,"verifyImpact",{id:i.id})}><button className="ep-button secondary" disabled={busy}>Independently verify</button></form>}
+      {i.recorded_by===data.currentUserId&&i.evidence_reference&&<p>A different administrator must verify your report.</p>}
+     </div>}
+   </div>)}</div>:<p>No impact records yet. Only independently verified values contribute to the KPIs.</p>}
    </section>
    {manager&&<section className="ep-panel"><h2>Record impact</h2>
     <form className="v3-form" onSubmit={e=>void submit(e,"recordImpact",{...impact,value:Number(impact.value)})}>
@@ -97,13 +112,13 @@ export default function CSRImpactPage(){
      <label>Metric<select value={impact.metric} onChange={e=>setImpact(v=>({...v,metric:e.target.value}))}>{metrics.map(m=><option key={m} value={m}>{m.replaceAll("_"," ")}</option>)}</select></label>
      <label>Value<input required type="number" min="0" step="0.01" value={impact.value} onChange={e=>setImpact(v=>({...v,value:e.target.value}))}/></label>
      <div className="ep-form-grid"><label>From<input required type="date" value={impact.period_start} onChange={e=>setImpact(v=>({...v,period_start:e.target.value}))}/></label><label>To<input required type="date" value={impact.period_end} min={impact.period_start||undefined} onChange={e=>setImpact(v=>({...v,period_end:e.target.value}))}/></label></div>
-     <label>Evidence reference (optional)<input value={impact.evidence_reference} maxLength={1000} onChange={e=>setImpact(v=>({...v,evidence_reference:e.target.value}))}/></label>
+     <label>Evidence reference (required)<input required minLength={6} value={impact.evidence_reference} maxLength={1000} placeholder="Document ID, report link, or evidence register reference" onChange={e=>setImpact(v=>({...v,evidence_reference:e.target.value}))}/></label>
      <button className="ep-button primary" disabled={busy}>Submit for verification</button>
     </form>
    </section>}
-   {!manager&&<section className="ep-panel"><h2>Event feedback</h2><p>After an administrator verifies your attendance, you can review the completed event using its event ID.</p>
+   {!manager&&<section className="ep-panel"><h2>Event feedback</h2><p>Choose a completed event where your attendance was verified.</p>
     <form className="v3-form" onSubmit={e=>void submit(e,"feedback",{...feedback,rating:Number(feedback.rating)})}>
-     <label>Completed event ID<input required value={feedback.event_id} onChange={e=>setFeedback(v=>({...v,event_id:e.target.value}))}/></label>
+     <label>Completed event<select required value={feedback.event_id} onChange={e=>setFeedback(v=>({...v,event_id:e.target.value}))}><option value="">Select an event</option>{data.eligibleFeedbackEvents.map(ev=><option value={String(ev.id)} key={String(ev.id)}>{ev.title} · {String(ev.ends_at).slice(0,10)}</option>)}</select></label>
      <label>Rating<select value={feedback.rating} onChange={e=>setFeedback(v=>({...v,rating:e.target.value}))}>{[5,4,3,2,1].map(x=><option value={x} key={x}>{x} / 5</option>)}</select></label>
      <label>Comments<textarea maxLength={2000} value={feedback.comments} onChange={e=>setFeedback(v=>({...v,comments:e.target.value}))}/></label>
      <button className="ep-button primary" disabled={busy}>Save feedback</button>
