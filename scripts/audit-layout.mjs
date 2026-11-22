@@ -37,6 +37,14 @@ try{
     assert.ok(dimensions.padL<=14&&dimensions.padR<=14,label+": excess gutters");
     assert.ok(dimensions.scroll<=dimensions.vw+2,label+": horizontal page overflow "+JSON.stringify(dimensions));
     assert.equal(dimensions.overflow,0,label+": input overflow");
+    if(email.startsWith("admin@")&&route==="overview"){
+     assert.equal(await page.locator(".evs-insight-card").count(),3,"Platform overview has three data-backed charts");
+     await page.locator(".evs-insights-period button").last().click();
+     assert.equal(await page.locator(".evs-insights-period button").last().getAttribute("aria-pressed"),"true","12-month period selection works");
+     await page.locator(".evs-chart-toggle button").last().click();
+     assert.equal(await page.locator(".evs-chart-toggle button").last().getAttribute("aria-pressed"),"true","Monthly events metric selection works");
+     assert.ok((await page.locator(".evs-admin-bars").getAttribute("aria-label"))?.includes("events"),"Activity chart updates with selected metric");
+    }
     if(email.startsWith("employee")&&route==="overview"){
      assert.equal(await page.locator(".cc-impact-chart").count(),3);
      assert.equal(await page.locator(".cc-chart-legend").first().evaluate(el=>getComputedStyle(el).overflowY),"visible");
