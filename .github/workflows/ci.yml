@@ -45,6 +45,11 @@ jobs:
         run: npx tsx --test tests/v4-db-integration.test.ts tests/attendance-pipeline.test.ts
         env:
           CI_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+      - name: Validate staging script syntax
+        run: |
+          node --check scripts/seed-railway-demo.mjs
+          node --check scripts/clear-railway-demo.mjs
+          node --check scripts/repair-demo-staging.mjs
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
