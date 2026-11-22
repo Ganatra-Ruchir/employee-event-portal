@@ -12,7 +12,7 @@ if(process.env.CI!=="true"||!parsed||!["localhost","127.0.0.1"].includes(parsed.
  process.env.ALLOW_INSECURE_STAGING_DB!=="true"){
  throw new Error("Refused: CI-only disposable loopback PostgreSQL required");
 }
-const base=process.env.BASE_URL||"http://127.0.0.1:3001";
+const base=process.env.BASE_URL||"http://localhost:3001";
 const db=new pg.Client({connectionString:url,ssl:false,connectionTimeoutMillis:10000});
 const hash=async pw=>{
  const salt=randomBytes(16).toString("hex");
@@ -131,6 +131,7 @@ try{
   await page.locator('input[autocomplete="current-password"]').fill(pass);
   await page.locator(".ep-auth-submit").click();
   await page.locator(".ep-shell .ep-main").waitFor({timeout:25000});
+  assert.ok((await context.cookies()).some(c=>c.name==="elixir_session"),account.name+" secure session cookie is stored");
   const snapshot=await context.request.get(base+"/api/portal");
   assert.equal(snapshot.status(),200,account.name+" session");
   const result=await snapshot.json();
