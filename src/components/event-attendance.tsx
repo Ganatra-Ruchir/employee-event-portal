@@ -24,15 +24,16 @@ function AttendanceSheet({user,data,now,onSave,eventId,onBack}:Props&{eventId:st
  const [extras,setExtras]=useState<WalkInInput[]>(()=>roster.extras.map(({employeeId,phone})=>({employeeId,phone})));
  const [search,setSearch]=useState(""),[error,setError]=useState(""),[saved,setSaved]=useState(false),[dirty,setDirty]=useState(false);
  const [draftId,setDraftId]=useState(""),[draftPhone,setDraftPhone]=useState(""),[employeeQuery,setEmployeeQuery]=useState("");
- const [attendanceSubmitted,setAttendanceSubmitted]=useState(false);
+ const [attendanceSubmitted,setAttendanceSubmitted]=useState(()=>roster.extras.length>0||roster.rows.some(r=>r.status!=="unmarked"));
  const readOnly=Date.parse(roster.event.startsAt)>now;
- const present=rows.filter(r=>r.status==="present").length,absent=rows.length-present,pending=0;
+ const present=rows.filter(r=>r.status==="present").length,absent=rows.length-present;
  const visible=roster.rows.filter(r=>[r.person.fullName,employeeId(r.person),r.person.department].join(" ").toLowerCase().includes(search.trim().toLowerCase()));
  const preview=seedPreview(data),actor=previewActor(user,preview);
  const registeredIds=new Set(preview.registrations.filter(r=>r.eventId===eventId&&r.status==="going").map(r=>r.userId));
  const extraIds=new Set(extras.map(x=>x.employeeId.toUpperCase()));
- const candidates=preview.users.filter(p=>p.role==="employee"&&p.status==="active"&&p.companyId===roster.event.companyId&&!registeredIds.has(p.id)&&!extraIds.has(employeeId(p).toUpperCase())&&preview.v3?.members.some(m=>m.user_id===p.id&&m.level==="employee"&&canManageScope(actor,m)));
- const searchMatches=employeeQuery.trim()?candidates.filter(p=>[p.fullName,employeeId(p),p.department,p.email].join(" ").toLowerCase().includes(employeeQuery.trim().toLowerCase())).slice(0,8):[];
+ const extraPersonIds=new Set((preview.v3?.walkIns||[]).filter(x=>x.eventId===eventId&&x.userId).map(x=>x.userId));
+ const candidates=preview.users.filter(p=>p.role==="employee"&&p.status==="active"&&p.companyId===roster.event.companyId&&!registeredIds.has(p.id)&&!extraIds.has(employeeId(p).toUpperCase())&&!extraPersonIds.has(p.id)&&preview.v3?.members.some(m=>m.user_id===p.id&&m.level==="employee"&&canManageScope(actor,m)));
+ const searchMatches=employeeQuery.trim()&&!draftId?candidates.filter(p=>[p.fullName,employeeId(p),p.department,p.email].join(" ").toLowerCase().includes(employeeQuery.trim().toLowerCase())).slice(0,8):[];
  function change(id:string,patch:Partial<AttendanceRow>){setRows(prev=>prev.map(r=>r.userId===id?{...r,...patch}:r));setDirty(true);setSaved(false);setError("");setAttendanceSubmitted(false);}
  function addExtra(){
   const employeeNumber=draftId.trim().toUpperCase(),phone=draftPhone.trim();
@@ -51,9 +52,9 @@ function AttendanceSheet({user,data,now,onSave,eventId,onBack}:Props&{eventId:st
   }catch(e){setError(e instanceof Error?e.message:"Could not save attendance.");}
  }
  return <section className="ep-panel v3-workspace cc-attendance">
-  <button type="button" className="ep-back" onClick={()=>{if(!dirty&& !draftId&&!draftPhone||window.confirm("Discard unsaved attendance changes?"))onBack();}}><ArrowLeft size={16}/> Back to attendance</button>
+  <button type="button" className="ep-back" onClick={()=>{if((!dirty&&!draftId&&!draftPhone)||window.confirm("Discard unsaved attendance changes?"))onBack();}}><ArrowLeft size={16}/> Back to attendance</button>
   <div><div className="ed-eyebrow">EVENT ATTENDANCE</div><h2>{roster.event.title}</h2><p className="ep-hint">{new Date(roster.event.startsAt).toLocaleString("en-IN")} · {roster.event.location||"Online"}</p></div>
-  <div className="v3-metrics cc-att-metrics">{[{label:"Registered",value:rows.length},{label:"Registered present",value:present},{label:"Absent",value:absent},{label:"Not marked",value:pending},{label:"Extra attendees",value:extras.length},{label:"Total present",value:present+extras.length}].map(m=><div key={m.label}><strong>{m.value}</strong><span>{m.label}</span></div>)}</div>
+  <div className="v3-metrics cc-att-metrics">{[{label:"Registered",value:rows.length},{label:"Registered present",value:present},{label:"Absent",value:absent},{label:"Extra attendees",value:extras.length},{label:"Total present",value:present+extras.length}].map(m=><div key={m.label}><strong>{m.value}</strong><span>{m.label}</span></div>)}</div>
   {readOnly&&<p className="ep-info">This event has not started. The roster is available to review; attendance can be marked after the event begins.</p>}
   <div className="cc-att-head"><h3>Registered employees</h3><label className="cc-att-search"><Search size={16}/><input type="search" aria-label="Search registered employees" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name or employee ID"/></label></div>
   <div className="ep-table-scroll cc-att-table"><table><thead><tr><th>Employee</th><th>Employee ID</th><th>Present ✓</th><th>Contribution (optional)</th></tr></thead><tbody>{visible.map(({person,userId})=>{
