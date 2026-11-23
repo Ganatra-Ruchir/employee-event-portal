@@ -200,6 +200,13 @@ try{
     assert.equal(reg.status(),403,"cross-organization registration denied");
    }
    if(account.name==="state A"){
+    await page.locator('.ep-sidebar .ep-nav-link',{hasText:"Attendance"}).waitFor({timeout:20000});
+    await page.locator('.ep-sidebar .ep-nav-link',{hasText:"People"}).waitFor();
+    await page.goto(base+"/attendance");
+    await page.locator('.ep-main[data-evs-view="attendance"]').waitFor({timeout:20000});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+3),true,"state admin attendance mobile layout");
+    await page.goto(base+"/people");
+    await page.locator('.ep-main[data-evs-view="people"]').waitFor({timeout:20000});
     const hierarchy=await context.request.get(base+"/api/v3");
     assert.equal(hierarchy.status(),200,"state hierarchy access");
     const data=await hierarchy.json();

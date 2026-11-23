@@ -274,6 +274,7 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
 export default function ElixirPortal(){
   const [data,setData]=useState<PortalData>(()=>({companies:[],users:[],events:[],registrations:[],invitations:[]}));
   const [remote,setRemote]=useState(false);
+  const [remoteV3Level,setRemoteV3Level]=useState<string|null>(null);
   const [remoteError,setRemoteError]=useState("");
   const [session,setSession]=useState<string|null>(null);
   const [ready,setReady]=useState(false);
@@ -370,6 +371,20 @@ export default function ElixirPortal(){
     },60_000);
     return ()=>window.clearInterval(timer);
   },[remote,session]);
+  // Membership roles live in V3 PostgreSQL, not in the legacy role string.
+  // A state administrator is stored as role=employee, so retrieve their actual
+  // scope for navigation. API authorization remains the source of truth.
+  useEffect(()=>{
+    if(!remote||!session)return;
+    let active=true;
+    fetch("/api/v3",{cache:"no-store"}).then(async response=>{
+      if(!response.ok)return null;
+      return await response.json() as {level?:string};
+    }).then(body=>{
+      if(active)setRemoteV3Level(body?.level||null);
+    }).catch(()=>{if(active)setRemoteV3Level(null);});
+    return ()=>{active=false;};
+  },[remote,session]);
   const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string}>=>{
     try{
       const r=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args}),cache:"no-store"});
@@ -409,7 +424,7 @@ export default function ElixirPortal(){
   const blocked=Boolean(current&&(current.status==="suspended"||(current.companyId&&(!company||company.status==="suspended"))));
   const events=current?.role==="platform_admin"?data.events:current?.companyId?data.events.filter(e=>e.companyId===current.companyId):[];
   const companyEvents=events;
-  const isStateAdmin=Boolean(current&&!remote&&previewActor(current,data).level==="state_admin");
+  const isStateAdmin=Boolean(current&&(remote?remoteV3Level==="state_admin":previewActor(current,data).level==="state_admin"));
   const isCountryAdmin=Boolean(current&&(remote?current.role==="company_admin":previewActor(current,data).level==="country_admin"));
   const dailyNav:View[]=current?.role==="platform_admin"?["home","events","users"]:isStateAdmin?["home","events","attendance","people"]:current?.role==="company_admin"?["home","events",...(isCountryAdmin?["attendance" as View]:[]),"people","registrations"]:["home","events","registrations"];
   const settingsNav:View[]=current?.role==="platform_admin"?["companies","invitations","hierarchy","profile"]:isCountryAdmin?["hierarchy","profile"]:["profile"];
@@ -725,8 +740,8 @@ export default function ElixirPortal(){
     <div className="ep-layout">
       {menu&&<button type="button" className="ep-nav-backdrop" aria-label="Close navigation" onClick={()=>setMenu(false)}/>}
       <nav id="ep-main-navigation" className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
-        <div className="ep-nav-title">{!remote&&previewActor(current,data).level==="state_admin"?"State admin":roleName(current.role)}</div>
-        {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
+        <div className="ep-nav-title">{isStateAdmin?"State admin":roleName(current.role)}</div>
+        {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||isStateAdmin?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
         {remote&&current.role!=="platform_admin"&&process.env.NEXT_PUBLIC_PORTAL_V4_ENABLED==="true"&&<Link className="ep-nav-link" href="/impact"><ClipboardList size={18}/> CSR & impact</Link>}
          {remote&&current.role==="platform_admin"&&process.env.NEXT_PUBLIC_PORTAL_V4_ENABLED==="true"&&<Link className="ep-nav-link" href="/admin/company-requests"><Building2 size={18}/> Company applications</Link>}
       </nav>
