@@ -76,10 +76,10 @@ try{
      const label=actor.name+"-"+route+"-"+screen.width;
      try{
       await page.goto(base+"/"+route,{waitUntil:"domcontentloaded"});
-      await page.locator(".ep-shell>.ep-layout>.ep-main").waitFor({timeout:15000});
-      await page.locator('.ep-sidebar [aria-current="page"]').waitFor({timeout:15000});
+      await page.locator(".ep-shell>.ep-layout>.ep-main").waitFor({timeout:4500});
+      await page.locator('.ep-sidebar [aria-current="page"]').waitFor({timeout:4500});
       const expectedView=route==="overview"?"home":route==="accounts"?"users":route;
-      await page.locator('.ep-main[data-evs-view="'+expectedView+'"]').waitFor({timeout:15000});
+      await page.locator('.ep-main[data-evs-view="'+expectedView+'"]').waitFor({timeout:4500});
       const geometry=await evaluate(page);
       checkGeometry(geometry,label,screen.width);
       if(actor.name==="root"&&route==="overview"){
@@ -113,12 +113,13 @@ try{
       const state=await page.locator(".ep-main").first().getAttribute("data-evs-view").catch(()=>null);
       const role=await page.locator(".ep-main").first().getAttribute("data-evs-role").catch(()=>null);
       console.error("AUDIT FAILURE",label,JSON.stringify({url:page.url(),view:state,role}),error instanceof Error?error.message:String(error));
+      if(failures.length>=8)throw Error("Systemic route failure after eight checks:\\n"+failures.join("\\n"));
      }
     }
     if(screen.width===390&&actor.name==="country"){
      try{
       await page.goto(base+"/events");
-      await page.locator('.ep-main[data-evs-view="events"]').waitFor({timeout:15000});
+      await page.locator('.ep-main[data-evs-view="events"]').waitFor({timeout:4500});
       const createButton=page.getByRole("button",{name:/Create event/i});
       if(!await createButton.count()){
        throw Error("Create event button missing. role="+await page.locator(".ep-main").getAttribute("data-evs-role")+" view="+await page.locator(".ep-main").getAttribute("data-evs-view")+" text="+(await page.locator(".ep-main").innerText()).slice(0,700));
@@ -137,7 +138,7 @@ try{
     if(screen.width===1440&&actor.name==="root"){
      try{
       await page.goto(base+"/companies");
-      await page.locator('.ep-main[data-evs-view="companies"]').waitFor({timeout:15000});
+      await page.locator('.ep-main[data-evs-view="companies"]').waitFor({timeout:4500});
       await page.getByRole("button",{name:/Add organization/i}).click();
       await page.locator('.ep-main[data-evs-view="companyForm"]').waitFor();
       await screenshot(page,"root-create-organization-1440");

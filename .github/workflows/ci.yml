@@ -3,6 +3,9 @@ on:
   push:
     branches: [main, 'feature/**']
   pull_request:
+concurrency:
+  group: volunteer-portal-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
