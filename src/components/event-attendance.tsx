@@ -1,5 +1,7 @@
 "use client";
 import {useState} from "react";
+import {previewActor,seedPreview} from "@/lib/v3-preview";
+import {canManageScope} from "@/lib/v3-permissions";
 import {ArrowLeft,CalendarDays,Check,Plus,Search,Trash2} from "lucide-react";
 import type {Person,PortalData} from "@/lib/portal-model";
 import {attendanceEvents,attendanceRoster,employeeId,saveEventAttendance,type AttendanceRow,type WalkInInput} from "@/lib/event-attendance";
@@ -21,17 +23,23 @@ function AttendanceSheet({user,data,now,onSave,eventId,onBack}:Props&{eventId:st
  const [rows,setRows]=useState<AttendanceRow[]>(()=>roster.rows.map(({userId,status,minutes,contribution})=>({userId,status,minutes,contribution})));
  const [extras,setExtras]=useState<WalkInInput[]>(()=>roster.extras.map(({employeeId,phone})=>({employeeId,phone})));
  const [search,setSearch]=useState(""),[error,setError]=useState(""),[saved,setSaved]=useState(false),[dirty,setDirty]=useState(false);
- const [draftId,setDraftId]=useState(""),[draftPhone,setDraftPhone]=useState("");
+ const [draftId,setDraftId]=useState(""),[draftPhone,setDraftPhone]=useState(""),[employeeQuery,setEmployeeQuery]=useState("");
  const [attendanceSubmitted,setAttendanceSubmitted]=useState(false);
  const readOnly=Date.parse(roster.event.startsAt)>now;
  const present=rows.filter(r=>r.status==="present").length,absent=rows.length-present,pending=0;
  const visible=roster.rows.filter(r=>[r.person.fullName,employeeId(r.person),r.person.department].join(" ").toLowerCase().includes(search.trim().toLowerCase()));
+ const preview=seedPreview(data),actor=previewActor(user,preview);
+ const registeredIds=new Set(preview.registrations.filter(r=>r.eventId===eventId&&r.status==="going").map(r=>r.userId));
+ const extraIds=new Set(extras.map(x=>x.employeeId.toUpperCase()));
+ const candidates=preview.users.filter(p=>p.role==="employee"&&p.status==="active"&&p.companyId===roster.event.companyId&&!registeredIds.has(p.id)&&!extraIds.has(employeeId(p).toUpperCase())&&preview.v3?.members.some(m=>m.user_id===p.id&&m.level==="employee"&&canManageScope(actor,m)));
+ const searchMatches=employeeQuery.trim()?candidates.filter(p=>[p.fullName,employeeId(p),p.department,p.email].join(" ").toLowerCase().includes(employeeQuery.trim().toLowerCase())).slice(0,8):[];
  function change(id:string,patch:Partial<AttendanceRow>){setRows(prev=>prev.map(r=>r.userId===id?{...r,...patch}:r));setDirty(true);setSaved(false);setError("");setAttendanceSubmitted(false);}
  function addExtra(){
   const employeeNumber=draftId.trim().toUpperCase(),phone=draftPhone.trim();
+  if(!candidates.some(p=>employeeId(p).toUpperCase()===employeeNumber)){setError("Select an existing company employee from search results.");return;}
   if(!employeeNumber||!phone){setError("Enter both employee ID and phone number.");return;}
   const next=[...extras,{employeeId:employeeNumber,phone}];
-  try{saveEventAttendance(user,data,eventId,rows,next);setExtras(next);setDraftId("");setDraftPhone("");setError("");setDirty(true);setSaved(false);}catch(e){setError(e instanceof Error?e.message:"Cannot add attendee.");}
+  try{const finalRows=rows.map(r=>({...r,status:r.status==="present"?"present" as const:"absent" as const}));const updated=saveEventAttendance(user,data,eventId,finalRows,next);if(!onSave(updated))throw Error("Unable to save extra attendee.");setExtras(next);setDraftId("");setDraftPhone("");setEmployeeQuery("");setError("");setDirty(false);setSaved(true);}catch(e){setError(e instanceof Error?e.message:"Cannot add attendee.");}
  }
  function save(){
   setError("");setSaved(false);
@@ -54,7 +62,7 @@ function AttendanceSheet({user,data,now,onSave,eventId,onBack}:Props&{eventId:st
   })}</tbody></table>{!visible.length&&<p className="ep-hint">{rows.length?"No matching employees.":"No confirmed registrations for this event."}</p>}</div>
   {attendanceSubmitted&&<div className="cc-att-extras"><h3>Extra attendees (walk-ins)</h3><p className="ep-hint">Add employees who attended without a confirmed registration. They count as present automatically.</p>
    {extras.length>0&&<div className="ep-table-scroll"><table><thead><tr><th>Employee ID</th><th>Phone number</th><th>Action</th></tr></thead><tbody>{extras.map((x,i)=><tr key={x.employeeId}><td>{x.employeeId}</td><td>{x.phone}</td><td><button type="button" className="ep-button secondary" aria-label={"Remove "+x.employeeId} disabled={readOnly} onClick={()=>{setExtras(prev=>prev.filter((_,j)=>j!==i));setDirty(true);setSaved(false);setError("");}}><Trash2 size={15}/> Remove</button></td></tr>)}</tbody></table></div>}
-   <div className="cc-att-add"><label>Employee ID<input disabled={readOnly} value={draftId} maxLength={80} onChange={e=>setDraftId(e.target.value)} placeholder="EMP-1001"/></label><label>Phone number<input disabled={readOnly} type="tel" value={draftPhone} maxLength={25} onChange={e=>setDraftPhone(e.target.value)} placeholder="+91 …"/></label><button type="button" className="ep-button secondary" disabled={readOnly} onClick={addExtra}><Plus size={16}/> Add extra attendee</button></div>
+   <div className="cc-att-add"><div className="cc-employee-picker"><label>Search existing company employee<input type="search" disabled={readOnly} value={employeeQuery} onChange={e=>{setEmployeeQuery(e.target.value);setDraftId("");setDraftPhone("");setError("");}} placeholder="Search by name or employee ID" aria-label="Search existing company employees" autoComplete="off"/></label>{searchMatches.length>0&&<div className="cc-employee-results" role="listbox" aria-label="Matching employees">{searchMatches.map(p=><button type="button" role="option" aria-selected={draftId===employeeId(p)} key={p.id} onClick={()=>{setDraftId(employeeId(p));setEmployeeQuery(p.fullName+" · "+employeeId(p));setDraftPhone(p.phone||"");setError("");}}><strong>{p.fullName}</strong><small>{employeeId(p)} · {p.department||"Employee"}</small></button>)}</div>}{employeeQuery.trim()&&!draftId&&!searchMatches.length&&<small className="ep-hint">No eligible employees found. Registered or already added employees are excluded.</small>}{draftId&&<small className="ep-hint">Selected employee: {draftId}</small>}</div><label>Phone number<input disabled={readOnly||!draftId} type="tel" value={draftPhone} maxLength={25} onChange={e=>setDraftPhone(e.target.value)} placeholder="+91 …"/></label><button type="button" className="ep-button secondary" disabled={readOnly||!draftId||!draftPhone.trim()} onClick={addExtra}><Plus size={16}/> Add extra attendee</button></div>
   </div>}
   {error&&<p className="ep-error" role="alert">{error}</p>}{saved&&<p className="ep-success" role="status"><Check size={16}/> Attendance saved. {present+extras.length} total present.</p>}
   <div className="cc-att-submit"><span className="ep-hint">{"Checked = present, unchecked = absent. Submit attendance before adding extra attendees."}</span><button className="ep-button primary" type="button" disabled={readOnly} onClick={save}>{attendanceSubmitted?"Update attendance":"Submit attendance"}</button></div>
