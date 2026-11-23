@@ -5,6 +5,7 @@ import {useRouter} from "next/navigation";
 import {ArrowRight,CheckCircle2,Mail,ShieldCheck} from "lucide-react";
 import {emailAuthClient} from "@/lib/auth/email-client";
 import "./signup.css";
+import "../evs-pages.css";
 type Step="details"|"otp"|"done";
 export default function SignupPage(){
  const router=useRouter();

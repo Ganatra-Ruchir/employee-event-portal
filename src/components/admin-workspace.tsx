@@ -4,6 +4,7 @@ import {Building2, CalendarDays, Clock3, TicketCheck, Users, AlertCircle, Chevro
 import {activeRegistrations, registrationState, remainingPlaces, shortDate} from "@/lib/portal-model";
 import type {Company,Person,PortalData,PortalEvent} from "@/lib/portal-model";
 import {EventTile} from "@/components/event-discovery";
+import AdminInsights from "@/components/admin-insights";
 
 function Metric({value,label,detail,icon:Icon}:{value:number;label:string;detail:string;icon:typeof CalendarDays}){
  return <div className="aw-metric"><span className="aw-metric-icon"><Icon size={21}/></span><span className="aw-metric-label">{label}</span><strong>{value.toLocaleString("en-IN")}</strong><small>{detail}</small></div>;
@@ -28,6 +29,7 @@ export function PlatformOverview({data,onEvent,now}:{data:PortalData;onEvent:(ev
    <Metric icon={Users} value={data.users.length} label="Accounts" detail="Across partner organizations"/>
    <Metric icon={Building2} value={active.length} label="Active organizations" detail={data.companies.length+" total"}/>
   </div>
+  <AdminInsights data={data} events={data.events} now={now}/>
   <WorkspaceSection title="Upcoming partner events" description="Next scheduled activities across all organizations">
    {upcoming.length?<div className="ed-tile-grid">{upcoming.slice(0,3).map(e=><EventTile key={e.id} event={e} data={data} now={now} onOpen={onEvent} showHost/>)}</div>:<div className="aw-list-empty">No upcoming published events.</div>}
   </WorkspaceSection>
@@ -64,6 +66,7 @@ export function CompanyOverview({data,current,company,now,onEvent}:{data:PortalD
     <Metric icon={Users} value={members.length} label="Team members" detail="In your organization"/>
     <Metric icon={Clock3} value={drafts.length} label="Draft events" detail="Not yet published"/>
    </div>
+   <AdminInsights data={data} events={events} now={now}/>
    <div className="aw-two-col">
     <WorkspaceSection title="Needs your attention" description="Drafts, closed registration and full events">
      <div className="aw-list-panel">{alertEvents.length?alertEvents.slice(0,5).map(({event:e,reason})=><button key={e.id} className="aw-item" onClick={()=>onEvent(e)}>

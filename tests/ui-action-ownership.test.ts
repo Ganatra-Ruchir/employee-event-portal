@@ -19,8 +19,10 @@ test("authenticated shell has one sign-out action and one responsive RSVP sectio
  assert.equal((portal.match(/cc-priority-registration/g)||[]).length,1);
 });
 
-test("public landing has one login action and one signup link",()=>{
+test("public landing routes all entry points to their intended actions",()=>{
  const landing=source("src/components/public-landing.tsx");
- assert.equal((landing.match(/onClick=\{onEnter\}/g)||[]).length,1);
- assert.equal((landing.match(/href="\/signup"/g)||[]).length,1);
+ assert.ok((landing.match(/onClick=\{onEnter\}/g)||[]).length>=1,"sign-in actions share one supplied callback");
+ assert.ok((landing.match(/href="\/signup"/g)||[]).length>=1,"employee signup exists");
+ assert.ok((landing.match(/href="\/companies\/register"/g)||[]).length>=2,"company application is prominent");
+ assert.match(landing,/Illustrative preview · not live data/,"sample metrics must not masquerade as verified statistics");
 });

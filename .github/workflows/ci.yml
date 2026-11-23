@@ -1,13 +1,30 @@
-name: Verify browser-only portal
+name: Verify volunteer portal
 on:
   push:
     branches: [main, 'feature/**']
   pull_request:
+concurrency:
+  group: volunteer-portal-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: portal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d portal_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -16,6 +33,26 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
+      - name: PostgreSQL migration smoke test (temporary CI database)
+        run: |
+          npm run db:migrate
+          npm run db:migrate
+        env:
+          DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+          DATABASE_SSL_MODE: disable
+          ALLOW_INSECURE_STAGING_DB: "true"
+          ALLOW_STAGING_MIGRATIONS: "true"
+          RAILWAY_ENVIRONMENT_NAME: ci
+
+      - name: Verify V4 event audience isolation on PostgreSQL
+        run: npx tsx --test tests/v4-db-integration.test.ts tests/attendance-pipeline.test.ts
+        env:
+          CI_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+      - name: Validate staging script syntax
+        run: |
+          node --check scripts/seed-railway-demo.mjs
+          node --check scripts/clear-railway-demo.mjs
+          node --check scripts/repair-demo-staging.mjs
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
@@ -32,5 +69,46 @@ jobs:
             sleep 1
           done
           node scripts/audit-layout.mjs
+          node scripts/audit-impact-layout.mjs
         env:
           NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "false"
+
+      - name: Upload UI audit screenshots and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4-ui-visual-audit
+          path: artifacts/ui-audit/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Build database-backed staging preview
+        run: npm run build
+        env:
+          NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "true"
+          NEXT_PUBLIC_PORTAL_V4_ENABLED: "true"
+          PORTAL_BACKEND_MODE: database
+          PORTAL_V3_ENABLED: "true"
+          PORTAL_V4_ENABLED: "true"
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+          DATABASE_SSL_MODE: disable
+          ALLOW_INSECURE_STAGING_DB: "true"
+      - name: Authenticated PostgreSQL browser audit
+        run: |
+          npm run start -- --hostname 0.0.0.0 --port 3001 > /tmp/portal-database-audit.log 2>&1 &
+          ready=0
+          for i in $(seq 1 45); do
+            if curl -fsS http://localhost:3001/api/portal/health >/dev/null; then ready=1; break; fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then cat /tmp/portal-database-audit.log; exit 1; fi
+          node scripts/audit-database-browser.mjs
+        env:
+          CI_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/portal_test
+          DATABASE_SSL_MODE: disable
+          ALLOW_INSECURE_STAGING_DB: "true"
+          PORTAL_BACKEND_MODE: database
+          PORTAL_V3_ENABLED: "true"
+          PORTAL_V4_ENABLED: "true"
+          NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "true"
+          NEXT_PUBLIC_PORTAL_V4_ENABLED: "true"

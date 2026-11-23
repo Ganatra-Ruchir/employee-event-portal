@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import PublicLanding from "@/components/public-landing";
 import V3Workspace from "@/components/v3-workspace";
 import {SDG_NAMES,eventGoal} from "@/lib/employee-impact";
@@ -53,6 +54,12 @@ const pageName=(view:View)=>({
 })[view];
 const emailOk=(e:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 const parseDomains=(s:string)=>[...new Set(s.split(/[,\s]+/).map(x=>x.trim().toLowerCase()).filter(Boolean))];
+/* Section is supplied by the server route so SSR and hydration agree. */
+const sectionToView=(slug:string):View=>({
+ overview:"home",events:"events",registrations:"registrations",
+ people:"people",companies:"companies",invitations:"invitations",accounts:"users",
+ profile:"profile",attendance:"attendance",hierarchy:"hierarchy"
+} as Record<string,View>)[slug]||"home";
 async function encodePassword(password:string,salt=crypto.randomUUID()){
   const raw=new TextEncoder().encode(salt+":"+password);
   const digest=await crypto.subtle.digest("SHA-256",raw);
@@ -222,11 +229,11 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
   return <div className="ep-auth-layout ep-auth-v2">
     <main className="ep-auth-card" id="sign-in">
       {onBack&&<button type="button" className="ep-back" onClick={onBack}><ArrowLeft size={16}/> Back to events home</button>}
-      <div className="ep-auth-heading"><span className="ep-login-mark" aria-hidden="true">E</span><span className="ep-product-name">Employee Volunteer System</span></div>
+      <div className="ep-auth-heading"><span className="ep-login-mark" aria-hidden="true">E<span className="ep-login-dot">·</span></span><span className="ep-product-name">Employee <strong>Volunteer System</strong><small>BY ELIXIR FOUNDATION</small></span></div>
       <div className="ep-auth-intro">
         <span className="ed-eyebrow">{mode==="login"?"WELCOME BACK":mode==="signup"?"JOIN YOUR COMPANY":mode==="forgot"?"ACCOUNT RECOVERY":"EMAIL VERIFICATION"}</span>
-        <h1>{mode==="login"?"Sign in to your events":mode==="signup"?"Join your team":mode==="forgot"?(remoteMode?"Forgot your password?":"Reset your demo password"):"Verify your demo email"}</h1>
-        <p className="ep-subtle">{mode==="login"?"Discover events, manage your registrations and bring your team together.":mode==="signup"?"Use your work email. We'll find your organization from its domain.":mode==="forgot"?(remoteMode?"Your password can be reset by an administrator. They give you a temporary password, and you choose a new one when you sign in.":"This prototype can reset a demo password locally. No email is sent."):"Confirm your sample account to continue. Verification is simulated in this browser."}</p>
+        <h1>{mode==="login"?"Welcome back. Let’s make an impact.":mode==="signup"?"Join your team":mode==="forgot"?(remoteMode?"Forgot your password?":"Reset your demo password"):"Verify your demo email"}</h1>
+        <p className="ep-subtle">{mode==="login"?"Your volunteering experiences, team events and verified contributions — all in one place.":mode==="signup"?"Use your work email. We'll find your organization from its domain.":mode==="forgot"?(remoteMode?"Your password can be reset by an administrator. They give you a temporary password, and you choose a new one when you sign in.":"This prototype can reset a demo password locally. No email is sent."):"Confirm your sample account to continue. Verification is simulated in this browser."}</p>
       </div>
       {mode==="forgot"&&remoteMode?<div className="ep-verify-content">
         <ol className="ep-steps"><li><strong>Employees:</strong> ask your company&apos;s event admin to reset your password from their People page.</li><li><strong>Company admins:</strong> ask the Elixir Foundation platform team to reset it from Accounts.</li><li>Sign in with the temporary password, then set a new one.</li></ol>
@@ -247,28 +254,38 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
         {mode!=="login"&&<button type="button" onClick={()=>{setMode("login");setError("");setMessage("");}}>Back to sign in</button>}
         {mode==="login"&&<><button type="button" onClick={()=>{if(remoteMode){window.location.href="/signup";return;}setMode("signup");setError("");setMessage("");}}>Create an account</button><button type="button" onClick={()=>{setMode("forgot");setError("");setMessage("");}}>Forgot password?</button>{!remoteMode&&<><button type="button" onClick={()=>{const u=data.users.find(p=>p.email===email.toLowerCase().trim()&&!p.verified);if(!u){setError("Enter the email of an unverified demonstration account.");return;}setVerifyId(u.id);setMode("verify");setError("");}}>Verify demo email</button></>}</>}
       </div>
-      <p className="ep-auth-footnote">{"Your organization’s event workspace"}</p>
+      <div className="ep-auth-new-company"><Building2 size={19}/><div><strong>New to the platform?</strong><p>Apply to add your company, or sign up with an approved work email.</p></div><Link href="/companies/register">Company registration <ArrowRight size={15}/></Link></div>
+      <p className="ep-auth-footnote"><span aria-hidden="true">●</span> Protected organization workspace · Demo data stays separate from real records</p>
     </main>
-    <aside className="ep-auth-aside" aria-label="About Employee Volunteer System">
-      <div className="ep-auth-aside-content"><span className="ep-auth-side-label">EVENTS THAT BRING TEAMS TOGETHER</span>
-      <h2>Good events start with people.</h2><p>Volunteering, learning and connecting—with everything your team needs in one place.</p>
-      <div className="ep-auth-feature-card"><div className="ep-auth-card-art"><span>COMMUNITY</span><strong>Make room for meaningful moments.</strong></div>
-       <div className="ep-auth-feature-footer"><span><CalendarDays size={16}/> Events & volunteering</span><span><ArrowRight size={17}/></span></div>
-      </div>
-      <div className="ep-auth-side-bottom">For company employees, event hosts and Elixir Foundation.</div>
+    <aside className="ep-auth-aside" aria-label="Employee Volunteer System introduction">
+      <div className="ep-auth-aside-content">
+        <span className="ep-auth-side-label"><span className="ep-auth-label-dot"/> A BETTER WAY TO VOLUNTEER TOGETHER</span>
+        <h2>Small actions.<em> Remarkable impact.</em></h2>
+        <p>Bring your colleagues together, discover opportunities, and recognize the moments that matter.</p>
+        <div className="ep-auth-dashboard-preview" aria-label="Illustrative employee volunteering analytics">
+          <div className="ep-auth-preview-top"><span className="ep-auth-preview-logo">E</span><div><strong>Your impact workspace</strong><small>Illustrative preview — not live company data</small></div><span className="ep-auth-preview-online"/></div>
+          <div className="ep-auth-preview-stats"><div><strong>24</strong><span>Opportunities</span></div><div><strong>680<small>h</small></strong><span>Sample hours</span></div><div><strong>8</strong><span>SDGs</span></div></div>
+          <div className="ep-auth-preview-body">
+            <div className="ep-auth-preview-graph"><span>Volunteering activity <small>Illustrative</small></span><div className="ep-auth-preview-bars">{[35,66,51,83,71,94].map((height,i)=><div key={i}><span style={{height:height+"%"}}/><small>{["J","A","S","O","N","D"][i]}</small></div>)}</div></div>
+            <div className="ep-auth-preview-impact"><span className="ep-auth-preview-ring"/><strong>Purpose</strong><small>Progress worth celebrating</small></div>
+          </div>
+          <div className="ep-auth-preview-event"><span className="ep-auth-preview-calendar"><CalendarDays size={19}/></span><div><strong>Community Learning Day</strong><small>Upcoming volunteering opportunity</small></div><ArrowRight size={17}/></div>
+        </div>
+        <div className="ep-auth-side-bottom"><span className="ep-auth-side-pulse"/> People · Purpose · Progress <span>EMPLOYEE VOLUNTEER SYSTEM</span></div>
       </div>
     </aside>
   </div>;
 }
 
-export default function ElixirPortal(){
+export default function ElixirPortal({initialSection="overview"}:{initialSection?:string}){
   const [data,setData]=useState<PortalData>(()=>({companies:[],users:[],events:[],registrations:[],invitations:[]}));
   const [remote,setRemote]=useState(false);
+  const [remoteV3Level,setRemoteV3Level]=useState<string|null>(null);
   const [remoteError,setRemoteError]=useState("");
   const [session,setSession]=useState<string|null>(null);
   const [ready,setReady]=useState(false);
   const [now,setNow]=useState(0);
-  const [view,setView]=useState<View>("home");
+  const [view,setView]=useState<View>(()=>sectionToView(initialSection));
   const [selectedEvent,setSelectedEvent]=useState<string|null>(null);
   const [selectedCompany,setSelectedCompany]=useState<string|null>(null);
   const [editingEvent,setEditingEvent]=useState<PortalEvent|null>(null);
@@ -360,6 +377,20 @@ export default function ElixirPortal(){
     },60_000);
     return ()=>window.clearInterval(timer);
   },[remote,session]);
+  // Membership roles live in V3 PostgreSQL, not in the legacy role string.
+  // A state administrator is stored as role=employee, so retrieve their actual
+  // scope for navigation. API authorization remains the source of truth.
+  useEffect(()=>{
+    if(!remote||!session)return;
+    let active=true;
+    fetch("/api/v3",{cache:"no-store"}).then(async response=>{
+      if(!response.ok)return null;
+      return await response.json() as {level?:string};
+    }).then(body=>{
+      if(active)setRemoteV3Level(body?.level||null);
+    }).catch(()=>{if(active)setRemoteV3Level(null);});
+    return ()=>{active=false;};
+  },[remote,session]);
   const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string}>=>{
     try{
       const r=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args}),cache:"no-store"});
@@ -399,7 +430,7 @@ export default function ElixirPortal(){
   const blocked=Boolean(current&&(current.status==="suspended"||(current.companyId&&(!company||company.status==="suspended"))));
   const events=current?.role==="platform_admin"?data.events:current?.companyId?data.events.filter(e=>e.companyId===current.companyId):[];
   const companyEvents=events;
-  const isStateAdmin=Boolean(current&&!remote&&previewActor(current,data).level==="state_admin");
+  const isStateAdmin=Boolean(current&&(remote?remoteV3Level==="state_admin":previewActor(current,data).level==="state_admin"));
   const isCountryAdmin=Boolean(current&&(remote?current.role==="company_admin":previewActor(current,data).level==="country_admin"));
   const dailyNav:View[]=current?.role==="platform_admin"?["home","events","users"]:isStateAdmin?["home","events","attendance","people"]:current?.role==="company_admin"?["home","events",...(isCountryAdmin?["attendance" as View]:[]),"people","registrations"]:["home","events","registrations"];
   const settingsNav:View[]=current?.role==="platform_admin"?["companies","invitations","hierarchy","profile"]:isCountryAdmin?["hierarchy","profile"]:["profile"];
@@ -709,15 +740,18 @@ export default function ElixirPortal(){
   return <div className="ep-shell">
     <a className="ep-skip" href="#main-content">Skip to main content</a>
     <header className="ep-topbar">
-      <div className="ep-top-left"><button className="ep-menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Employee Volunteer System</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
+      <div className="ep-top-left"><button type="button" className="ep-menu" aria-label="Toggle navigation" aria-controls="ep-main-navigation" aria-expanded={menu} onClick={()=>setMenu(v=>!v)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Employee Volunteer System</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
       <div className="ep-top-right">{current.role==="employee"&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
     </header>
     <div className="ep-layout">
-      <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
-        <div className="ep-nav-title">{!remote&&previewActor(current,data).level==="state_admin"?"State admin":roleName(current.role)}</div>
-        {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
+      {menu&&<button type="button" className="ep-nav-backdrop" aria-label="Close navigation" onClick={()=>setMenu(false)}/>}
+      <nav id="ep-main-navigation" className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
+        <div className="ep-nav-title">{isStateAdmin?"State admin":roleName(current.role)}</div>
+        {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||isStateAdmin?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
+        {remote&&current.role!=="platform_admin"&&process.env.NEXT_PUBLIC_PORTAL_V4_ENABLED==="true"&&<Link className="ep-nav-link" href="/impact"><ClipboardList size={18}/> CSR & impact</Link>}
+         {remote&&current.role==="platform_admin"&&process.env.NEXT_PUBLIC_PORTAL_V4_ENABLED==="true"&&<Link className="ep-nav-link" href="/admin/company-requests"><Building2 size={18}/> Company applications</Link>}
       </nav>
-      <main className="ep-main" id="main-content" tabIndex={-1}>
+      <main className="ep-main" id="main-content" data-evs-view={view} data-evs-role={current.role} tabIndex={-1}>
         {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Sample data is saved only in this browser. All names, events and contact details are fictional examples. No shared database. {view==="profile"&&<button type="button" onClick={()=>{if(window.confirm("Reset every sample company, account and event in this browser?")){save(createDemoData());setSession(null);localStorage.removeItem(SESSION);}}}>Reset all sample data</button>}{view==="profile"&&<button type="button" onClick={()=>{const old=localStorage.getItem(STORE+"-before-expanded-demo");if(!old){flash("No previous demo backup is stored in this browser.");return;}const url=URL.createObjectURL(new Blob([old],{type:"application/json"}));const link=document.createElement("a");link.href=url;link.download="previous-demo-backup.json";link.click();URL.revokeObjectURL(url);}}>Download previous demo backup</button>}</div>}
         {notice&&<div className="ep-info ep-notice" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice("")}><X size={17}/></button></div>}
         {resetResult&&<div className="ep-reset-result" role="status">

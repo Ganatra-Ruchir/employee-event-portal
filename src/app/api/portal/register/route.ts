@@ -47,20 +47,47 @@ export async function POST(req:NextRequest){
   const company=await companyFor(email);
   if(!company.rows.length)return fail("Your company is not registered",403);
   const id=randomUUID(),hash=await passwordHash(password);
-  const result=await sqlPool().query(
-   "INSERT INTO users(id,full_name,email,password_hash,department,role,organization_id,verified,status) VALUES($1,$2,$3,$4,$5,'employee',$6,true,'active') ON CONFLICT(email) DO NOTHING RETURNING id",
-   [id,name,email,hash,department,company.rows[0].id]
-  );
-  if(!result.rows.length){
-   // Existing unverified employee accounts from the old manual-approval flow
-   // can be activated, but only after authenticating the verified work email.
-   const changed=await sqlPool().query(
-    "UPDATE users SET verified=true,password_hash=$1,full_name=$2,department=$3,failed_attempts=0,locked_until=NULL WHERE email=$4 AND role='employee' AND verified=false AND status='active' AND organization_id=$5 RETURNING id",
-    [hash,name,department,email,company.rows[0].id]
+  const client=await sqlPool().connect();
+  let elevated=false;
+  try{
+   await client.query("BEGIN");
+   const result=await client.query(
+    "INSERT INTO users(id,full_name,email,password_hash,department,role,organization_id,verified,status) VALUES($1,$2,$3,$4,$5,'employee',$6,true,'active') ON CONFLICT(email) DO NOTHING RETURNING id",
+    [id,name,email,hash,department,company.rows[0].id]
    );
-   if(!changed.rowCount)return fail("This account cannot be activated automatically. Contact your administrator.",409);
-  }
-  return NextResponse.json({success:true,organization:company.rows[0].name,message:"Email verified. Your employee account is active. You can sign in now."},{headers:{"Cache-Control":"no-store"}});
+   let userId=result.rows[0]?.id;
+   if(!userId){
+    // Retry an unverified legacy employee only after confirmed mailbox ownership.
+    const changed=await client.query(
+     "UPDATE users SET verified=true,password_hash=$1,full_name=$2,department=$3,failed_attempts=0,locked_until=NULL WHERE email=$4 AND role='employee' AND verified=false AND status='active' AND organization_id=$5 RETURNING id",
+     [hash,name,department,email,company.rows[0].id]
+    );
+    if(!changed.rowCount){await client.query("ROLLBACK");return fail("This account cannot be activated automatically. Contact your administrator.",409);}
+    userId=changed.rows[0].id;
+   }
+   if(process.env.PORTAL_V4_ENABLED==="true"){
+    // Automatic Country Admin grants only for an explicitly approved company application,
+    // a matching one-time invitation, AND a newly verified exact company work email.
+    const authorized=await client.query(
+     "SELECT a.country_code,i.id AS invitation_id FROM company_applications a JOIN invitations i ON i.email=a.contact_email AND i.organization_id=a.organization_id AND i.accepted=false WHERE a.status='approved' AND a.organization_id=$1 AND a.contact_email=$2 FOR UPDATE OF i",
+     [company.rows[0].id,email]);
+    if(authorized.rows.length===1){
+     const invite=authorized.rows[0];
+     const promoted=await client.query("UPDATE users SET role='company_admin' WHERE id=$1 AND role='employee' AND verified=true AND organization_id=$2 RETURNING id",[userId,company.rows[0].id]);
+     if(!promoted.rowCount)throw new Error("Approved company contact cannot be promoted");
+     const membership=await client.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,$3,'country_admin') ON CONFLICT(user_id) DO NOTHING RETURNING user_id",[userId,company.rows[0].id,invite.country_code]);
+     if(!membership.rowCount)throw new Error("Existing membership requires manual administrator review");
+     await client.query("UPDATE invitations SET accepted=true WHERE id=$1 AND accepted=false",[invite.invitation_id]);
+     await client.query("INSERT INTO audit_logs(actor_user_id,organization_id,action,subject_id) VALUES($1,$2,'company_application.contact_verified',$3)",[userId,company.rows[0].id,invite.invitation_id]);
+     elevated=true;
+    }
+   }
+   await client.query("COMMIT");
+  }catch(e){await client.query("ROLLBACK").catch(()=>{});throw e;}
+  finally{client.release();}
+  return NextResponse.json({success:true,organization:company.rows[0].name,
+   message:elevated?"Work email verified. Your approved company administrator account is ready to use.":"Email verified. Your employee account is active. You can sign in now.",
+   role:elevated?"company_admin":"employee"},{headers:{"Cache-Control":"no-store"}});
  }catch(error){
   console.error("Verified employee registration failed",error instanceof Error?error.name:"unknown");
   return fail("Unable to finish registration",503);

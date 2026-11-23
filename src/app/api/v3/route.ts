@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {randomUUID} from "node:crypto";
 import {databaseEnabled,getSession,sqlPool,passwordHash,makeToken,logAudit} from "@/lib/db/server";
 import {sameOrigin} from "@/lib/http";
+import {writeVerifiedAttendance} from "@/lib/db/attendance-sync";
 import {canAssign,canManageScope,type V3Actor,type V3Membership,type V3Scope} from "@/lib/v3-permissions";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -85,7 +86,7 @@ export async function POST(req:NextRequest){
     const target=(await client.query<V3Membership>("SELECT m.* FROM v3_memberships m JOIN users u ON u.id=m.user_id AND u.organization_id=m.organization_id JOIN registrations r ON r.user_id=u.id JOIN events e ON e.id=r.event_id AND e.organization_id=m.organization_id WHERE u.id=$1 AND e.id=$2 AND m.level='employee' AND r.status='going' AND e.status='published' AND e.ends_at<=now() FOR UPDATE OF r,m",[userId,eventId])).rows[0];
     if(!target||!canManageScope(actor,target))return fail("No eligible registration in your scope",403);
     subject=eventId+":"+userId;
-    await client.query("INSERT INTO v3_contributions(event_id,user_id,volunteer_minutes,contribution,verified_by) VALUES($1,$2,$3,$4,$5) ON CONFLICT(event_id,user_id) DO UPDATE SET volunteer_minutes=excluded.volunteer_minutes,contribution=excluded.contribution,verified_by=excluded.verified_by,verified_at=now()",[eventId,userId,minutes,txt(a.contribution,1000),user.id]);
+    await writeVerifiedAttendance(client,{eventId,userId,status:"present",minutes,contribution:txt(a.contribution,1000),verifiedBy:user.id});
    }else return fail("Not authorized",403);
    await logAudit(client,user,"v3."+action,subject,org);
    await client.query("COMMIT");

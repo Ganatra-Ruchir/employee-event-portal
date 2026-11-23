@@ -1,5 +1,10 @@
 # Employee Volunteer System
 
+> **V4 development branch:** Railway PostgreSQL integration and CSR workflows are under review. This is NOT the production branch. Real employee data must not be imported until migration, permissions, authentication and browser acceptance checks pass.
+>
+> [Railway PostgreSQL V4 setup and readiness guide](docs/RAILWAY_POSTGRES_V4.md) · [CSR workspace source](src/app/impact/page.tsx) · [Migration 091](db/migrations/091_railway_csr_volunteering.sql)
+
+
 Next.js event management for Elixir Foundation and its partner organizations, with distinct interfaces for **Platform Admin**, **Organization Admin**, and **Employee**.
 
 ## Environments
@@ -50,3 +55,16 @@ For database testing, configure \`DATABASE_URL\` for the appropriate non-product
 - A separate audited production migration and public access review are required before real employee data is processed.
 
 See [GitHub draft pull request](https://github.com/Ganatra-Ruchir/Corporate-Event-Management-Employee-Registration-Portal/pull/1) for the proposed database integration. Do not merge without approval and staged validation.
+
+
+## V4 landing and reviewed company onboarding (staging)
+
+- Redesigned public landing: responsive employee volunteering experience, accessible micro-animations and illustrated dashboard previews (figures are **illustrative**, not live analytics).
+- Public company application: `/companies/register` → `POST /api/company-applications` creates a **pending** request, never a company account automatically.
+- Platform Root Admin review: `/admin/company-requests` → authenticated `GET/PATCH /api/company-applications`. Approval creates an organization, country, work domain and pending invitation; rejection records a reason.
+- Nominated contact: follows normal **work-email OTP signup**; approved organization + matching invitation is required before becoming Company/Country Admin. No automatic company notification sender is deployed.
+- Staging-only migration: `db/migrations/092_company_applications.sql`; apply through the isolated Railway migration gate and turn it back off after verification.
+- UX research, security notes and acceptance gates: [UI research and onboarding](docs/UI_RESEARCH_AND_ONBOARDING.md).
+- Expanded CI browser audit: disposable PostgreSQL + authenticated Root, Country, State and employee sessions, cross-tenant registrations, owner-only certificates, mobile layouts and approved company requests.
+
+**Safety:** No automatic production merge. Complete provider-based email delivery, manual organizational review and security checks before processing real applicants.
