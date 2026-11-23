@@ -54,6 +54,14 @@ const pageName=(view:View)=>({
 })[view];
 const emailOk=(e:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 const parseDomains=(s:string)=>[...new Set(s.split(/[,\s]+/).map(x=>x.trim().toLowerCase()).filter(Boolean))];
+/* Deep links need to render their own section on first hydration. */
+const directRouteView=():View=>{
+  if(typeof window==="undefined")return "home";
+  const slug=window.location.pathname.split("/").filter(Boolean)[0];
+  return ({overview:"home",events:"events",registrations:"registrations",
+    people:"people",companies:"companies",invitations:"invitations",accounts:"users",
+    profile:"profile",attendance:"attendance",hierarchy:"hierarchy"} as Record<string,View>)[slug]||"home";
+};
 async function encodePassword(password:string,salt=crypto.randomUUID()){
   const raw=new TextEncoder().encode(salt+":"+password);
   const digest=await crypto.subtle.digest("SHA-256",raw);
@@ -279,7 +287,7 @@ export default function ElixirPortal(){
   const [session,setSession]=useState<string|null>(null);
   const [ready,setReady]=useState(false);
   const [now,setNow]=useState(0);
-  const [view,setView]=useState<View>("home");
+  const [view,setView]=useState<View>(directRouteView);
   const [selectedEvent,setSelectedEvent]=useState<string|null>(null);
   const [selectedCompany,setSelectedCompany]=useState<string|null>(null);
   const [editingEvent,setEditingEvent]=useState<PortalEvent|null>(null);

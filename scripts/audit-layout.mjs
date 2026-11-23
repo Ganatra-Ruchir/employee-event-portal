@@ -110,7 +110,9 @@ try{
      }catch(error){
       await screenshot(page,"FAILED-"+label).catch(()=>{});
       failures.push(label+": "+(error instanceof Error?error.message:String(error)));
-      console.error("AUDIT FAILURE",label,error instanceof Error?error.message:String(error));
+      const state=await page.locator(".ep-main").first().getAttribute("data-evs-view").catch(()=>null);
+      const role=await page.locator(".ep-main").first().getAttribute("data-evs-role").catch(()=>null);
+      console.error("AUDIT FAILURE",label,JSON.stringify({url:page.url(),view:state,role}),error instanceof Error?error.message:String(error));
      }
     }
     if(screen.width===390&&actor.name==="country"){
