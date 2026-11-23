@@ -288,6 +288,7 @@ export default function ElixirPortal(){
   const [placesOnly,setPlacesOnly]=useState(false);
   const [menu,setMenu]=useState(false);
   const [inviteEmail,setInviteEmail]=useState("");
+  const [inviteName,setInviteName]=useState("");
   const [inviteCompany,setInviteCompany]=useState("");
   const [inviteError,setInviteError]=useState("");
   const [profileName,setProfileName]=useState<string|null>(null);
@@ -569,10 +570,10 @@ export default function ElixirPortal(){
   function invite(e:React.FormEvent){
     e.preventDefault();setInviteError("");
     if(remote){void (async()=>{
-      const result=await remoteRequest("invite",{email:inviteEmail,companyId:inviteCompany});
+      const result=await remoteRequest("invite",{email:inviteEmail,name:inviteName,companyId:inviteCompany});
       if(result.error){setInviteError(result.error);return;}
       if(result.data)setData(result.data);
-      setInviteEmail("");setNotice("Invitation recorded. The manager can sign up using this address.");
+      setInviteEmail("");setInviteName("");setNotice("Manager account created. Login email and temporary password sent to the manager.");
     })();return;}
     if(current?.role!=="platform_admin")return;
     const email=inviteEmail.trim().toLowerCase(),c=data.companies.find(x=>x.id===inviteCompany);
@@ -869,10 +870,11 @@ export default function ElixirPortal(){
             <WorkspaceSection title="Invite a manager" description="Choose an active company and enter the recipient's email.">
               <form className="ep-panel ep-invite-form aw-form-panel" onSubmit={invite}>
                 <FormRow label="Partner company"><select required value={inviteCompany} onChange={e=>setInviteCompany(e.target.value)}><option value="">Select company</option>{data.companies.filter(c=>c.status==="active").map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select></FormRow>
+                <FormRow label="Manager name"><input required minLength={2} value={inviteName} onChange={e=>setInviteName(e.target.value)} placeholder="Manager full name"/></FormRow>
                 <FormRow label="Manager email"><input required type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="manager@company.example"/></FormRow>
                 {inviteError&&<div className="ep-error" role="alert">{inviteError}</div>}
-                <Action type="submit">Create invitation <ArrowRight size={16}/></Action>
-                <p className="ep-hint">Invite the organization administrator with their work email. Invitation status is stored by the portal.</p>
+                <Action type="submit">Create manager and email access <ArrowRight size={16}/></Action>
+                <p className="ep-hint">The manager receives a work-email invitation with a temporary password, valid for 24 hours. First login requires a password change. Demo mode creates an invitation without sending email.</p>
               </form>
             </WorkspaceSection>
             <WorkspaceSection title="Invitation history" description="Invitations and their current status.">
