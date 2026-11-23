@@ -77,6 +77,8 @@ try{
       await page.goto(base+"/"+route,{waitUntil:"domcontentloaded"});
       await page.locator(".ep-shell>.ep-layout>.ep-main").waitFor({timeout:15000});
       await page.locator('.ep-sidebar [aria-current="page"]').waitFor({timeout:15000});
+      const expectedView=route==="overview"?"home":route==="accounts"?"users":route;
+      await page.locator('.ep-main[data-evs-view="'+expectedView+'"]').waitFor({timeout:15000});
       const geometry=await evaluate(page);
       checkGeometry(geometry,label,screen.width);
       if(actor.name==="root"&&route==="overview"){
@@ -106,23 +108,42 @@ try{
       checked++;console.log("PASS",label,"header",geometry.header.height,"nav",geometry.sidebar.width,"contentTop",geometry.firstTop);
      }catch(error){
       await screenshot(page,"FAILED-"+label).catch(()=>{});
-      throw error;
+      failures.push(label+": "+(error instanceof Error?error.message:String(error)));
+      console.error("AUDIT FAILURE",label,error instanceof Error?error.message:String(error));
      }
     }
     if(screen.width===390&&actor.name==="country"){
-     await page.goto(base+"/events");
-     await page.getByRole("button",{name:/Create event/i}).click();
-     await page.locator('.ep-main[data-evs-view="eventForm"]').waitFor();
-     assert.ok(await page.locator('input[required]').count()>=2,"Event creation form present");
-     await screenshot(page,"country-create-event-390");
-     checked++;interactionChecks++;
+     try{
+      await page.goto(base+"/events");
+      await page.locator('.ep-main[data-evs-view="events"]').waitFor({timeout:15000});
+      const createButton=page.getByRole("button",{name:/Create event/i});
+      if(!await createButton.count()){
+       throw Error("Create event button missing. role="+await page.locator(".ep-main").getAttribute("data-evs-role")+" view="+await page.locator(".ep-main").getAttribute("data-evs-view")+" text="+(await page.locator(".ep-main").innerText()).slice(0,700));
+      }
+      await createButton.click();
+      await page.locator('.ep-main[data-evs-view="eventForm"]').waitFor();
+      assert.ok(await page.locator('input[required]').count()>=2,"Event creation form present");
+      await screenshot(page,"country-create-event-390");
+      checked++;interactionChecks++;
+     }catch(error){
+      await screenshot(page,"FAILED-country-create-event-390").catch(()=>{});
+      failures.push("country-create-event-390: "+(error instanceof Error?error.message:String(error)));
+      console.error("AUDIT FAILURE country-create-event",error);
+     }
     }
     if(screen.width===1440&&actor.name==="root"){
-     await page.goto(base+"/companies");
-     await page.getByRole("button",{name:/Add organization/i}).click();
-     await page.locator('.ep-main[data-evs-view="companyForm"]').waitFor();
-     await screenshot(page,"root-create-organization-1440");
-     checked++;interactionChecks++;
+     try{
+      await page.goto(base+"/companies");
+      await page.locator('.ep-main[data-evs-view="companies"]').waitFor({timeout:15000});
+      await page.getByRole("button",{name:/Add organization/i}).click();
+      await page.locator('.ep-main[data-evs-view="companyForm"]').waitFor();
+      await screenshot(page,"root-create-organization-1440");
+      checked++;interactionChecks++;
+     }catch(error){
+      await screenshot(page,"FAILED-root-create-organization-1440").catch(()=>{});
+      failures.push("root-create-organization-1440: "+(error instanceof Error?error.message:String(error)));
+      console.error("AUDIT FAILURE root-create-organization",error);
+     }
     }
     assert.deepEqual(errors,[],actor.name+" "+screen.width+": JavaScript runtime errors");
    }finally{await context.close();}
@@ -140,5 +161,6 @@ try{
    }finally{await page.close();}
   }
  }
- console.log("AUDIT SUMMARY "+JSON.stringify({pages:checked,interactions:interactionChecks,screenshots:visualScreenshots,screenWidths:screens.map(v=>v.width),roles:roles.map(v=>v.name)}));
+ console.log("AUDIT SUMMARY "+JSON.stringify({pages:checked,interactions:interactionChecks,screenshots:visualScreenshots,failed:failures.length,screenWidths:screens.map(v=>v.width),roles:roles.map(v=>v.name)}));
+ if(failures.length)throw Error("UI audit failed with "+failures.length+" issues:\n"+failures.join("\n"));
 }finally{await browser.close();}
