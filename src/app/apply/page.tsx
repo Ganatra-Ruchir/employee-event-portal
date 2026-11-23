@@ -17,7 +17,7 @@ export default function CompanyApplicationPage(){
  <header className="landing-header" aria-label="Site navigation"><Link href="/" className="landing-brand" style={{textDecoration:"none"}}><span className="landing-mark">E</span><span>Employee <span className="landing-brand-light">Volunteer System</span></span></Link><nav className="landing-nav"><Link href="/" className="landing-login"><ArrowLeft size={15}/> Home</Link><Link href="/login" className="landing-login">Log in</Link><Link href="/signup" className="landing-signup">Join your team <ArrowRight size={15}/></Link></nav></header>
  <div className="join-page" style={{background:"transparent",padding:"22px clamp(14px,4vw,65px) 48px"}}><div className="join-grid" style={{maxWidth:1150,margin:"auto"}}>
  <section className="join-panel" style={{borderRadius:22,padding:26}}>
- <small>PARTNER WITH US · EMPLOYEE VOLUNTEER SYSTEM</small><h1>Bring your company into the community.</h1><p>Apply for your organization's workspace. Our platform team reviews your details before activating access.</p>
+ <small>PARTNER WITH US · EMPLOYEE VOLUNTEER SYSTEM</small><h1>Bring your company into the community.</h1><p>Apply for your organization&apos;s workspace. Our platform team reviews your details before activating access.</p>
  {done?<div className="join-done"><CheckCircle2 size={38}/><h2>Application submitted</h2><p>Your application is pending review. The team can contact you using your work email.</p><Link href="/">Return to home</Link></div>:
  <form onSubmit={submit}>
  <label>Organization name<input required minLength={3} maxLength={160} value={form.organizationName} onChange={e=>update("organizationName",e.target.value)} placeholder="Company name"/></label>
