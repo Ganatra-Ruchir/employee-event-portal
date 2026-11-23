@@ -42,3 +42,19 @@ test("saving future or incomplete roster is blocked",()=>{
  event.startsAt="2099-01-01T09:00:00Z";
  assert.throws(()=>saveEventAttendance(admin,data,event.id,attendanceRoster(admin,data,event.id).rows,[]),/once the event starts/);
 });
+
+test("an existing unregistered employee can be added as a walk-in exactly once",()=>{
+ const {data,admin,employee,event}=setup();
+ const second={...employee,id:"test-extra-employee",email:"extra@northwind.example",fullName:"Extra Test Employee"};
+ data.users.push(second);
+ const membership=data.v3!.members.find(m=>m.user_id===employee.id)!;
+ data.v3!.members.push({...membership,user_id:second.id});
+ const rows=attendanceRoster(admin,data,event.id).rows;
+ const extra={employeeId:employeeId(second),phone:"+919876543210"};
+ const saved=saveEventAttendance(admin,data,event.id,rows,[extra]);
+ const walkin=attendanceRoster(admin,saved,event.id).extras;
+ assert.equal(walkin.length,1);
+ assert.equal(walkin[0].userId,second.id);
+ assert.equal(walkin[0].employeeId,extra.employeeId);
+ assert.throws(()=>saveEventAttendance(admin,saved,event.id,rows,[extra,extra]),/Duplicate/);
+});
