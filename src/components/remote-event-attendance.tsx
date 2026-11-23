@@ -1,5 +1,5 @@
 "use client";
-import {useMemo,useState} from "react";
+import {useState} from "react";
 import {ArrowLeft,CalendarDays,Check,Plus,Search} from "lucide-react";
 import type {Person,PortalData} from "@/lib/portal-model";
 type Mark={event_id:string;user_id:string;status:string};
@@ -11,7 +11,7 @@ export default function RemoteEventAttendance({user,data,now,scope,members,marks
  const companyEvents=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published").sort((a,b)=>Date.parse(b.startsAt)-Date.parse(a.startsAt));
  const event=companyEvents.find(e=>e.id===eventId);
  const scopedIds=new Set(members.filter(m=>m.level==="employee").map(m=>String(m.user_id)));
- const roster=useMemo(()=>event?data.registrations.filter(r=>r.eventId===event.id&&r.status==="going"&&scopedIds.has(r.userId)).map(r=>({id:r.userId,person:data.users.find(p=>p.id===r.userId)})).filter((r):r is {id:string;person:Person}=>Boolean(r.person)):[],[event,data, members]);
+ const roster=event?data.registrations.filter(r=>r.eventId===event.id&&r.status==="going"&&scopedIds.has(r.userId)).map(r=>({id:r.userId,person:data.users.find(p=>p.id===r.userId)})).filter((r):r is {id:string;person:Person}=>Boolean(r.person)):[];
  const existing=marks.filter(m=>m.event_id===eventId);
  const present=roster.filter(r=>(checks[r.id]??existing.find(m=>m.user_id===r.id)?.status==="present")).length;
  const extrasForEvent=extras.filter(x=>x.event_id===eventId);
