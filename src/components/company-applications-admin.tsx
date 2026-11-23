@@ -4,7 +4,7 @@ type Application={id:string;organization_name:string;website:string;contact_name
 export default function CompanyApplicationsAdmin({onApproved}:{onApproved?:()=>void}){
  const [items,setItems]=useState<Application[]>([]),[error,setError]=useState(""),[busy,setBusy]=useState(""),[notice,setNotice]=useState("");
  async function load(){const r=await fetch("/api/company-applications",{cache:"no-store"});const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to load");setItems(j.applications||[]);}
- useEffect(()=>{void load().catch(e=>setError(e.message));},[]);
+ useEffect(()=>{let active=true;void fetch("/api/company-applications",{cache:"no-store"}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to load");return j;}).then(j=>{if(active)setItems(j.applications||[]);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Unable to load");});return()=>{active=false;};},[]);
  async function review(id:string,decision:"approved"|"rejected"){
   if(!window.confirm((decision==="approved"?"Approve":"Reject")+" this company application?"))return;
   setBusy(id);setError("");setNotice("");
