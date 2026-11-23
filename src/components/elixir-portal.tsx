@@ -14,6 +14,7 @@ const SpeakerGallery=dynamic(()=>import("@/components/speaker-gallery").then(m=>
 import {PlatformOverview,CompanyOverview,WorkspaceHeading,WorkspaceSection} from "@/components/admin-workspace";
 import {CompanyDirectory,PeopleDirectory,AccountDirectory,InvitationDirectory} from "@/components/admin-directory";
 import {EmployeeProvisioner} from "@/components/employee-provisioner";
+import CompanyApplicationsAdmin from "@/components/company-applications-admin";
 import {EmployeeEditor} from "@/components/employee-editor";
 import {PersonAvatar} from "@/components/person-avatar";
 import {optimizeLocalAvatar,optimizePngAvatar,MAX_AVATAR_SOURCE_BYTES} from "@/lib/avatar-optimization";
@@ -863,6 +864,7 @@ export default function ElixirPortal(){
             query={directorySearch} onQuery={setDirectorySearch} onSelect={c=>setSelectedCompany(c.id)}
             onEdit={c=>{setEditingCompany(c);goto("companyForm");}}
             onToggle={changeCompanyStatus} onClose={()=>setSelectedCompany(null)}/>
+          {remote&&<CompanyApplicationsAdmin onApproved={()=>void remoteRequest("refresh",{}).then(result=>{if(result.data)setData(result.data);})}/>}
         </>}
         {view==="invitations"&&current.role==="platform_admin"&&<>
           <WorkspaceHeading eyebrow="PARTNER ACCESS" title="Admin invitations" description="Grant a manager access to a partner company. Roles are assigned from the invitation, never chosen at login."/>
