@@ -13,7 +13,7 @@ export default function PublicLanding({onEnter}:{onEnter:()=>void}){
  return <div className="landing landing-editorial">
   <header className="landing-header" aria-label="Site navigation">
     <div className="landing-brand"><span className="landing-mark">E</span><span>Employee <span className="landing-brand-light">Volunteer System</span></span></div>
-    <nav className="landing-nav"><button onClick={()=>document.getElementById("experiences")?.scrollIntoView({behavior:"smooth"})} className="landing-login">Explore</button><button onClick={onEnter} className="landing-login">Log in</button><Link href="/signup" className="landing-signup">Join your team <ArrowRight size={15}/></Link></nav>
+    <nav className="landing-nav"><button onClick={()=>document.getElementById("experiences")?.scrollIntoView({behavior:"smooth"})} className="landing-login">Explore</button><Link href="/apply" className="landing-login">For companies</Link><button onClick={onEnter} className="landing-login">Log in</button><Link href="/signup" className="landing-signup">Join your team <ArrowRight size={15}/></Link></nav>
   </header>
   <main>
     <section className="landing-photo-hero" aria-labelledby="landing-hero-title">
@@ -40,7 +40,7 @@ export default function PublicLanding({onEnter}:{onEnter:()=>void}){
        </div>
       </div>
     </section>
-    <section className="landing-private-wrap"><div className="landing-private-note"><span className="landing-private-symbol"><ShieldCheck size={23}/></span><div><strong>For your organization</strong><span>Sign in to see your team’s events and registration options.</span></div></div></section>
+    <section className="landing-private-wrap"><div className="landing-private-note"><span className="landing-private-symbol"><ShieldCheck size={23}/></span><div><strong>For your organization</strong><span>Already a partner? Sign in to see your team’s events. New organizations can apply for access.</span></div><Link href="/apply" className="landing-signup" style={{marginTop:14,display:"inline-flex"}}>Apply as a company <ArrowRight size={15}/></Link></div></section>
   </main>
   <footer className="landing-footer-new cc-landing-footer"><div className="landing-footer-bottom"><span>© {new Date().getFullYear()} Elixir Foundation. All rights reserved.</span><span>Made for meaningful connections</span></div></footer>
  </div>;
