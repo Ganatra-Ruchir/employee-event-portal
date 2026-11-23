@@ -4,9 +4,10 @@ import type {Person,PortalData} from "@/lib/portal-model";
 import {previewWorkspace,previewAction} from "@/lib/v3-preview";
 import CountryHierarchy from "@/components/country-hierarchy";
 import EventAttendance from "@/components/event-attendance";
+import RemoteEventAttendance from "@/components/remote-event-attendance";
 import ImpactCharts from "@/components/impact-charts";
 type Row=Record<string,string|number|null>;
-type Workspace={level:"root"|"country_admin"|"state_admin"|"employee";scope?:Row|null;countries?:Row[];states?:Row[];branches?:Row[];members?:Row[];attendance?:Row[];contributions?:Row[]};
+type Workspace={level:"root"|"country_admin"|"state_admin"|"employee";scope?:Row|null;countries?:Row[];states?:Row[];branches?:Row[];members?:Row[];attendance?:Row[];attendanceMarks?:{event_id:string;user_id:string;status:string}[];attendanceExtras?:{event_id:string;employee_id:string;phone:string}[];contributions?:Row[]};
 const str=(v:unknown)=>String(v??"");
 export default function V3Workspace({user,data,remote,now,onEvent,onSave,hash,section="home",showPeopleDirectory=true}:{user:Person;data:PortalData;remote:boolean;now:number;onEvent:(id:string)=>void;onSave:(data:PortalData)=>boolean;hash:(password:string)=>Promise<string>;section?:"home"|"attendance"|"people"|"hierarchy";showPeopleDirectory?:boolean}){
  const [remoteWorkspace,setWorkspace]=useState<Workspace|null>(null),[issue,setIssue]=useState(""),[success,setSuccess]=useState(""),[busy,setBusy]=useState(false),[credentials,setCredentials]=useState<Row|null>(null);
@@ -46,6 +47,7 @@ export default function V3Workspace({user,data,remote,now,onEvent,onSave,hash,se
  if(section==="hierarchy"&&!root&&!countryAdmin)return <section className="ep-panel"><p>Hierarchy settings are not available for this account.</p></section>;
  if((section==="attendance"||section==="people")&&!countryAdmin&&!stateAdmin)return <section className="ep-panel"><p>This workspace is not available for this account.</p></section>;
  if(section==="attendance"&&!remote&&(countryAdmin||stateAdmin))return <EventAttendance user={user} data={data} now={now} onSave={onSave}/>;
+ if(section==="attendance"&&remote&&(countryAdmin||stateAdmin))return <RemoteEventAttendance user={user} data={data} now={now} scope={scope||null} members={workspace?.members||[]} marks={workspace?.attendanceMarks||[]} extras={workspace?.attendanceExtras||[]} onRefresh={load}/>;
  if(section==="hierarchy"&&countryAdmin&&!remote)return <CountryHierarchy user={user} data={data} onSave={onSave} hash={hash}/>;
  return <section className="ep-panel v3-workspace">
   {section==="home"&&user.role==="employee"&&!stateAdmin&&<><div className="ed-eyebrow">MY VOLUNTEERING JOURNEY</div><h2>My impact dashboard</h2>
