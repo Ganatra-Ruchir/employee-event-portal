@@ -1,0 +1,88 @@
+/* Structural safety layer. Must be imported AFTER all legacy CSS in app/layout.
+   Prevents nested Next.js routes from rendering an unstyled horizontal navigation
+   and an empty first viewport when page-specific CSS is omitted. */
+:root{color-scheme:light!important}
+body:has(.ep-shell),body:has(.ep-auth-layout){background:#f5f8f4!important;color:#203727!important}
+.ep-shell{display:block!important;min-height:100vh!important;width:100%!important;overflow-x:clip}
+.ep-shell h1,.ep-shell h2,.ep-shell .aw-heading h1,.ep-shell .ep-page-head h1,
+.ep-shell .ed-browse-title h1,.ep-auth-v2 h1,.ep-auth-v2 h2{
+ font-family:Inter,"Segoe UI",Arial,sans-serif!important;letter-spacing:-.035em!important;font-weight:800!important;
+}
+.ep-shell>.ep-topbar{
+ display:flex!important;position:relative!important;inset:auto!important;
+ align-items:center!important;justify-content:space-between!important;
+ height:62px!important;min-height:62px!important;width:100%!important;
+ padding:0 18px!important;margin:0!important;gap:12px!important;
+ background:#fff!important;border-bottom:1px solid #e0eae0!important;z-index:66!important
+}
+.ep-shell>.ep-topbar .ep-top-left,.ep-shell>.ep-topbar .ep-top-right{display:flex!important;align-items:center!important;min-width:0!important;gap:11px!important}
+.ep-shell>.ep-topbar .ep-brand{display:flex!important;align-items:center!important;gap:9px!important;color:#204b2b!important;line-height:1.2!important}
+.ep-shell>.ep-layout{
+ display:flex!important;flex-direction:row!important;align-items:stretch!important;
+ gap:0!important;width:100%!important;min-width:0!important;max-width:none!important;
+ min-height:calc(100vh - 62px)!important;margin:0!important
+}
+.ep-shell>.ep-layout>.ep-sidebar{
+ display:flex!important;flex-direction:column!important;position:sticky!important;
+ top:0!important;left:auto!important;right:auto!important;bottom:auto!important;
+ align-self:flex-start!important;flex:0 0 218px!important;width:218px!important;
+ min-width:218px!important;max-width:218px!important;
+ min-height:calc(100vh - 62px)!important;height:auto!important;max-height:100vh!important;
+ overflow-x:hidden!important;overflow-y:auto!important;
+ padding:12px 9px!important;margin:0!important;gap:2px!important;
+ border-right:1px solid #e0eae0!important;background:#fff!important;
+ scroll-snap-type:none!important;mask-image:none!important;-webkit-mask-image:none!important
+}
+.ep-shell>.ep-layout>.ep-sidebar>.cc-nav-entry{display:block!important;flex:0 0 auto!important;width:100%!important;min-width:0!important}
+.ep-shell>.ep-layout>.ep-sidebar>.ep-nav-title{display:block!important;margin:0!important;padding:8px 12px!important;font-size:11px!important;color:#68816d!important}
+.ep-shell>.ep-layout>.ep-sidebar .ep-nav-link{
+ display:flex!important;align-items:center!important;justify-content:flex-start!important;
+ flex-direction:row!important;gap:10px!important;width:100%!important;min-width:0!important;
+ min-height:43px!important;padding:9px 11px!important;text-align:left!important;
+ white-space:normal!important;line-height:1.3!important;text-decoration:none!important
+}
+.ep-shell>.ep-layout>.ep-main{
+ display:block!important;flex:1 1 0%!important;width:auto!important;
+ min-width:0!important;max-width:none!important;min-height:calc(100vh - 62px)!important;
+ margin:0!important;padding:14px!important;background:#f5f8f4!important;
+ position:relative!important;top:auto!important;left:auto!important;overflow:visible!important
+}
+.ep-shell>.ep-layout>.ep-main>*{min-width:0!important}
+.ep-shell .ep-nav-backdrop{display:none!important}
+.ep-shell .ep-main .aw-root,.ep-shell .ep-main .v3-workspace,.ep-shell .ep-main .md-root{
+ margin-top:0!important;
+}
+@media(max-width:800px){
+ .ep-shell>.ep-topbar{height:62px!important;min-height:62px!important;padding:0 12px!important}
+ .ep-shell>.ep-topbar .ep-menu{
+  display:inline-flex!important;flex:0 0 40px!important;align-items:center!important;justify-content:center!important;
+  width:40px!important;height:40px!important;color:#225630!important;z-index:1
+ }
+ .ep-shell>.ep-layout{display:block!important;min-height:calc(100vh - 62px)!important}
+ .ep-shell>.ep-layout>.ep-sidebar{
+  display:flex!important;position:fixed!important;z-index:68!important;
+  top:62px!important;bottom:0!important;left:-272px!important;right:auto!important;
+  width:255px!important;min-width:255px!important;max-width:255px!important;flex:none!important;
+  height:calc(100dvh - 62px)!important;max-height:calc(100dvh - 62px)!important;
+  box-shadow:0 16px 38px #173b2a26!important;transition:left .2s ease!important;
+  overflow-y:auto!important;overscroll-behavior:contain!important
+ }
+ .ep-shell>.ep-layout>.ep-sidebar.expanded{left:0!important}
+ .ep-shell>.ep-layout>.ep-main{
+  display:block!important;width:100%!important;min-height:calc(100vh - 62px)!important;
+  margin:0!important;padding:12px!important;flex:none!important
+ }
+ .ep-shell .ep-nav-backdrop{
+  display:block!important;position:fixed!important;inset:62px 0 0 0!important;z-index:67!important;
+  background:#14281c70!important;border:0!important;padding:0!important;cursor:pointer!important
+ }
+ .ep-shell>.ep-topbar .ep-account>span:last-child{display:none!important}
+}
+@media(max-width:400px){
+ .ep-shell>.ep-topbar{padding:0 8px!important;gap:5px!important}
+ .ep-shell>.ep-topbar .ep-brand{font-size:13px!important;max-width:210px!important;letter-spacing:-.025em!important}
+ .ep-shell>.ep-layout>.ep-main{padding:9px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .ep-shell>.ep-layout>.ep-sidebar{transition:none!important}
+}
