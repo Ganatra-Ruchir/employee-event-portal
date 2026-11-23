@@ -17,6 +17,7 @@ const screens=[
 const browser=await chromium.launch({headless:true});
 await mkdir(output,{recursive:true});
 let checked=0,interactionChecks=0,visualScreenshots=0;
+const failures=[];
 const screenshot=async(page,name)=>{await page.screenshot({path:output+"/"+name+".png",fullPage:false,animations:"disabled"});visualScreenshots++;};
 function checkGeometry(g,label,width){
  const summary=JSON.stringify(g);
