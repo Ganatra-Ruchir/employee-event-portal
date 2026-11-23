@@ -108,6 +108,7 @@ export async function POST(req:NextRequest){
     const submitted=await client.query("SELECT 1 FROM v3_attendance_marks m JOIN registrations r ON r.event_id=m.event_id AND r.user_id=m.user_id WHERE m.event_id=$1 LIMIT 1",[eventId]);
     if(!submitted.rowCount)return fail("Submit registered attendance before adding extras",409);
     const person=await client.query("SELECT u.id,m.* FROM users u LEFT JOIN v3_memberships m ON m.user_id=u.id WHERE (upper(u.id)=$1 OR upper('EMP-'||left(u.id,8))=$1) AND u.organization_id=$2",[employeeId,org]);
+    if(!person.rowCount)return fail("Select an existing company employee",404);
     if(person.rowCount){
      const m=person.rows[0] as V3Membership;
      if(!canManageScope(actor,m))return fail("Employee is outside your attendance scope",403);
