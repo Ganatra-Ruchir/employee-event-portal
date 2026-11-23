@@ -1,4 +1,5 @@
 import {sameOrigin} from "@/lib/http";
+import {sendOnboardingEmail} from "@/lib/auth/onboarding-email";
 import {NextRequest,NextResponse} from "next/server";
 import {randomUUID} from "node:crypto";
 import {databaseEnabled,sqlPool,passwordHash,passwordValid,makeToken,hashToken,getSession,snapshot,logAudit,toPerson} from "@/lib/db/server";
@@ -216,16 +217,24 @@ export async function POST(req:NextRequest){
   }
   if(action==="invite"){
    if(!requireAdmin(user))return denied();
-   const email=text(args.email,255).toLowerCase(),companyId=text(args.companyId,120);
-   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return error("Invalid email");
+   const email=text(args.email,255).toLowerCase(),companyId=text(args.companyId,120),managerName=text(args.name,100)||email.split("@")[0].replace(/[._-]+/g," ");
+   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||managerName.length<2)return error("Enter manager name and valid work email");
    const domain=email.split("@")[1];
-   const org=await pool.query("SELECT 1 FROM organization_domains d JOIN organizations o ON o.id=d.organization_id WHERE d.domain=$1 AND d.organization_id=$2 AND o.status='active'",[domain,companyId]);
+   const org=await pool.query("SELECT o.name FROM organization_domains d JOIN organizations o ON o.id=d.organization_id WHERE d.domain=$1 AND d.organization_id=$2 AND o.status='active'",[domain,companyId]);
    if(!org.rowCount)return error("Email domain does not belong to the active organization");
    if((await pool.query("SELECT 1 FROM users WHERE email=$1",[email])).rowCount)return error("Account already exists");
-    if((await pool.query("SELECT 1 FROM invitations WHERE email=$1 AND organization_id=$2 AND accepted=false",[email,companyId])).rowCount)return error("A pending invitation already exists for this address",409);
-   await pool.query("INSERT INTO invitations(id,email,organization_id) VALUES($1,$2,$3)",[randomUUID(),email,companyId]);
-   await logAudit(pool,user,"invitation.create",email,companyId);
-   return getSnapshot(user);
+   if(!process.env.RESEND_API_KEY||!process.env.ONBOARDING_FROM_EMAIL)return error("Manager email delivery is not configured. Configure RESEND_API_KEY and ONBOARDING_FROM_EMAIL first.",503);
+   const id=randomUUID(),initialPassword=makeToken().slice(0,24);
+   const client=await pool.connect();
+   try{
+    await client.query("BEGIN");
+    await client.query("INSERT INTO users(id,full_name,email,password_hash,department,role,organization_id,verified,status,must_change_password,v3_temporary_password_expires_at) VALUES($1,$2,$3,$4,'Management','company_admin',$5,true,'active',true,now()+interval '24 hours')",[id,managerName,email,await passwordHash(initialPassword),companyId]);
+    await logAudit(client,user,"manager.provisioned",id,companyId);
+    const loginUrl=new URL("/login",req.url).toString();
+    await sendOnboardingEmail({to:email,name:managerName,organization:org.rows[0].name,employeeId:"MGR-"+id.slice(0,8).toUpperCase(),temporaryPassword:initialPassword,loginUrl});
+    await client.query("COMMIT");
+   }catch(e){await client.query("ROLLBACK");throw e;}finally{client.release();}
+   return ok({success:true,emailed:true,email,employeeId:"MGR-"+id.slice(0,8).toUpperCase(),data:await snapshot(user)});
   }
   if(action==="revokeInvitation"){
     if(!requireAdmin(user))return denied();
