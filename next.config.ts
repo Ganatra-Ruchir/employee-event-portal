@@ -23,8 +23,7 @@ const nextConfig:NextConfig={
       {source:"/my-registrations",destination:"/",permanent:false},
       {source:"/join",destination:"/",permanent:false},
       {source:"/settings",destination:"/",permanent:false},
-      {source:"/organizations/:path*",destination:"/",permanent:false},
-      {source:"/events/:path*",destination:"/",permanent:false}
+      {source:"/organizations/:path*",destination:"/",permanent:false}
     ];
   }
 };

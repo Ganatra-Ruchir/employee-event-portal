@@ -80,6 +80,7 @@ try{
       await page.locator('.ep-sidebar [aria-current="page"]').waitFor({timeout:4500});
       const expectedView=route==="overview"?"home":route==="accounts"?"users":route;
       await page.locator('.ep-main[data-evs-view="'+expectedView+'"]').waitFor({timeout:4500});
+      assert.equal(new URL(page.url()).pathname,"/"+route,label+": unexpected route redirect to "+page.url());
       const geometry=await evaluate(page);
       checkGeometry(geometry,label,screen.width);
       if(actor.name==="root"&&route==="overview"){
