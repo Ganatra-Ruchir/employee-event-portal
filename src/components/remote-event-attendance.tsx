@@ -4,8 +4,8 @@ import {ArrowLeft,CalendarDays,Check,Plus,Search} from "lucide-react";
 import type {Person,PortalData} from "@/lib/portal-model";
 type Mark={event_id:string;user_id:string;status:string};
 type Extra={event_id:string;employee_id:string;phone:string};
-type Props={user:Person;data:PortalData;now:number;scope:{organization_id?:string;country_code?:string;state_id?:string}|null;members:Record<string,unknown>[];marks:Mark[];extras:Extra[];onRefresh:()=>Promise<void>};
-export default function RemoteEventAttendance({user,data,now,scope,members,marks,extras,onRefresh}:Props){
+type Props={user:Person;data:PortalData;now:number;scope:{organization_id?:string;country_code?:string;state_id?:string}|null;members:Record<string,unknown>[];marks:Mark[];extras:Extra[];submissions:{event_id:string}[];onRefresh:()=>Promise<void>};
+export default function RemoteEventAttendance({user,data,now,scope,members,marks,extras,submissions,onRefresh}:Props){
  const [eventId,setEventId]=useState(""),[search,setSearch]=useState(""),[checks,setChecks]=useState<Record<string,boolean>>({}),[submitted,setSubmitted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
  const [extraId,setExtraId]=useState(""),[phone,setPhone]=useState(""),[employeeQuery,setEmployeeQuery]=useState("");
  const companyEvents=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published").sort((a,b)=>Date.parse(b.startsAt)-Date.parse(a.startsAt));
@@ -19,7 +19,7 @@ export default function RemoteEventAttendance({user,data,now,scope,members,marks
  const extraIds=new Set(extrasForEvent.map(x=>x.employee_id.toUpperCase()));
  const employees=data.users.filter(p=>p.role==="employee"&&p.status==="active"&&p.companyId===user.companyId&&scopedIds.has(p.id)&&!registeredIds.has(p.id)&&!extraIds.has((p.employeeNumber||"EMP-"+p.id.slice(0,8).toUpperCase()).toUpperCase()));
  const employeeMatches=employeeQuery.trim()?employees.filter(p=>[p.fullName,p.employeeNumber||"EMP-"+p.id.slice(0,8).toUpperCase(),p.department,p.email].join(" ").toLowerCase().includes(employeeQuery.trim().toLowerCase())).slice(0,8):[];
- function open(id:string){setEventId(id);setChecks({});setSubmitted(marks.some(m=>m.event_id===id));setError("");setMessage("");setSearch("");}
+ function open(id:string){setEventId(id);setChecks({});setSubmitted(submissions.some(m=>m.event_id===id));setError("");setMessage("");setSearch("");}
  async function send(action:string,fields:Record<string,unknown>){
   const r=await fetch("/api/v3",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,organization_id:scope?.organization_id,country_code:scope?.country_code,state_id:scope?.state_id,event_id:eventId,...fields})});
   const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to save");return j;
