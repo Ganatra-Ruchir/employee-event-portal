@@ -70,6 +70,14 @@ jobs:
         env:
           NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "false"
 
+      - name: Upload UI audit screenshots and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4-ui-visual-audit
+          path: artifacts/ui-audit/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Build database-backed staging preview
         run: npm run build
         env:
