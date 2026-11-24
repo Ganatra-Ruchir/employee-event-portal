@@ -400,7 +400,10 @@ export async function POST(req:NextRequest){
     const event=locked.rows[0];
     if(!event||!requireOrg(user,event.organization_id)||!event.starts_at){await client.query("ROLLBACK");return denied();}
     const employeeId=action==="removeParticipant"?text(args.userId,120):user.id;
-    if(action==="removeParticipant"&&!requireCompanyAdmin(user,event.organization_id)){await client.query("ROLLBACK");return denied();}
+    if(action==="removeParticipant"&&!requireCompanyAdmin(user,event.organization_id)){
+     const editorState=await eventEditorState(user,event.organization_id);
+     if(!editorState||event.payload?.stateId!==editorState){await client.query("ROLLBACK");return denied();}
+    }
     if(action==="removeParticipant"){
       const member=await client.query("SELECT 1 FROM users WHERE id=$1 AND organization_id=$2",[employeeId,event.organization_id]);
       if(!member.rowCount){await client.query("ROLLBACK");return denied();}
@@ -408,6 +411,10 @@ export async function POST(req:NextRequest){
     const previous=await client.query("SELECT * FROM registrations WHERE event_id=$1 AND user_id=$2",[eventId,employeeId]);
     const oldStatus=previous.rows[0]?.status;
     if(action==="register"){
+      if(process.env.PORTAL_V3_ENABLED==="true"&&user.role==="employee"&&event.payload?.stateId){
+       const eligible=await client.query("SELECT 1 FROM v3_memberships WHERE user_id=$1 AND organization_id=$2 AND state_id=$3 AND level IN ('state_admin','employee')",[user.id,event.organization_id,event.payload.stateId]);
+       if(!eligible.rowCount){await client.query("ROLLBACK");return error("This event belongs to another state",403);}
+      }
       if(user.role==="platform_admin"||user.companyId!==event.organization_id||!user.verified||event.status!=="published"||new Date(event.starts_at)<=new Date()||event.payload.deadline&&new Date(event.payload.deadline)<=new Date()){
        await client.query("ROLLBACK");return error("Registration unavailable",409);
       }
