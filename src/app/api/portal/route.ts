@@ -331,6 +331,7 @@ export async function POST(req:NextRequest){
    if(assignedState&&prior?.stateId!==undefined&&prior.stateId!==assignedState)return denied();
    if(assignedState&&existing.rowCount&&!prior?.stateId)return denied();
    if(assignedState&&e.stateId&&e.stateId!==assignedState)return denied();
+   if(prior&&e.stateId!==undefined&&e.stateId!==prior.stateId)return error("An existing event cannot change its assigned state",409);
    // Trim speaker text so names don't carry stray spaces into cards, labels and screen-reader text.
    const speakers=Array.isArray(e.speakers)?e.speakers.map(s=>({...s,name:text(s.name,120),jobTitle:text(s.jobTitle,120),company:text(s.company,120),
     talkTitle:text(s.talkTitle,200),bio:text(s.bio,2000),agendaSlot:text(s.agendaSlot,120),linkedIn:text(s.linkedIn,300),github:text(s.github,300),website:text(s.website,300)})):e.speakers;
