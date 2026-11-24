@@ -98,6 +98,13 @@ try{
   }
   checked++;console.log("PASS public",route);await page.close();
  }
+ for(const route of ["/","/apply"]){
+  const page=await browser.newPage({viewport:{width:1440,height:900}});
+  await page.goto(base+route);await page.waitForLoadState("domcontentloaded");
+  await page.screenshot({path:"artifacts/client-ui/public-"+(route==="/"?"landing":"apply")+"-desktop.png",fullPage:false});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),route+": desktop overflow");
+  checked++;await page.close();
+ }
  navigationMs.sort((a,b)=>a-b);
  const p95=navigationMs[Math.floor(.95*(navigationMs.length-1))]||0;
  console.log("Client audit:",JSON.stringify({pages:checked,roles:roles.length,viewports:viewportSizes.map(v=>v.width),navigationSampleCount:navigationMs.length,p50NavigationMs:navigationMs[Math.floor(.5*(navigationMs.length-1))]||0,p95NavigationMs:p95,browserErrors:pageErrors.length}));
