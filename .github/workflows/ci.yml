@@ -34,3 +34,11 @@ jobs:
           node scripts/audit-layout.mjs
         env:
           NEXT_PUBLIC_PORTAL_DATABASE_ENABLED: "false"
+      - name: Upload client UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-ui-screenshots
+          path: artifacts/client-ui/
+          if-no-files-found: ignore
+          retention-days: 7
