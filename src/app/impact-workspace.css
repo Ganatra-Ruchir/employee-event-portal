@@ -353,3 +353,7 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .ep-shell .cc-event-upcoming-list>.cc-upcoming-card strong{font-size:15px;color:#213f2a;overflow-wrap:anywhere}
 .ep-shell .cc-event-upcoming-list>.cc-upcoming-card span{font-size:12px;color:#667b6b}
 @media(max-width:720px){.ep-shell .cc-event-upcoming-list{grid-template-columns:minmax(0,1fr)}}
+
+.ep-shell .cc-state-card .cc-state-company{color:#687b6d;font-size:12px;margin:-7px 0 10px;overflow-wrap:anywhere}
+.ep-shell .cc-member-search{display:grid;gap:6px;max-width:360px;margin:10px 0 14px;font-size:12px;color:#506455}
+.ep-shell .cc-member-search input{min-height:38px;width:100%}
