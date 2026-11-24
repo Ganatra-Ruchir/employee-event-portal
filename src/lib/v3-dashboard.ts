@@ -26,3 +26,16 @@ export function stateMetrics(states:DashboardState[],branches:DashboardBranch[],
   ...peopleMetrics(members.filter(m=>m.state_id===state.id),data,now)
  }));
 }
+
+/** Published events owned by the selected company and country in the current month.
+ * Country-scoped totals must not accidentally include a company's other countries.
+ * Legacy events without a country assignment are excluded rather than guessed.
+ */
+export function countryMonthEventCount(data:PortalData,companyId:string,countryCode:string,now:number):number{
+ if(!companyId||!countryCode)return 0;
+ const [start,end]=monthBounds(now);
+ return data.events.filter(e=>
+  e.companyId===companyId&&e.countryCode===countryCode&&e.status==="published"&&
+  Number.isFinite(Date.parse(e.startsAt))&&Date.parse(e.startsAt)>=start&&Date.parse(e.startsAt)<end
+ ).length;
+}
