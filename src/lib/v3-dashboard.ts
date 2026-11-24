@@ -9,15 +9,15 @@ export function monthBounds(now:number):[number,number]{
 }
 export function peopleMetrics(members:DashboardMember[],data:PortalData,now:number){
  const employees=members.filter(m=>m.level==="employee");
- const employeeIds=new Set(employees.map(m=>m.user_id));
+ const statuses=new Map(data.users.map(p=>[p.id,p.status]));
+ const activeIds=new Set(employees.filter(m=>(m.status||statuses.get(m.user_id)||"active")==="active").map(m=>m.user_id));
  const [start,end]=monthBounds(now);
  const monthEvents=data.events.filter(e=>e.status==="published"&&Date.parse(e.startsAt)>=start&&Date.parse(e.startsAt)<end);
  const eventIds=new Set(monthEvents.map(e=>e.id));
- const registeredIds=new Set(data.registrations.filter(r=>r.status==="going"&&employeeIds.has(r.userId)&&eventIds.has(r.eventId)).map(r=>r.userId));
- const statuses=new Map(data.users.map(p=>[p.id,p.status]));
- const active=employees.filter(m=>(m.status||statuses.get(m.user_id)||"active")==="active").length;
- return {total:employees.length,active,suspended:employees.length-active,registeredThisMonth:registeredIds.size,notRegisteredThisMonth:employees.length-registeredIds.size,
-  eventCount:monthEvents.filter(e=>data.registrations.some(r=>r.status==="going"&&employeeIds.has(r.userId)&&r.eventId===e.id)).length};
+ const registeredIds=new Set(data.registrations.filter(r=>r.status==="going"&&activeIds.has(r.userId)&&eventIds.has(r.eventId)).map(r=>r.userId));
+ const active=activeIds.size;
+ return {total:employees.length,active,suspended:employees.length-active,registeredThisMonth:registeredIds.size,notRegisteredThisMonth:active-registeredIds.size,
+  eventCount:monthEvents.filter(e=>data.registrations.some(r=>r.status==="going"&&activeIds.has(r.userId)&&r.eventId===e.id)).length};
 }
 export function stateMetrics(states:DashboardState[],branches:DashboardBranch[],members:DashboardMember[],data:PortalData,now:number){
  return states.map(state=>({
