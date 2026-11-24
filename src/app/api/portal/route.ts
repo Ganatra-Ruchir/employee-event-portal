@@ -396,13 +396,21 @@ export async function POST(req:NextRequest){
   }
   if(action==="cancelEvent"){
    const id=text(args.eventId,120);
-   const found=await pool.query("SELECT organization_id,payload FROM events WHERE id=$1",[id]);
+   const found=await pool.query("SELECT organization_id,created_by,payload FROM events WHERE id=$1",[id]);
    if(!found.rowCount||user.companyId!==found.rows[0].organization_id)return denied();
    const companyAdmin=requireCompanyAdmin(user,found.rows[0].organization_id);
    const assignedState=companyAdmin?null:await eventEditorState(user,found.rows[0].organization_id);
+   const editorCountry=await eventEditorCountry(user,found.rows[0].organization_id);
+   if(process.env.PORTAL_V3_ENABLED==="true"&&!editorCountry)return denied();
    if(!companyAdmin&&(!assignedState||found.rows[0].payload?.stateId!==assignedState))return denied();
+   if(editorCountry&&found.rows[0].payload?.countryCode&&found.rows[0].payload.countryCode!==editorCountry)return denied();
    const event={...found.rows[0].payload,status:"cancelled",cancellationReason:text(args.reason,500)};
-   const changed=await pool.query("UPDATE events SET status='cancelled',payload=$1::jsonb,updated_at=now() WHERE id=$2 AND organization_id=$3 AND ($4::bool=true OR payload->>'stateId'=$5) RETURNING id",[jsonPayload(event),id,user.companyId,companyAdmin,assignedState]);
+   const changed=await pool.query(
+    "UPDATE events SET status='cancelled',payload=$1::jsonb,updated_at=now() WHERE id=$2 AND organization_id=$3 AND "+
+    "(($4::bool=true AND ($5::text IS NULL OR payload->>'countryCode'=$5 OR (payload->>'countryCode' IS NULL AND "+
+    "(created_by=$6 OR payload->>'stateId' IN (SELECT id FROM v3_states WHERE organization_id=$3 AND country_code=$5))))) OR "+
+    "($4::bool=false AND payload->>'stateId'=$7 AND (payload->>'countryCode' IS NULL OR payload->>'countryCode'=$5))) RETURNING id",
+    [jsonPayload(event),id,user.companyId,companyAdmin,editorCountry,user.id,assignedState]);
    if(!changed.rowCount)return denied();
    await logAudit(pool,user,"event.cancel",id);
    return getSnapshot(user);
