@@ -645,7 +645,7 @@ export default function ElixirPortal(){
       if(result.error){setProfileError(result.error);return;}
       const changed=Boolean(profilePw);
       if(result.data)setData(result.data);setProfilePw("");setProfilePwConfirm("");setProfileCurrentPw("");setProfileError("");
-      setProfileSuccess(changed?"Profile and password saved. You've been signed out on your other devices.":"Profile saved.");return;
+      setProfileSuccess(changed?"Profile and password saved. You've been signed out on your other devices.":"Profile saved.");setProfileName(null);setProfileDepartment(null);setProfileJobTitle(null);setProfilePhone(null);setProfileMode("view");return;
     }
     setProfileError("");setProfileSuccess("");
     const fullName=profileName??current.fullName,department=profileDepartment??current.department;
