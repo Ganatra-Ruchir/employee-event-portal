@@ -867,11 +867,6 @@ export default function ElixirPortal(){
         {view==="people"&&current.role==="company_admin"&&!remote&&<>
           {(!isCountryAdmin||remote)&&<WorkspaceHeading eyebrow={company?.name.toUpperCase()||"COMPANY"} title="Your people" description="Manage employee accounts."/>}
           {remote&&remoteRole==="employee"&&<div className="ep-info" role="alert"><strong>Country access not assigned.</strong> A platform administrator must assign this company admin to a country under Global hierarchy before employee provisioning can be used.</div>}
-          <div className="employee-list-stats">
-            <span>{companyPeople.length} total staff</span>
-            <span>{companyPeople.filter(p=>p.status==="active").length} active</span>
-            <span>{companyPeople.filter(p=>p.status==="suspended").length} suspended</span>
-          </div>
           <div className="employee-list-actions ep-people-toolbar">
             <label>Status <select value={employeeFilter} onChange={e=>setEmployeeFilter(e.target.value)}><option>All</option><option value="active">Active</option><option value="suspended">Suspended</option></select></label>
             <button type="button" className="ep-export-button" onClick={()=>exportCsv("company-employees.csv",["Employee ID","Name","Email","Department","Job title","Phone","Role","Status"],companyPeople.map(p=>[p.employeeNumber||"EMP-"+p.id.slice(0,8).toUpperCase(),p.fullName,p.email,p.department,p.jobTitle||"",p.phone||"",p.role,p.status]))}><Download size={15}/> Export employees CSV</button>
