@@ -378,7 +378,7 @@ export default function ElixirPortal(){
     }).catch(()=>{if(active)setRemoteRole(null);});
     return()=>{active=false;};
   },[remote,session]);
-  const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string}>=>{
+  const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string;accessLevel?:"root"|"country_admin"|"state_admin"|"employee"}>=>{
     try{
       const r=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args}),cache:"no-store"});
       const result=await r.json();
@@ -390,7 +390,7 @@ export default function ElixirPortal(){
     try{
       const r=await fetch("/api/portal",{cache:"no-store"});
       const json=await r.json();
-      if(r.ok&&json.data){setData(json.data);setSession(json.currentId||null);return true;}
+      if(r.ok&&json.data){setData(json.data);setRemoteRole(json.accessLevel||null);setSession(json.currentId||null);return true;}
     }catch{}
     return false;
   };
@@ -398,7 +398,8 @@ export default function ElixirPortal(){
     const result=await remoteRequest(action,args);
     if(result.error){setNotice(result.error);return false;}
     if(result.data)setData(result.data);
-    else await remoteRefresh();
+    if(result.accessLevel)setRemoteRole(result.accessLevel);
+    else if(!result.data)await remoteRefresh();
     if(success)setNotice(success);return true;
   };
   const save=(newData:PortalData)=>{
@@ -418,7 +419,7 @@ export default function ElixirPortal(){
   const events=current?.role==="platform_admin"?data.events:current?.companyId?data.events.filter(e=>e.companyId===current.companyId):[];
   const companyEvents=events;
   const isStateAdmin=Boolean(current&&(remote?remoteRole==="state_admin":previewActor(current,data).level==="state_admin"));
-  const isCountryAdmin=Boolean(current&&(remote?current.role==="company_admin":previewActor(current,data).level==="country_admin"));
+  const isCountryAdmin=Boolean(current&&(remote?remoteRole==="country_admin":previewActor(current,data).level==="country_admin"));
   const dailyNav:View[]=current?.role==="platform_admin"?["home","events","users"]:isStateAdmin?["home","events","attendance","people"]:current?.role==="company_admin"?["home","events",...(isCountryAdmin?["attendance" as View]:[]),"people","registrations"]:["home","events","registrations"];
   const settingsNav:View[]=current?.role==="platform_admin"?["companies","invitations","hierarchy","profile"]:isCountryAdmin?["hierarchy","profile"]:["profile"];
   const nav=[...dailyNav,...settingsNav];
@@ -843,11 +844,12 @@ export default function ElixirPortal(){
         </>}
         {view==="people"&&current.role==="company_admin"&&<>
           {(!isCountryAdmin||remote)&&<WorkspaceHeading eyebrow={company?.name.toUpperCase()||"COMPANY"} title="Your people" description="Manage employee accounts."/>}
-          {remote&&!isCountryAdmin&&<div className="ep-panel ep-invite-employees">
+          {remote&&remoteRole==="employee"&&<div className="ep-info" role="alert"><strong>Country access not assigned.</strong> A platform administrator must assign this company admin to a country under Global hierarchy before employee provisioning can be used.</div>}
+          {remote&&!isCountryAdmin&&remoteRole!=="employee"&&<div className="ep-panel ep-invite-employees">
             <div><strong>Invite employees</strong><p>Share the signup page with employees. They confirm their work email with a one-time code, and their account is ready to use.</p></div>
             <button type="button" className="aw-primary" onClick={()=>{void navigator.clipboard.writeText(new URL("/signup",window.location.origin).toString()).then(()=>setNotice("Employee signup link copied."),()=>setNotice("Copy this link from your browser address: /signup"));}}>Copy employee signup link</button>
           </div>}
-          {remote&&!isCountryAdmin&&<EmployeeProvisioner onCreate={async fields=>{
+          {remote&&remoteRole!=="employee"&&!isCountryAdmin&&<EmployeeProvisioner onCreate={async fields=>{
             try{
               const response=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"createEmployee",args:fields})});
               const result=await response.json();
