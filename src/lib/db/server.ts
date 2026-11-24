@@ -45,6 +45,23 @@ export async function getSession(token?:string){
   [hashToken(token)]);
  return r.rowCount?toPerson(r.rows[0]):null;
 }
+/**
+ * V3 requests need both an authenticated user and their hierarchy membership.
+ * A single joined query avoids a second database round trip on every V3 page.
+ * Membership is nullable for the root administrator.
+ */
+export async function getSessionWithMembership(token?:string):Promise<{user:Person;membership:Record<string,unknown>|null}|null>{
+ if(!token)return null;
+ const r=await sqlPool().query(
+  "SELECT u.*,row_to_json(m) AS membership FROM sessions s JOIN users u ON u.id=s.user_id "+
+  "LEFT JOIN organizations o ON o.id=u.organization_id "+
+  "LEFT JOIN v3_memberships m ON m.user_id=u.id AND m.organization_id=u.organization_id "+
+  "WHERE s.token_hash=$1 AND s.expires_at>now() AND u.status='active' AND (u.organization_id IS NULL OR o.status='active') LIMIT 1",
+  [hashToken(token)]
+ );
+ if(!r.rowCount)return null;
+ return {user:toPerson(r.rows[0]),membership:r.rows[0].membership||null};
+}
 export async function snapshot(current:Person):Promise<PortalData>{
  const p=sqlPool(),admin=current.role==="platform_admin";
  const [companies,users,events,registrations,invitations,domains]=await Promise.all([
