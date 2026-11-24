@@ -142,7 +142,7 @@ function EventEditor({event,data,onSave,onBack}:{event:PortalEvent;data:PortalDa
   }
   return <div>
     <button className="ep-back" type="button" onClick={leave}><ArrowLeft size={16}/> Back</button>
-    <WorkspaceHeading eyebrow="COMPANY EVENT MANAGEMENT" title={isNew?"Create event":"Edit event"} description="Set up event details, timing and registration, then save or publish."/>
+    <WorkspaceHeading eyebrow={form.stateId?"STATE EVENT MANAGEMENT":"COMPANY EVENT MANAGEMENT"} title={isNew?"Create event":"Edit event"} description="Set up event details, timing and registration, then save or publish."/>
     <form className="ep-panel ep-form" onSubmit={submit}>
       <h2>Event information</h2>
       <FormRow label="Event banner (optional, JPG/PNG/WebP up to 5 MB)"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void uploadBanner(e.target.files?.[0])}/></FormRow>
