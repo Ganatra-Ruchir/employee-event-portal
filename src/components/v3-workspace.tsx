@@ -23,7 +23,7 @@ export default function V3Workspace({user,data,remote,now,onEvent,onSave,hash,se
   invalidateV3Workspace();
   const result=await fetchV3Workspace<Workspace>();setWorkspace(result);
  }
- useEffect(()=>{if(!remote)return;let active=true;void fetchV3Workspace<Workspace>().then(result=>{if(active)setWorkspace(result);}).catch(e=>{if(active)setIssue(e instanceof Error?e.message:"Workspace unavailable");});return()=>{active=false;};},[remote,user.id]);
+ useEffect(()=>{if(!remote)return;let active=true;void fetchV3Workspace<Workspace>({force:section==="attendance"}).then(result=>{if(active)setWorkspace(result);}).catch(e=>{if(active)setIssue(e instanceof Error?e.message:"Workspace unavailable");});return()=>{active=false;};},[remote,user.id,section]);
  const workspace:Workspace|null=remote?remoteWorkspace:previewWorkspace(user,data);
  const level=workspace?.level,scope=workspace?.scope;
  const root=level==="root",countryAdmin=level==="country_admin",stateAdmin=level==="state_admin";
