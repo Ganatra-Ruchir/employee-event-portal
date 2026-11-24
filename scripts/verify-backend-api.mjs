@@ -46,5 +46,10 @@ try{
  assert.equal(response.status,200,"Approve application: "+JSON.stringify(response.body));
  const approved=await db.query("SELECT o.id FROM organizations o JOIN organization_domains d ON d.organization_id=o.id WHERE d.domain='ci-newpartner.example'");
  assert.equal(approved.rowCount,1);
+ const simultaneous=await Promise.all(Array.from({length:5},async()=>{const started=performance.now();const r=await api("/api/v3",{headers:{"Cookie":"elixir_session="+tokenManager}});return {status:r.status,ms:Math.round(performance.now()-started)};}));
+ assert(simultaneous.every(x=>x.status===200),"Five concurrent read requests failed");
+ const times=simultaneous.map(x=>x.ms).sort((a,b)=>a-b);
+ console.log("CI local API latency:",JSON.stringify({clients:5,p50Ms:times[2],p95Ms:times[4]}));
+ assert(times[4]<8000,"CI 5-request p95 latency exceeded 8s");
  console.log("PASS: live HTTP API attendance, walk-in, duplicate prevention, company application and review");
 }finally{await db.end().catch(()=>{});}
