@@ -10,6 +10,8 @@ const roles=[
 const viewportSizes=[{width:2300,height:1100},{width:1440,height:900},{width:390,height:844}];
 const browser=await chromium.launch({headless:true});
 let checked=0;
+const navigationMs=[];
+const pageErrors=[];
 try{
  for(const viewport of viewportSizes){
   for(const [email,routes] of roles){
@@ -22,9 +24,11 @@ try{
    await page.locator(".ep-auth-submit").click();
    await page.locator(".ep-shell .ep-main").waitFor();
    for(const route of routes){
+    const navigationStart=Date.now();
     await page.goto(base+"/"+route);
     await page.locator(".ep-shell .ep-main").waitFor();
     await page.locator(".ep-sidebar [aria-current=page]").waitFor();
+    navigationMs.push(Date.now()-navigationStart);
     const dimensions=await page.evaluate(()=>{
      const main=document.querySelector(".ep-main"),nav=document.querySelector(".ep-sidebar");
      const box=main.getBoundingClientRect(),n=nav.getBoundingClientRect(),style=getComputedStyle(main);
@@ -45,15 +49,27 @@ try{
     checked++;console.log("PASS",label);
    }
    assert.deepEqual(errors,[],email+": browser errors");
+   pageErrors.push(...errors);
    await context.close();
   }
  }
- for(const route of ["/","/signup","/admin/activate"]){
+ for(const route of ["/","/signup","/login","/apply","/admin/activate"]){
   const page=await browser.newPage({viewport:{width:390,height:844}});
   await page.goto(base+route);
   await page.waitForLoadState("domcontentloaded");
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),route+": public mobile overflow");
+  if(route==="/apply"){
+   assert.ok(await page.locator('form input[type="email"]').count()>0,"Company application contact email field missing");
+   assert.ok(await page.locator('a[href="/"]').count()>0,"Company application has no main-site navigation");
+  }
+  if(route==="/"){
+   assert.ok(await page.locator('a[href="/apply"]').count()>0,"Landing page does not link to company applications");
+  }
   checked++;console.log("PASS public",route);await page.close();
  }
+ navigationMs.sort((a,b)=>a-b);
+ const p95=navigationMs[Math.floor(.95*(navigationMs.length-1))]||0;
+ console.log("Client audit:",JSON.stringify({pages:checked,roles:roles.length,viewports:viewportSizes.map(v=>v.width),navigationSampleCount:navigationMs.length,p50NavigationMs:navigationMs[Math.floor(.5*(navigationMs.length-1))]||0,p95NavigationMs:p95,browserErrors:pageErrors.length}));
+ assert.ok(p95<20000,"CI navigation p95 exceeded 20s; inspect performance regression");
  console.log("Layout checks passed:",checked);
 }finally{await browser.close();}
