@@ -1,3 +1,4 @@
+import {mkdir} from "node:fs/promises";
 import {chromium} from "playwright";
 import assert from "node:assert/strict";
 const base=process.env.BASE_URL||"http://127.0.0.1:3000";
@@ -11,6 +12,7 @@ const viewportSizes=[{width:2300,height:1100},{width:1440,height:900},{width:390
 const browser=await chromium.launch({headless:true});
 let checked=0;
 const navigationMs=[];
+await mkdir("artifacts/client-ui",{recursive:true});
 const pageErrors=[];
 try{
  for(const viewport of viewportSizes){
@@ -29,6 +31,7 @@ try{
     await page.locator(".ep-shell .ep-main").waitFor();
     await page.locator(".ep-sidebar [aria-current=page]").waitFor();
     navigationMs.push(Date.now()-navigationStart);
+    if(viewport.width===1440&&["overview","attendance","companies","events","profile"].includes(route))await page.screenshot({path:"artifacts/client-ui/"+email.split("@")[0]+"-"+route+".png",fullPage:false});
     const dimensions=await page.evaluate(()=>{
      const main=document.querySelector(".ep-main"),nav=document.querySelector(".ep-sidebar");
      const box=main.getBoundingClientRect(),n=nav.getBoundingClientRect(),style=getComputedStyle(main);
@@ -58,6 +61,7 @@ try{
   await page.goto(base+route);
   await page.waitForLoadState("domcontentloaded");
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),route+": public mobile overflow");
+  if(route==="/"||route==="/apply")await page.screenshot({path:"artifacts/client-ui/public-"+(route==="/"?"landing":"apply")+".png",fullPage:false});
   if(route==="/apply"){
    assert.ok(await page.locator('form input[type="email"]').count()>0,"Company application contact email field missing");
    assert.ok(await page.locator('a[href="/"]').count()>0,"Company application has no main-site navigation");
