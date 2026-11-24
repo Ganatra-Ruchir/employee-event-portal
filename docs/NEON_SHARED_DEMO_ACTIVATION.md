@@ -12,10 +12,11 @@
 - Production Vercel environment keys created: `DATABASE_URL`, `PORTAL_BACKEND_MODE=database`, `PORTAL_V3_ENABLED=true`, `NEXT_PUBLIC_PORTAL_DATABASE_ENABLED=true`, and `BOOTSTRAP_ADMIN_EMAIL`.
 - Test-account temporary passwords were created outside the GitHub repository and require first-sign-in rotation.
 
-## Deployment blocker
-Vercel rejected deployment with `402 payment_required: api-deployments-free-per-day`. The live production URL has an older build and still uses browser-only demo data. **The shared database is NOT available on the permanent website until a new production deployment is READY.**
+## Live deployment (verified)
 
-When the quota resets, deploy the current `main` revision to the existing Vercel project/team. Inspect build logs and ensure `/api/portal/health` returns HTTP 200 with `{"mode":"postgresql","ready":true}`.
+Vercel successfully deployed `main` commit `6241863f` to production, using the new database environment settings. On 24 November 2026, the permanent domain `/api/portal/health` returned HTTP 200 with `{"mode":"postgresql","ready":true}`. Unauthenticated `/api/portal` reported `enabled:true`; company applications returned HTTP 403 without an admin session.
+
+**Database connectivity is verified. Full cross-browser login, event mutation, role isolation and client acceptance still require live authenticated tests.** Follow-up commits add documentation and the optional live smoke test script `scripts/verify-shared-neon.mjs`; these do not change the database connection.
 
 ## First root admin
 The first root account has not been activated. Use `scripts/issue-first-admin-link.mjs` from a trusted private shell with the direct Neon connection string. Set `BOOTSTRAP_ADMIN_EMAIL` to the same email configured in Vercel, `PORTAL_PUBLIC_URL=https://employee-event-portal.vercel.app`, and `ALLOW_FIRST_ADMIN_INVITE=true`. The script refuses if a root already exists, creates only a hashed 48-hour single-use token, and prints the activation URL privately.
@@ -36,4 +37,4 @@ The first root account has not been activated. Use `scripts/issue-first-admin-li
 - The eighty fictional directory placeholders require the admin to issue credentials before those placeholder users can sign in. Eight role-test accounts have unique one-time credentials.
 - Email delivery is not activated; onboarding messages will not be sent until the sender and provider are configured and verified.
 - A secure first-admin activation is still required.
-- The permanent domain remains on the old build until Vercel allows deployment.
+- The permanent domain now uses Neon, but the initial platform admin and full authenticated five-person acceptance have not been completed.
