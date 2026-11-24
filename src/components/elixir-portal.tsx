@@ -730,7 +730,7 @@ export default function ElixirPortal(){
     <a className="ep-skip" href="#main-content">Skip to main content</a>
     <header className="ep-topbar">
       <div className="ep-top-left"><button className="ep-menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Employee Volunteer System</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
-      <div className="ep-top-right">{current.role==="employee"&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
+      <div className="ep-top-right">{current.role==="employee"&&!isStateAdmin&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
     </header>
     <div className="ep-layout">
       <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
@@ -747,7 +747,7 @@ export default function ElixirPortal(){
         </div>}
         {view==="eventForm"&&editingEvent&&<EventEditor key={editingEvent.id} event={editingEvent} data={data} onSave={saveEvent} onBack={()=>goto("events")}/>}
         {view==="companyForm"&&<CompanyEditor key={editingCompany?.id||"new"} company={editingCompany||undefined} data={data} onSave={saveCompany} onBack={()=>goto("companies")}/>}
-        {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isStateAdmin||isCountryAdmin&&!remote)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} now={now} onEvent={openEvent} onSave={save} hash={encodePassword} showPeopleDirectory={current.role!=="company_admin"} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"}/> }
+        {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isStateAdmin||isCountryAdmin)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} now={now} onEvent={openEvent} onSave={save} hash={encodePassword} showPeopleDirectory={current.role!=="company_admin"} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"}/> }
         {view==="events"&&current.role==="employee"&&<DiscoverBrowse
           data={data} events={companyEvents} now={now}
           onOpen={e=>{openEvent(e.id);}}
@@ -843,11 +843,11 @@ export default function ElixirPortal(){
         </>}
         {view==="people"&&current.role==="company_admin"&&<>
           {(!isCountryAdmin||remote)&&<WorkspaceHeading eyebrow={company?.name.toUpperCase()||"COMPANY"} title="Your people" description="Manage employee accounts."/>}
-          {remote&&<div className="ep-panel ep-invite-employees">
+          {remote&&!isCountryAdmin&&<div className="ep-panel ep-invite-employees">
             <div><strong>Invite employees</strong><p>Share the signup page with employees. They confirm their work email with a one-time code, and their account is ready to use.</p></div>
             <button type="button" className="aw-primary" onClick={()=>{void navigator.clipboard.writeText(new URL("/signup",window.location.origin).toString()).then(()=>setNotice("Employee signup link copied."),()=>setNotice("Copy this link from your browser address: /signup"));}}>Copy employee signup link</button>
           </div>}
-          {remote&&<EmployeeProvisioner onCreate={async fields=>{
+          {remote&&!isCountryAdmin&&<EmployeeProvisioner onCreate={async fields=>{
             try{
               const response=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"createEmployee",args:fields})});
               const result=await response.json();
