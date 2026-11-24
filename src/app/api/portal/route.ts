@@ -34,16 +34,18 @@ async function eventEditorState(user:Person,companyId:string):Promise<string|nul
 }
 async function getSnapshot(user:Person){
  let accessLevel:"root"|"country_admin"|"state_admin"|"employee"=user.role==="platform_admin"?"root":user.role==="company_admin"?"country_admin":"employee";
+ let accessStateId:string|null=null;
  if(process.env.PORTAL_V3_ENABLED==="true"&&user.role!=="platform_admin"){
-  const membership=await sqlPool().query("SELECT level FROM v3_memberships WHERE user_id=$1 AND organization_id=$2 LIMIT 1",[user.id,user.companyId]);
+  const membership=await sqlPool().query("SELECT level,state_id FROM v3_memberships WHERE user_id=$1 AND organization_id=$2 LIMIT 1",[user.id,user.companyId]);
   const assigned=membership.rows[0]?.level;
   accessLevel=(assigned==="country_admin"&&user.role==="company_admin")?"country_admin":
     (assigned==="state_admin"&&user.role==="employee")?"state_admin":"employee";
+  accessStateId=accessLevel==="state_admin"?membership.rows[0]?.state_id||null:null;
  }
  if(user.mustChangePassword){
-  return ok({enabled:true,currentId:user.id,accessLevel,data:{companies:[],users:[user],events:[],registrations:[],invitations:[]}});
+  return ok({enabled:true,currentId:user.id,accessLevel,accessStateId,data:{companies:[],users:[user],events:[],registrations:[],invitations:[]}});
  }
- return ok({enabled:true,currentId:user.id,accessLevel,data:await snapshot(user)});
+ return ok({enabled:true,currentId:user.id,accessLevel,accessStateId,data:await snapshot(user)});
 }
 export async function GET(req:NextRequest){
  if(!databaseEnabled())return ok({enabled:false});
