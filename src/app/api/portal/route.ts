@@ -449,6 +449,14 @@ export async function POST(req:NextRequest){
        const eligible=await client.query("SELECT 1 FROM v3_memberships WHERE user_id=$1 AND organization_id=$2 AND state_id=$3 AND level IN ('state_admin','employee')",[user.id,event.organization_id,event.payload.stateId]);
        if(!eligible.rowCount){await client.query("ROLLBACK");return error("This event belongs to another state",403);}
       }
+      if(process.env.PORTAL_V3_ENABLED==="true"&&user.role==="company_admin"){
+       const assignedCountry=await eventEditorCountry(user,event.organization_id);
+       if(!assignedCountry||event.payload?.countryCode&&event.payload.countryCode!==assignedCountry){await client.query("ROLLBACK");return denied();}
+       if(event.payload?.stateId){
+        const localState=await client.query("SELECT 1 FROM v3_states WHERE id=$1 AND organization_id=$2 AND country_code=$3",[event.payload.stateId,event.organization_id,assignedCountry]);
+        if(!localState.rowCount){await client.query("ROLLBACK");return denied();}
+       }
+      }
       if(user.role==="platform_admin"||user.companyId!==event.organization_id||!user.verified||event.status!=="published"||new Date(event.starts_at)<=new Date()||event.payload.deadline&&new Date(event.payload.deadline)<=new Date()){
        await client.query("ROLLBACK");return error("Registration unavailable",409);
       }
