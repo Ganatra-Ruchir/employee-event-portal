@@ -25,10 +25,17 @@ function jsonPayload(value:unknown){
  return raw;
 }
 async function getSnapshot(user:Person){
- if(user.mustChangePassword){
-  return ok({enabled:true,currentId:user.id,data:{companies:[],users:[user],events:[],registrations:[],invitations:[]}});
+ let accessLevel:"root"|"country_admin"|"state_admin"|"employee"=user.role==="platform_admin"?"root":user.role==="company_admin"?"country_admin":"employee";
+ if(process.env.PORTAL_V3_ENABLED==="true"&&user.role!=="platform_admin"){
+  const membership=await sqlPool().query("SELECT level FROM v3_memberships WHERE user_id=$1 AND organization_id=$2 LIMIT 1",[user.id,user.companyId]);
+  const assigned=membership.rows[0]?.level;
+  accessLevel=(assigned==="country_admin"&&user.role==="company_admin")?"country_admin":
+    (assigned==="state_admin"&&user.role==="employee")?"state_admin":"employee";
  }
- return ok({enabled:true,currentId:user.id,data:await snapshot(user)});
+ if(user.mustChangePassword){
+  return ok({enabled:true,currentId:user.id,accessLevel,data:{companies:[],users:[user],events:[],registrations:[],invitations:[]}});
+ }
+ return ok({enabled:true,currentId:user.id,accessLevel,data:await snapshot(user)});
 }
 export async function GET(req:NextRequest){
  if(!databaseEnabled())return ok({enabled:false});
