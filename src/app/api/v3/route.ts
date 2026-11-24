@@ -35,10 +35,10 @@ export async function GET(req:NextRequest){
    db.query("SELECT * FROM v3_states WHERE ($1::text IS NULL OR organization_id=$1) AND ($2::text IS NULL OR country_code=$2) AND ($3::text IS NULL OR id=$3) ORDER BY name",args),
    db.query("SELECT * FROM v3_branches WHERE ($1::text IS NULL OR organization_id=$1) AND ($2::text IS NULL OR country_code=$2) AND ($3::text IS NULL OR state_id=$3) ORDER BY name",args),
    db.query("SELECT m.*,u.full_name,u.email,u.department,u.status,u.job_title,u.phone FROM v3_memberships m JOIN users u ON u.id=m.user_id AND u.organization_id=m.organization_id WHERE ($1::text IS NULL OR m.organization_id=$1) AND ($2::text IS NULL OR m.country_code=$2) AND ($3::text IS NULL OR m.state_id=$3) ORDER BY u.full_name",args),
-   root?Promise.resolve({rows:[]}):db.query("SELECT r.event_id,r.user_id,e.title,u.full_name,c.volunteer_minutes,c.contribution FROM registrations r JOIN events e ON e.id=r.event_id JOIN users u ON u.id=r.user_id JOIN v3_memberships m ON m.user_id=u.id AND m.organization_id=e.organization_id AND u.organization_id=m.organization_id LEFT JOIN v3_contributions c ON c.event_id=r.event_id AND c.user_id=r.user_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3) AND m.level='employee' AND r.status='going' AND e.status='published' AND e.ends_at<=now() ORDER BY e.ends_at DESC LIMIT 250",args),
+   root?Promise.resolve({rows:[]}):db.query("SELECT r.event_id,r.user_id,e.title,u.full_name,c.volunteer_minutes,c.contribution FROM registrations r JOIN events e ON e.id=r.event_id JOIN users u ON u.id=r.user_id JOIN v3_memberships m ON m.user_id=u.id AND m.organization_id=e.organization_id AND u.organization_id=m.organization_id LEFT JOIN v3_contributions c ON c.event_id=r.event_id AND c.user_id=r.user_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3) AND m.level='employee' AND r.status='going' AND e.status='published' AND e.ends_at<=now() AND ($3::text IS NULL OR e.payload->>'stateId'=$3) ORDER BY e.ends_at DESC LIMIT 250",args),
    root?Promise.resolve({rows:[]}):db.query("SELECT x.event_id,x.user_id,x.status FROM v3_attendance_marks x JOIN events e ON e.id=x.event_id JOIN v3_memberships m ON m.user_id=x.user_id AND m.organization_id=e.organization_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3)",args),
-   root?Promise.resolve({rows:[]}):db.query("SELECT w.event_id,w.employee_id,w.phone FROM v3_attendance_walkins w JOIN events e ON e.id=w.event_id WHERE e.organization_id=$1 AND ($2::text IS NULL OR w.state_id=$2) ORDER BY w.added_at", [args[0],actor.level==="state_admin"?s?.state_id:null]),
-   root?Promise.resolve({rows:[]}):db.query("SELECT sub.event_id FROM v3_attendance_submissions sub JOIN events e ON e.id=sub.event_id WHERE e.organization_id=$1 AND EXISTS(SELECT 1 FROM v3_countries c WHERE c.organization_id=e.organization_id AND c.code=$2)",args.slice(0,2))
+   root?Promise.resolve({rows:[]}):db.query("SELECT w.event_id,w.employee_id,w.phone FROM v3_attendance_walkins w JOIN events e ON e.id=w.event_id WHERE e.organization_id=$1 AND ($2::text IS NULL OR (w.state_id=$2 AND e.payload->>'stateId'=$2)) ORDER BY w.added_at", [args[0],actor.level==="state_admin"?s?.state_id:null]),
+   root?Promise.resolve({rows:[]}):db.query("SELECT sub.event_id FROM v3_attendance_submissions sub JOIN events e ON e.id=sub.event_id WHERE e.organization_id=$1 AND EXISTS(SELECT 1 FROM v3_countries c WHERE c.organization_id=e.organization_id AND c.code=$2) AND ($3::text IS NULL OR e.payload->>'stateId'=$3)",args)
   ]);
   return reply({level:actor.level,scope:s,countries:countries.rows,states:states.rows,branches:branches.rows,members:members.rows,attendance:attendance.rows,attendanceMarks:attendanceMarks.rows,attendanceExtras:attendanceExtras.rows,attendanceSubmissions:attendanceSubmissions.rows});
  }catch(e){console.error("V3 read failed",e);return fail("V3 workspace unavailable; check staging migration",503);}
@@ -118,8 +118,9 @@ export async function POST(req:NextRequest){
     const eventId=txt(a.event_id,120);
     const rows=Array.isArray(a.rows)?a.rows:null;
     if(!eventId||!rows||rows.length>2000)return fail("Invalid attendance roster");
-    const event=(await client.query("SELECT id FROM events WHERE id=$1 AND organization_id=$2 AND status='published' AND starts_at<=now()",[eventId,org])).rows[0];
+    const event=(await client.query("SELECT id,payload FROM events WHERE id=$1 AND organization_id=$2 AND status='published' AND starts_at<=now()",[eventId,org])).rows[0];
     if(!event)return fail("Event is unavailable for attendance",404);
+     if(actor.level==="state_admin"&&event.payload?.stateId!==actor.scope?.state_id)return fail("Only events assigned to your state can be marked",403);
     const expected=await client.query<V3Membership>("SELECT m.* FROM registrations r JOIN users u ON u.id=r.user_id JOIN v3_memberships m ON m.user_id=u.id AND m.organization_id=u.organization_id WHERE r.event_id=$1 AND r.status='going' AND u.organization_id=$2 AND m.country_code=$3 AND ($4::text IS NULL OR m.state_id=$4) AND m.level='employee'",[eventId,org,country,actor.level==="state_admin"?actor.scope?.state_id:null]);
     const eligible=new Set(expected.rows.filter(m=>canManageScope(actor,m)).map(m=>m.user_id));
     if(rows.length!==eligible.size)return fail("Submit the complete registered employee roster",400);
@@ -137,8 +138,9 @@ export async function POST(req:NextRequest){
    }else if(action==="attendanceExtra"&&(actor.level==="country_admin"||actor.level==="state_admin")){
     const eventId=txt(a.event_id,120),employeeId=txt(a.employee_id,80).toUpperCase(),phone=txt(a.phone,25);
     if(!validWalkInEmployeeId(employeeId)||!validWalkInPhone(phone))return fail("Enter valid employee ID and phone");
-    const event=(await client.query("SELECT id FROM events WHERE id=$1 AND organization_id=$2 AND status='published' AND starts_at<=now()",[eventId,org])).rows[0];
+    const event=(await client.query("SELECT id,payload FROM events WHERE id=$1 AND organization_id=$2 AND status='published' AND starts_at<=now()",[eventId,org])).rows[0];
     if(!event)return fail("Event unavailable",404);
+     if(actor.level==="state_admin"&&event.payload?.stateId!==actor.scope?.state_id)return fail("Only your state events accept extra attendees",403);
     const submitted=await client.query("SELECT 1 FROM v3_attendance_submissions WHERE event_id=$1",[eventId]);
     if(!submitted.rowCount)return fail("Submit registered attendance before adding extras",409);
     const person=await client.query("SELECT u.id,m.* FROM users u LEFT JOIN v3_memberships m ON m.user_id=u.id WHERE (upper(u.id)=$1 OR upper('EMP-'||left(u.id,8))=$1) AND u.organization_id=$2",[employeeId,org]);
@@ -155,6 +157,10 @@ export async function POST(req:NextRequest){
     if(!Number.isInteger(minutes)||minutes<0||minutes>10080)return fail("Enter valid volunteer minutes");
     const target=(await client.query<V3Membership>("SELECT m.* FROM v3_memberships m JOIN users u ON u.id=m.user_id AND u.organization_id=m.organization_id JOIN registrations r ON r.user_id=u.id JOIN events e ON e.id=r.event_id AND e.organization_id=m.organization_id WHERE u.id=$1 AND e.id=$2 AND m.level='employee' AND r.status='going' AND e.status='published' AND e.ends_at<=now() FOR UPDATE OF r,m",[userId,eventId])).rows[0];
     if(!target||!canManageScope(actor,target))return fail("No eligible registration in your scope",403);
+     const eventOwner=await client.query("SELECT payload FROM events WHERE id=$1",[eventId]);
+     if(actor.level==="state_admin"&&eventOwner.rows[0]?.payload?.stateId!==actor.scope?.state_id)return fail("Cannot verify another state's event",403);
+     const attendanceMark=await client.query("SELECT status FROM v3_attendance_marks WHERE event_id=$1 AND user_id=$2",[eventId,userId]);
+     if(attendanceMark.rows[0]?.status==="absent")return fail("Cannot award volunteer hours to an employee marked absent",409);
     subject=eventId+":"+userId;
     await client.query("INSERT INTO v3_contributions(event_id,user_id,volunteer_minutes,contribution,verified_by) VALUES($1,$2,$3,$4,$5) ON CONFLICT(event_id,user_id) DO UPDATE SET volunteer_minutes=excluded.volunteer_minutes,contribution=excluded.contribution,verified_by=excluded.verified_by,verified_at=now()",[eventId,userId,minutes,txt(a.contribution,1000),user.id]);
    }else return fail("Not authorized",403);
