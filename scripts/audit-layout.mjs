@@ -51,6 +51,18 @@ try{
     }
     checked++;console.log("PASS",label);
    }
+   if(viewport.width===1440){
+    const buttons=page.locator(".ep-sidebar button.ep-nav-link");
+    const count=await buttons.count();
+    assert.ok(count>0,email+": no sidebar navigation buttons");
+    for(let i=0;i<count;i++){
+     await buttons.nth(i).click();
+     await buttons.nth(i).waitFor({state:"visible"});
+     await assert.equal(await buttons.nth(i).getAttribute("aria-current"),"page",email+": sidebar click did not activate the expected page");
+     assert.ok(new URL(page.url()).pathname!=="/",email+": sidebar click did not route");
+    }
+    console.log("PASS sidebar click-through",email,count);
+   }
    assert.deepEqual(errors,[],email+": browser errors");
    pageErrors.push(...errors);
    await context.close();
