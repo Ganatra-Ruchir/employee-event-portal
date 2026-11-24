@@ -90,7 +90,7 @@ export async function previewAction(user:Person,input:PreviewData,a:Record<strin
   v.members=v.members.filter(m=>m.user_id!==target.id);v.members.push({...scopeOf(org,country),user_id:target.id,level:"country_admin"});
  }else if(action==="provision"){
   const level=a.level==="country_admin"?"country_admin":a.level==="state_admin"?"state_admin":a.level==="employee"?"employee":null;
-  if(!level||!canAssign(actor,level,scope)||!hasCountry||(level!=="country_admin"&&!hasState)||(level==="employee"&&!hasBranch))throw Error("Invalid account scope");
+  if(!level||!canAssign(actor,level,scope)||!hasCountry||(level!=="country_admin"&&!hasState)||(level==="employee"&&branch!==null&&!hasBranch))throw Error("Invalid account scope");
   if(name.length<2||name.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||isPersonalDomain(email.split("@")[1])||!company.domains.includes(email.split("@")[1]))throw Error("Enter a name and approved company email");
   if(d.users.some(u=>u.email.toLowerCase()===email))throw Error("Email already registered");
   const id="EMP-"+crypto.randomUUID().toUpperCase(),password=crypto.randomUUID().replaceAll("-","").slice(0,24);
