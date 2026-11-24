@@ -104,7 +104,7 @@ export async function POST(req:NextRequest){
     subject=eventId;
    }else if(action==="attendanceExtra"&&(actor.level==="country_admin"||actor.level==="state_admin")){
     const eventId=txt(a.event_id,120),employeeId=txt(a.employee_id,80).toUpperCase(),phone=txt(a.phone,25);
-    if(!/^[A-Z0-9][A-Z0-9_./-]{0,79}$/.test(employeeId)||!/^\\+?[0-9 ()-]{6,24}$/.test(phone)||phone.replace(/\\D/g,"").length<7)return fail("Enter valid employee ID and phone");
+    if(!/^[A-Z0-9][A-Z0-9_./-]{0,79}$/.test(employeeId)||!/^\+?[0-9 ()-]{6,24}$/.test(phone)||phone.replace(/\D/g,"").length<7)return fail("Enter valid employee ID and phone");
     const event=(await client.query("SELECT id FROM events WHERE id=$1 AND organization_id=$2 AND status='published' AND starts_at<=now()",[eventId,org])).rows[0];
     if(!event)return fail("Event unavailable",404);
     const submitted=await client.query("SELECT 1 FROM v3_attendance_submissions WHERE event_id=$1",[eventId]);
