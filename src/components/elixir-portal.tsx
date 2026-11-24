@@ -293,6 +293,7 @@ export default function ElixirPortal(){
   const [inviteCountry,setInviteCountry]=useState("");
   const [inviteCountries,setInviteCountries]=useState<{organization_id:string;code:string;name:string}[]>([]);
   const [inviteError,setInviteError]=useState("");
+  const [profileMode,setProfileMode]=useState<"view"|"edit"|"security">("view");
   const [profileName,setProfileName]=useState<string|null>(null);
   const [profileDepartment,setProfileDepartment]=useState<string|null>(null);
   const [profileJobTitle,setProfileJobTitle]=useState<string|null>(null);
@@ -652,7 +653,7 @@ export default function ElixirPortal(){
     if(profilePw&&profilePw.length<6){setProfileError("Use at least six characters for the demonstration password.");return;}
     const password=profilePw?await encodePassword(profilePw):current.password;
     save({...data,users:data.users.map(u=>u.id===current.id?{...u,fullName:fullName.trim(),department:department.trim(),jobTitle:profileJobTitle??current.jobTitle??"",phone:profilePhone??current.phone??"",password}:u)});
-    setProfilePw("");setProfilePwConfirm("");setProfileSuccess("Profile saved in this browser.");
+    setProfilePw("");setProfilePwConfirm("");setProfileSuccess("Profile saved in this browser.");setProfileMode("view");
   }
   function saveLocalPhoto(userId:string,avatarUrl:string|undefined){
     if(localStorage.getItem(SESSION)!==userId)throw Error("Your session changed. Sign in again before changing your photo.");
@@ -911,46 +912,55 @@ export default function ElixirPortal(){
           <AccountDirectory people={data.users} companies={data.companies} search={directorySearch} onSearch={setDirectorySearch} onStatus={changeUserStatus} onApprove={remote?approveUser:undefined} onGrantAdmin={remote?grantInvitedAdmin:undefined} onResetPassword={remote?p=>void resetPassword(p):undefined}/>
         </>}
         {view==="profile"&&<>
-          <WorkspaceHeading eyebrow="YOUR ACCOUNT" title="Profile & settings" description="Manage your personal details, profile photo and password."/>
-          <div className="aw-two-col aw-profile-layout">
-            <div className="aw-profile-summary">
+          <div className="cc-page-heading"><div><div className="ed-eyebrow">YOUR ACCOUNT</div><h1>Profile & settings</h1><p>Account details, privacy and security in one place.</p></div>
+            <div className="cc-page-actions"><button type="button" className="ep-button secondary" onClick={()=>{setProfileMode(profileMode==="edit"?"view":"edit");setProfileError("");}}> {profileMode==="edit"?"Close editor":"Edit profile"}</button><button type="button" className="ep-button secondary" onClick={()=>{setProfileMode(profileMode==="security"?"view":"security");setProfileError("");}}>Security</button></div>
+          </div>
+          <div className="aw-two-col aw-profile-layout cc-profile-layout">
+            <div className="aw-profile-summary cc-profile-summary">
               <PersonAvatar person={current} size={88}/>
-              <div className="cc-profile-photo-control" key={current.id}>
-                <label className="cc-photo-upload"><input type="file" aria-label="Choose profile picture" accept="image/png,image/jpeg,image/webp" disabled={profilePhotoBusy} onChange={e=>{void uploadProfilePhoto(e.currentTarget.files?.[0]);e.currentTarget.value="";}}/><span>{profilePhotoBusy?"Processing…":current.avatarUrl?"Change profile picture":"Upload profile picture"}</span></label>
+              {profileMode==="edit"&&<div className="cc-profile-photo-control" key={current.id}>
+                <label className="cc-photo-upload"><input type="file" aria-label="Choose profile picture" accept="image/png,image/jpeg,image/webp" disabled={profilePhotoBusy} onChange={e=>{void uploadProfilePhoto(e.currentTarget.files?.[0]);e.currentTarget.value="";}}/><span>{profilePhotoBusy?"Processing…":current.avatarUrl?"Change photo":"Upload photo"}</span></label>
                 {current.avatarUrl&&<button className="cc-photo-remove" type="button" disabled={profilePhotoBusy} onClick={()=>void removeProfilePhoto()}>Remove picture</button>}
-                <small>JPG, PNG, WebP · Up to 20 MB. {remote?"Automatically resized.":"Saved locally; use demo photos only."}</small>
+                <small>JPG, PNG or WebP · Up to 20 MB</small>
                 {photoError&&<p className="ep-error" role="alert">{photoError}</p>}{photoSuccess&&<p className="ep-success" role="status">{photoSuccess}</p>}
-              </div>
-              <h2>{current.fullName}</h2><p>{current.email}</p><span className="md-role">{isStateAdmin?"State admin":roleName(current.role)}</span>
+              </div>}
+              <h2 title={current.fullName}>{current.fullName}</h2><p title={current.email}>{current.email}</p><span className="md-role">{isStateAdmin?"State admin":roleName(current.role)}</span>
               <div className="aw-profile-company"><span>Organization</span><strong>{company?.name||"Elixir Foundation"}</strong></div>
               <div className="aw-profile-company"><span>Department</span><strong>{current.department||"Not provided"}</strong></div>
               {current.jobTitle&&<div className="aw-profile-company"><span>Job title</span><strong>{current.jobTitle}</strong></div>}
             </div>
-            <form className="ep-panel ep-form aw-profile-form" onSubmit={profileSave}>
-              <h2>Personal details</h2>
-
-              <div className="ep-form-grid">
-                <FormRow label="Full name"><input required value={profileName??current.fullName} onChange={e=>setProfileName(e.target.value)}/></FormRow>
-                <FormRow label="Department"><input value={profileDepartment??current.department} onChange={e=>setProfileDepartment(e.target.value)}/></FormRow>
-              </div>
-              <div className="ep-form-grid">
-                <FormRow label="Job title"><input maxLength={100} value={profileJobTitle??current.jobTitle??""} onChange={e=>setProfileJobTitle(e.target.value)}/></FormRow>
-                <FormRow label="Phone (optional)"><input type="tel" maxLength={25} value={profilePhone??current.phone??""} onChange={e=>setProfilePhone(e.target.value)}/></FormRow>
-              </div>
-              <FormRow label="Work email"><input value={current.email} disabled/></FormRow>
-              <label className="ep-check aw-privacy-setting"><input type="checkbox" checked={current.showInAttendeeLists!==false} onChange={e=>remote?void remoteAction("privacy",{visible:e.target.checked},"Privacy preference saved."):save({...data,users:data.users.map(u=>u.id===current.id?{...u,showInAttendeeLists:e.target.checked}:u)})}/> Show my name in attendee lists</label>
-              <div className="aw-form-divider"/>
-              <h2>{remote?"Change password":"Change demonstration password"}</h2>
-              <p className="ep-hint">{remote?"Optional: choose a new unique password of at least 12 characters.":"Optional. Use a disposable demo password, not your real work password."}</p>
-              {remote&&<FormRow label="Current password"><input type="password" autoComplete="current-password" value={profileCurrentPw} onChange={e=>setProfileCurrentPw(e.target.value)} placeholder="Needed only to change your password"/></FormRow>}
-              <div className="ep-form-grid">
-                <FormRow label="New password"><input type="password" minLength={remote?12:6} autoComplete="new-password" value={profilePw} onChange={e=>setProfilePw(e.target.value)}/></FormRow>
-                <FormRow label="Confirm new password"><input type="password" minLength={remote?12:6} autoComplete="new-password" value={profilePwConfirm} onChange={e=>setProfilePwConfirm(e.target.value)}/></FormRow>
-              </div>
-              {profileError&&<div className="ep-error" role="alert">{profileError}</div>}
-              {profileSuccess&&<div className="ep-success" role="status">{profileSuccess}</div>}
-              <Action type="submit">Save changes <ArrowRight size={16}/></Action>
-            </form>
+            <div className="cc-profile-content">
+              {profileMode==="view"&&<section className="ep-panel cc-profile-readonly">
+                <div className="cc-card-heading"><h2>Personal details</h2><button type="button" className="ep-button secondary" onClick={()=>setProfileMode("edit")}>Edit</button></div>
+                <dl className="cc-profile-details">
+                  <div><dt>Full name</dt><dd>{current.fullName}</dd></div><div><dt>Department</dt><dd>{current.department||"Not provided"}</dd></div>
+                  <div><dt>Job title</dt><dd>{current.jobTitle||"Not provided"}</dd></div><div><dt>Phone</dt><dd>{current.phone||"Not provided"}</dd></div>
+                  <div className="cc-detail-wide"><dt>Work email</dt><dd>{current.email}</dd></div>
+                </dl>
+                <div className="cc-profile-preferences"><h3>Privacy</h3><label className="ep-check aw-privacy-setting"><input type="checkbox" checked={current.showInAttendeeLists!==false} onChange={e=>remote?void remoteAction("privacy",{visible:e.target.checked},"Privacy preference saved."):save({...data,users:data.users.map(u=>u.id===current.id?{...u,showInAttendeeLists:e.target.checked}:u)})}/> Show my name in attendee lists</label></div>
+                <div className="cc-profile-preferences"><div className="cc-card-heading"><h3>Account security</h3><button type="button" className="ep-button secondary" onClick={()=>setProfileMode("security")}>Change password</button></div><p className="ep-hint">Manage your password separately from your profile details.</p></div>
+                {profileSuccess&&<div className="ep-success" role="status">{profileSuccess}</div>}
+              </section>}
+              {profileMode==="edit"&&<form className="ep-panel ep-form aw-profile-form" onSubmit={profileSave}>
+                <div className="cc-card-heading"><h2>Edit profile</h2><button type="button" className="ep-button secondary" onClick={()=>{setProfileMode("view");setProfileName(null);setProfileDepartment(null);setProfileJobTitle(null);setProfilePhone(null);setProfileError("");}}>Cancel</button></div>
+                <div className="ep-form-grid"><FormRow label="Full name"><input required minLength={2} maxLength={100} value={profileName??current.fullName} onChange={e=>setProfileName(e.target.value)}/></FormRow>
+                <FormRow label="Department"><input value={profileDepartment??current.department} onChange={e=>setProfileDepartment(e.target.value)}/></FormRow></div>
+                <div className="ep-form-grid"><FormRow label="Job title"><input maxLength={100} value={profileJobTitle??current.jobTitle??""} onChange={e=>setProfileJobTitle(e.target.value)}/></FormRow>
+                <FormRow label="Phone (optional)"><input type="tel" maxLength={25} value={profilePhone??current.phone??""} onChange={e=>setProfilePhone(e.target.value)}/></FormRow></div>
+                <FormRow label="Work email (managed by organization)"><input value={current.email} disabled/></FormRow>
+                {profileError&&<div className="ep-error" role="alert">{profileError}</div>}
+                <div className="cc-page-actions"><Action type="submit">Save profile <ArrowRight size={16}/></Action></div>
+              </form>}
+              {profileMode==="security"&&<form className="ep-panel ep-form aw-profile-form" onSubmit={profileSave}>
+                <div className="cc-card-heading"><h2>Change password</h2><button type="button" className="ep-button secondary" onClick={()=>{setProfileMode("view");setProfileError("");setProfilePw("");setProfilePwConfirm("");setProfileCurrentPw("");}}>Cancel</button></div>
+                <p className="ep-hint">{remote?"Choose a unique password with at least 12 characters.":"This is a browser-only demo. Do not use your real work password."}</p>
+                {remote&&<FormRow label="Current password"><input type="password" required autoComplete="current-password" value={profileCurrentPw} onChange={e=>setProfileCurrentPw(e.target.value)}/></FormRow>}
+                <FormRow label="New password"><input type="password" required minLength={remote?12:6} autoComplete="new-password" value={profilePw} onChange={e=>setProfilePw(e.target.value)}/></FormRow>
+                <FormRow label="Confirm new password"><input type="password" required minLength={remote?12:6} autoComplete="new-password" value={profilePwConfirm} onChange={e=>setProfilePwConfirm(e.target.value)}/></FormRow>
+                {profileError&&<div className="ep-error" role="alert">{profileError}</div>}
+                <div className="cc-page-actions"><Action type="submit">Update password</Action></div>
+              </form>}
+            </div>
           </div>
         </>}
         <footer className="ep-footer">{portalBrand} · Team events and experiences</footer>
