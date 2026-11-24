@@ -33,7 +33,7 @@ try{
     const expectedView=route==="overview"?"home":route==="accounts"?"users":route;
     await page.locator(`.ep-sidebar button.ep-nav-link[data-view="${expectedView}"][aria-current="page"]`).waitFor();
     navigationMs.push(Date.now()-navigationStart);
-    if((viewport.width===1440||viewport.width===768)&&["overview","attendance","companies","events","profile"].includes(route))await page.screenshot({path:"artifacts/client-ui/"+email.split("@")[0]+"-"+route+(viewport.width===768?"-tablet":"")+".png",fullPage:false});
+    if((viewport.width===1440||viewport.width===768)&&["overview","attendance","companies","events","people","hierarchy","accounts","registrations","profile"].includes(route))await page.screenshot({path:"artifacts/client-ui/"+email.split("@")[0]+"-"+route+(viewport.width===768?"-tablet":"")+".png",fullPage:false});
     const dimensions=await page.evaluate(()=>{
      const main=document.querySelector(".ep-main"),nav=document.querySelector(".ep-sidebar");
      const box=main.getBoundingClientRect(),n=nav.getBoundingClientRect(),style=getComputedStyle(main);
