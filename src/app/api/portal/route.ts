@@ -145,6 +145,7 @@ export async function POST(req:NextRequest){
    return getSnapshot(user);
   }
   if(action==="editEmployee"||action==="changeEmployeeStatus"){
+   if(process.env.PORTAL_V3_ENABLED==="true")return error("Manage employee profiles and status through scoped People in V3.",409);
    if(user.role!=="company_admin"||!user.companyId)return denied();
    const id=text(args.userId,120);
    const db=sqlPool(),client=await db.connect();
@@ -204,6 +205,7 @@ export async function POST(req:NextRequest){
    return ok({success:true,email,employeeId:"EMP-"+id.slice(0,8).toUpperCase(),temporaryPassword:initialPassword,data:await snapshot(user)});
   }
   if(action==="resetPassword"){
+   if(process.env.PORTAL_V3_ENABLED==="true"&&user.role!=="platform_admin")return error("Reset employee passwords from scoped People in V3.",409);
    // There is no email service, so "forgot password" is handled by an administrator:
    // company admins reset their own employees, platform admins reset anyone except other platform admins.
    const id=text(args.userId,120);
@@ -277,6 +279,7 @@ export async function POST(req:NextRequest){
    return getSnapshot(user);
   }
   if(action==="role"){
+   if(process.env.PORTAL_V3_ENABLED==="true")return error("Role promotions require platform administrator approval and V3 hierarchy assignment.",403);
    const id=text(args.userId,120);
    const person=await pool.query("SELECT id,role,organization_id,status,verified FROM users WHERE id=$1",[id]);
    const target=person.rows[0];
