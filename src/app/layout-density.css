@@ -138,3 +138,10 @@
 .ep-shell .cc-chart-stage .cc-polar{width:min(100%,174px)}
 @media(min-width:1251px){.ep-shell .cc-impact-chart>p:nth-child(2){min-height:32px}}
 @media(max-width:680px){.ep-shell .cc-chart-stage{height:164px}.ep-shell .cc-chart-stage .cc-polar{width:min(100%,164px)}}
+
+/* Keep the invitation form and invitation history usable on tablet widths. */
+@media(max-width:1000px){
+ .ep-shell .aw-invitation-layout{grid-template-columns:minmax(0,1fr)!important}
+ .ep-shell .aw-invitation-layout>.aw-section{min-width:0;max-width:100%}
+ .ep-shell .aw-invitation-layout .ep-table-scroll{max-width:100%;overflow-x:auto}
+}
