@@ -319,7 +319,7 @@ export async function POST(req:NextRequest){
   }
   if(action==="saveEvent"){
    const e=args.event as PortalEvent;
-   if(!e||typeof e!=="object"||user.companyId!==text(e.companyId,120))return denied();
+   if(!e||typeof e!=="object"||!text(e.id,120)||!["draft","published","cancelled"].includes(e.status)||user.companyId!==text(e.companyId,120))return denied();
    const companyAdmin=requireCompanyAdmin(user,e.companyId);
    const assignedState=companyAdmin?null:await eventEditorState(user,e.companyId);
    if(!companyAdmin&&!assignedState)return denied();
@@ -333,6 +333,8 @@ export async function POST(req:NextRequest){
    const speakers=Array.isArray(e.speakers)?e.speakers.map(s=>({...s,name:text(s.name,120),jobTitle:text(s.jobTitle,120),company:text(s.company,120),
     talkTitle:text(s.talkTitle,200),bio:text(s.bio,2000),agendaSlot:text(s.agendaSlot,120),linkedIn:text(s.linkedIn,300),github:text(s.github,300),website:text(s.website,300)})):e.speakers;
    const event:PortalEvent={...e,speakers,stateId:assignedState||prior?.stateId||e.stateId||undefined,title:text(e.title,160),location:text(e.location,300),contactEmail:text(e.contactEmail,255),createdBy:existing.rows[0]?.created_by||user.id};
+   if(prior&&prior.stateId!==event.stateId)return error("An event cannot be moved to another state",409);
+   if(event.stateId){const location=await pool.query("SELECT 1 FROM v3_states WHERE id=$1 AND organization_id=$2",[event.stateId,user.companyId]);if(!location.rowCount)return error("State must belong to your company",403);}
    // Field validation only: capacity against existing registrations is checked under a row lock below,
    // so the full portal snapshot (with every image) doesn't need to be loaded here.
    const issue=validateEvent(event,{companies:[],users:[],events:[],registrations:[],invitations:[]});
@@ -353,7 +355,7 @@ export async function POST(req:NextRequest){
     await client.query("BEGIN");
     const present=await client.query("SELECT * FROM events WHERE id=$1 FOR UPDATE",[event.id]);
     if(present.rowCount){
-      if(present.rows[0].organization_id!==user.companyId){await client.query("ROLLBACK");return denied();}
+      if(present.rows[0].organization_id!==user.companyId||assignedState&&present.rows[0].payload?.stateId!==assignedState||present.rows[0].payload?.stateId!==event.stateId){await client.query("ROLLBACK");return denied();}
       const reserved=await client.query("SELECT count(*)::int AS count FROM registrations WHERE event_id=$1 AND status='going'",[event.id]);
       if(Number(reserved.rows[0].count)>cap){await client.query("ROLLBACK");return error("Capacity cannot be below registered attendees");}
       await client.query("UPDATE events SET title=$1,status=$2,starts_at=$3,ends_at=$4,capacity=$5,waitlist_enabled=$6,payload=$7::jsonb,updated_at=now() WHERE id=$8",
@@ -382,7 +384,8 @@ export async function POST(req:NextRequest){
    const assignedState=companyAdmin?null:await eventEditorState(user,found.rows[0].organization_id);
    if(!companyAdmin&&(!assignedState||found.rows[0].payload?.stateId!==assignedState))return denied();
    const event={...found.rows[0].payload,status:"cancelled",cancellationReason:text(args.reason,500)};
-   await pool.query("UPDATE events SET status='cancelled',payload=$1::jsonb,updated_at=now() WHERE id=$2",[jsonPayload(event),id]);
+   const changed=await pool.query("UPDATE events SET status='cancelled',payload=$1::jsonb,updated_at=now() WHERE id=$2 AND organization_id=$3 AND ($4::bool=true OR payload->>'stateId'=$5) RETURNING id",[jsonPayload(event),id,user.companyId,companyAdmin,assignedState]);
+   if(!changed.rowCount)return denied();
    await logAudit(pool,user,"event.cancel",id);
    return getSnapshot(user);
   }
