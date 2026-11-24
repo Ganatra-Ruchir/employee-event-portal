@@ -26,6 +26,8 @@ test("attendance is only counted after verification",async()=>{
  const d=seedPreview(structuredClone(initialData)),admin=d.users.find(u=>u.id==="demo-state-admin")!,employee=d.users.find(u=>u.id==="employee")!;
  d.events=d.events.map(e=>e.id==="event-5"?{...e,endsAt:"2020-01-01T00:00:00Z"}:e);
  assert.equal(previewWorkspace(employee,d).contributions?.length,0);
+ await assert.rejects(previewAction(admin,d,{action:"verify",organization_id:"northwind",country_code:"IN",state_id:"northwind-gj",event_id:"event-5",user_id:"employee",volunteer_minutes:60,contribution:"Orientation"},hash),/present/);
+ d.v3!.attendanceMarks=[{eventId:"event-5",userId:"employee",status:"present",updatedBy:admin.id,updatedAt:new Date().toISOString()}];
  const r=await previewAction(admin,d,{action:"verify",organization_id:"northwind",country_code:"IN",state_id:"northwind-gj",event_id:"event-5",user_id:"employee",volunteer_minutes:60,contribution:"Orientation"},hash);
  assert.equal(previewWorkspace(employee,r.data).contributions?.length,1);
 });
