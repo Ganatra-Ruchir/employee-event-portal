@@ -181,6 +181,7 @@ export async function POST(req:NextRequest){
   }
   if(action==="createEmployee"){
    if(user.role!=="company_admin"||!user.companyId)return denied();
+   if(process.env.PORTAL_V3_ENABLED==="true")return error("Use scoped People → Create employee after country assignment. Unscoped employee accounts are disabled in V3.",409);
    const name=text(args.name,100),email=text(args.email,255).toLowerCase(),department=text(args.department,100);
    if(name.length<2||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return error("Enter an employee name and valid company email");
    const domain=email.split("@")[1];
