@@ -33,7 +33,7 @@ export async function GET(req:NextRequest){
    db.query("SELECT c.*,o.name AS organization_name FROM v3_countries c JOIN organizations o ON o.id=c.organization_id WHERE ($1::text IS NULL OR c.organization_id=$1) AND ($2::text IS NULL OR c.code=$2) ORDER BY o.name,c.name",args.slice(0,2)),
    db.query("SELECT * FROM v3_states WHERE ($1::text IS NULL OR organization_id=$1) AND ($2::text IS NULL OR country_code=$2) AND ($3::text IS NULL OR id=$3) ORDER BY name",args),
    db.query("SELECT * FROM v3_branches WHERE ($1::text IS NULL OR organization_id=$1) AND ($2::text IS NULL OR country_code=$2) AND ($3::text IS NULL OR state_id=$3) ORDER BY name",args),
-   db.query("SELECT m.*,u.full_name,u.email FROM v3_memberships m JOIN users u ON u.id=m.user_id AND u.organization_id=m.organization_id WHERE ($1::text IS NULL OR m.organization_id=$1) AND ($2::text IS NULL OR m.country_code=$2) AND ($3::text IS NULL OR m.state_id=$3) ORDER BY u.full_name",args),
+   db.query("SELECT m.*,u.full_name,u.email,u.department,u.status,u.job_title,u.phone FROM v3_memberships m JOIN users u ON u.id=m.user_id AND u.organization_id=m.organization_id WHERE ($1::text IS NULL OR m.organization_id=$1) AND ($2::text IS NULL OR m.country_code=$2) AND ($3::text IS NULL OR m.state_id=$3) ORDER BY u.full_name",args),
    root?Promise.resolve({rows:[]}):db.query("SELECT r.event_id,r.user_id,e.title,u.full_name,c.volunteer_minutes,c.contribution FROM registrations r JOIN events e ON e.id=r.event_id JOIN users u ON u.id=r.user_id JOIN v3_memberships m ON m.user_id=u.id AND m.organization_id=e.organization_id AND u.organization_id=m.organization_id LEFT JOIN v3_contributions c ON c.event_id=r.event_id AND c.user_id=r.user_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3) AND m.level='employee' AND r.status='going' AND e.status='published' AND e.ends_at<=now() ORDER BY e.ends_at DESC LIMIT 250",args),
    root?Promise.resolve({rows:[]}):db.query("SELECT x.event_id,x.user_id,x.status FROM v3_attendance_marks x JOIN events e ON e.id=x.event_id JOIN v3_memberships m ON m.user_id=x.user_id AND m.organization_id=e.organization_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3)",args),
    root?Promise.resolve({rows:[]}):db.query("SELECT w.event_id,w.employee_id,w.phone FROM v3_attendance_walkins w JOIN events e ON e.id=w.event_id WHERE e.organization_id=$1 AND ($2::text IS NULL OR w.state_id=$2) ORDER BY w.added_at", [args[0],actor.level==="state_admin"?s?.state_id:null]),
@@ -83,6 +83,36 @@ export async function POST(req:NextRequest){
     await client.query("INSERT INTO users(id,full_name,email,password_hash,department,role,organization_id,verified,status,must_change_password,v3_temporary_password_expires_at) VALUES($1,$2,$3,$4,$5,'employee',$6,true,'active',true,now()+interval '24 hours')",[subject,name,email,await passwordHash(temporaryPassword),txt(a.department,100),org]);
     await client.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,state_id,branch_id,level) VALUES($1,$2,$3,$4,$5,$6)",[subject,org,country,state,branch,level]);
     credentials={employeeId:subject,email,temporaryPassword,expiresIn:"24 hours"};
+   }else if(["employeeUpdate","employeeStatus","employeeReset"].includes(action)&&(actor.level==="country_admin"||actor.level==="state_admin")){
+    // The server chooses the employee's actual membership; callers cannot
+    // elevate themselves by passing another organization's state or branch.
+    const employeeId=txt(a.user_id,120);
+    const found=await client.query<V3Membership&{email:string;status:string}>(
+     "SELECT m.*,u.email,u.status FROM v3_memberships m JOIN users u ON u.id=m.user_id AND u.organization_id=m.organization_id WHERE m.user_id=$1 AND m.organization_id=$2 AND m.level='employee' FOR UPDATE OF m,u",
+     [employeeId,org]
+    );
+    const target=found.rows[0];
+    if(!target||!canManageScope(actor,target))return fail("This employee is outside your assigned state or country",403);
+    subject=employeeId;
+    if(action==="employeeUpdate"){
+     const fullName=txt(a.name,100),newEmail=txt(a.email,255).toLowerCase(),department=txt(a.department,100),jobTitle=txt(a.job_title,100),phone=txt(a.phone,25);
+     if(fullName.length<2||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)||phone&&!/^\+?[0-9 ()-]{7,25}$/.test(phone))return fail("Enter a valid employee name, work email and phone");
+     const domain=newEmail.split("@")[1];
+     const valid=await client.query("SELECT 1 FROM organization_domains WHERE organization_id=$1 AND domain=$2",[org,domain]);
+     if(!valid.rowCount)return fail("Use an approved company email domain",403);
+     await client.query("UPDATE users SET full_name=$1,email=$2,department=$3,job_title=$4,phone=$5 WHERE id=$6",[fullName,newEmail,department,jobTitle,phone,employeeId]);
+     if(newEmail!==target.email)await client.query("DELETE FROM sessions WHERE user_id=$1",[employeeId]);
+    }else if(action==="employeeStatus"){
+     const status=a.status==="active"?"active":a.status==="suspended"?"suspended":null;
+     if(!status)return fail("Choose active or suspended status");
+     await client.query("UPDATE users SET status=$1 WHERE id=$2",[status,employeeId]);
+     if(status==="suspended")await client.query("DELETE FROM sessions WHERE user_id=$1",[employeeId]);
+    }else{
+     const password=makeToken().slice(0,24);
+     await client.query("UPDATE users SET password_hash=$1,must_change_password=true,v3_temporary_password_expires_at=now()+interval '24 hours',failed_attempts=0,locked_until=NULL WHERE id=$2",[await passwordHash(password),employeeId]);
+     await client.query("DELETE FROM sessions WHERE user_id=$1",[employeeId]);
+     credentials={employeeId,email:target.email,temporaryPassword:password,expiresIn:"24 hours"};
+    }
    }else if(action==="attendanceSubmit"&&(actor.level==="country_admin"||actor.level==="state_admin")){
     const eventId=txt(a.event_id,120);
     const rows=Array.isArray(a.rows)?a.rows:null;
