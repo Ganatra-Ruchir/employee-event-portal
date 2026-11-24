@@ -139,6 +139,8 @@ export async function POST(req:NextRequest){
     const exists=await client.query("SELECT id FROM organizations WHERE id=$1",[id]);
     if(exists.rowCount)await client.query("UPDATE organizations SET name=$1 WHERE id=$2",[name,id]);
     else await client.query("INSERT INTO organizations(id,name,status) VALUES($1,$2,'active')",[id,name]);
+    const stranded=await client.query("SELECT count(*)::int AS total FROM users WHERE organization_id=$1 AND NOT (lower(split_part(email,'@',2))=ANY($2::text[]))",[id,domains]);
+    if(stranded.rows[0].total>0){await client.query("ROLLBACK");return error("One or more employee accounts use a domain you are removing. Reassign their work emails first.",409);}
     await client.query("DELETE FROM organization_domains WHERE organization_id=$1",[id]);
     for(const domain of domains)await client.query("INSERT INTO organization_domains(domain,organization_id) VALUES($1,$2)",[domain,id]);
     await logAudit(client,user,"organization.save",id,id);
