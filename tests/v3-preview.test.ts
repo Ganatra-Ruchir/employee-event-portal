@@ -48,3 +48,18 @@ test("city onboarding creates state and branch once and accepts a unique adminis
  assert.equal(reset.credentials?.employeeId,"MH-1001");
  assert.notEqual(reset.credentials?.temporaryPassword,result.credentials?.temporaryPassword);
 });
+
+test("new Bihar state admin provisions an employee without branches and cannot cross state",async()=>{
+ const d=seedPreview(structuredClone(initialData)),manager=d.users.find(u=>u.id==="manager")!;
+ const created=await previewAction(manager,d,{action:"state",organization_id:"northwind",country_code:"IN",name:"Bihar"},hash);
+ const bihar=created.data.v3!.states.find(x=>x.name==="Bihar")!;
+ const admin=await previewAction(manager,created.data,{action:"provision",level:"state_admin",organization_id:"northwind",country_code:"IN",state_id:bihar.id,name:"Bihar State Administrator",email:"bihar-admin@northwind.example"},hash);
+ const person=admin.data.users.find(x=>x.email==="bihar-admin@northwind.example")!;
+ assert.equal(previewActor(person,admin.data).level,"state_admin");
+ const result=await previewAction(person,admin.data,{action:"provision",level:"employee",organization_id:"northwind",country_code:"IN",state_id:bihar.id,branch_id:null,name:"Bihar Employee",email:"bihar-employee@northwind.example"},hash);
+ const employee=result.data.users.find(x=>x.email==="bihar-employee@northwind.example")!;
+ assert.equal(previewActor(employee,result.data).level,"employee");
+ assert.equal(result.data.v3!.members.find(m=>m.user_id===employee.id)?.branch_id,null);
+ await assert.rejects(previewAction(person,result.data,{action:"provision",level:"employee",organization_id:"northwind",country_code:"IN",state_id:"northwind-gj",branch_id:"northwind-ahm",name:"Other State",email:"other-state@northwind.example"},hash));
+ await assert.rejects(previewAction(employee,result.data,{action:"provision",level:"employee",organization_id:"northwind",country_code:"IN",state_id:bihar.id,branch_id:null,name:"Unauthorized",email:"unauthorized@northwind.example"},hash));
+});
