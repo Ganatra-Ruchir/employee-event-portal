@@ -10,7 +10,11 @@ let pool:Pool|undefined;
 export function databaseEnabled(){return process.env.PORTAL_BACKEND_MODE==="database" && Boolean(process.env.DATABASE_URL);}
 export function sqlPool(){
  if(!databaseEnabled())throw new Error("Database mode is not configured");
- if(!pool)pool=new Pool({connectionString:process.env.DATABASE_URL,max:6,idleTimeoutMillis:10000,connectionTimeoutMillis:8000,ssl:{rejectUnauthorized:true}});
+ if(!pool){
+  const url=new URL(process.env.DATABASE_URL!);
+  const localTest=process.env.CI==="true"&&process.env.CI_TEST_DATABASE_URL===process.env.DATABASE_URL&&["localhost","127.0.0.1","::1"].includes(url.hostname)&&url.pathname==="/portal_test";
+  pool=new Pool({connectionString:process.env.DATABASE_URL,max:6,idleTimeoutMillis:10000,connectionTimeoutMillis:8000,ssl:localTest?false:{rejectUnauthorized:true}});
+ }
  return pool;
 }
 export const makeToken=()=>randomBytes(32).toString("base64url");
