@@ -10,7 +10,7 @@ export default function V3PeopleSummary({members,states,branches,data,now,stateA
  const groups=stateAdmin?[...branches.map(b=>({id:b.id,name:(b as DashboardBranch&{name?:string}).name||"Branch",total:members.filter(m=>m.level==="employee"&&m.branch_id===b.id).length})),...(stateWideCount?[{id:"state-wide",name:"State-wide",total:stateWideCount}]:[])]:
   rows.map(s=>({id:s.id,name:s.name,total:s.total}));
  const max=Math.max(1,...groups.map(g=>g.total));
- const percent=metrics.total?Math.round(100*metrics.registeredThisMonth/metrics.total):0;
+ const percent=metrics.active?Math.round(100*metrics.registeredThisMonth/metrics.active):0;
  return <div className="cc-insights">
    <div className="cc-kpi-grid">
     <div className="cc-kpi"><span>Total employees</span><strong>{metrics.total}</strong><small>In your assigned {stateAdmin?"state":"country"}</small></div>
@@ -26,7 +26,7 @@ export default function V3PeopleSummary({members,states,branches,data,now,stateA
     <section className="cc-insight-card">
       <div className="cc-card-heading"><h3>Monthly participation</h3><span>{new Date(now).toLocaleString("en-IN",{month:"long",year:"numeric"})}</span></div>
       <div className="cc-donut-body"><div className="cc-participation-donut" role="img" aria-label={percent+" percent of employees registered for an event this month"} style={{background:`conic-gradient(#2e703b 0 ${percent}%,#e5e9e5 ${percent}% 100%)`}}><div><strong>{percent}%</strong><small>registered</small></div></div>
-       <div className="cc-participation-legend"><span><i className="cc-legend-green"/> Registered for events: <b>{metrics.registeredThisMonth}</b></span><span><i className="cc-legend-grey"/> Not registered: <b>{metrics.notRegisteredThisMonth}</b></span><p className="ep-hint">Registration is not proof of attendance. Verified attendance is shown on the Attendance page.</p></div></div>
+       <div className="cc-participation-legend"><span><i className="cc-legend-green"/> Active staff registered: <b>{metrics.registeredThisMonth}</b></span><span><i className="cc-legend-grey"/> Active staff not registered: <b>{metrics.notRegisteredThisMonth}</b></span><p className="ep-hint">Registration is not proof of attendance. Verified attendance is shown on the Attendance page.</p></div></div>
     </section>
    </div>
  </div>;
