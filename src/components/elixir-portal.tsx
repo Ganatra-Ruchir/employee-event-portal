@@ -722,7 +722,7 @@ export default function ElixirPortal(){
      .filter((p):p is Person=>Boolean(p)&&p!.showInAttendeeLists!==false&&p!.companyId===selected.companyId):[];
   const chosenCompany=selectedCompany?data.companies.find(c=>c.id===selectedCompany):null;
   const filteredEvents=events.filter(e=>{
-    if(current.role==="employee"&&e.status!=="published")return false;
+    if(current.role==="employee"&&!isStateAdmin&&e.status!=="published")return false;
     if(search&&!(e.title+" "+e.summary+" "+e.location+" "+e.category).toLowerCase().includes(search.toLowerCase()))return false;
     if(category!=="All"&&e.category!==category)return false;
     if(placesOnly&&registrationState(e,data,now)!=="open")return false;
