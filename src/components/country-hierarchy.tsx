@@ -11,6 +11,7 @@ export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;da
  const [country,setCountry]=useState(ws.scope?.country_code||""),[cities,setCities]=useState<City[]>([]),[search,setSearch]=useState(""),[selection,setSelection]=useState(""),[email,setEmail]=useState(""),[employeeNumber,setEmployeeNumber]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[geoError,setGeoError]=useState(""),[credentials,setCredentials]=useState<Row|null>(null),[retry,setRetry]=useState(0);
  const [cityOpen,setCityOpen]=useState(false),[activeIndex,setActiveIndex]=useState(-1);
  const [showCreate,setShowCreate]=useState(false);
+ const [today]=useState(()=>Date.now());
  const listId=useId(),cityInput=useRef<HTMLInputElement>(null);
  useEffect(()=>{
   if(!country)return;
@@ -49,8 +50,8 @@ export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;da
   if(await run({action:"cityStateAdmin",city:chosen.city,state_name:chosen.state,email,employee_number:employeeNumber})){setEmail("");setEmployeeNumber("");setShowCreate(false);}
  }
  const administrators=(ws.members||[]).filter(m=>m.level==="state_admin");
- const stateRows=stateMetrics((ws.states||[]).map(r=>({id:String(r.id),name:String(r.name)})),(ws.branches||[]).map(r=>({id:String(r.id),state_id:String(r.state_id)})),(ws.members||[]).map(m=>({user_id:String(m.user_id),level:String(m.level),state_id:m.state_id?String(m.state_id):null,branch_id:m.branch_id?String(m.branch_id):null,organization_id:String(m.organization_id),status:null})),data,Date.now());
- const monthEventCount=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published"&&new Date(e.startsAt).getMonth()===new Date().getMonth()&&new Date(e.startsAt).getFullYear()===new Date().getFullYear()).length;
+ const stateRows=stateMetrics((ws.states||[]).map(r=>({id:String(r.id),name:String(r.name)})),(ws.branches||[]).map(r=>({id:String(r.id),state_id:String(r.state_id)})),(ws.members||[]).map(m=>({user_id:String(m.user_id),level:String(m.level),state_id:m.state_id?String(m.state_id):null,branch_id:m.branch_id?String(m.branch_id):null,organization_id:String(m.organization_id),status:null})),data,today);
+ const monthEventCount=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published"&&new Date(e.startsAt).getMonth()===new Date(today).getMonth()&&new Date(e.startsAt).getFullYear()===new Date(today).getFullYear()).length;
  const employeeCount=stateRows.reduce((sum,r)=>sum+r.total,0);
 
  return <section className="ep-panel v3-workspace cc-hierarchy-setup">
