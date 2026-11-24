@@ -6,7 +6,8 @@ type Props={members:DashboardMember[];states:DashboardState[];branches:Dashboard
 export default function V3PeopleSummary({members,states,branches,data,now,stateAdmin}:Props){
  const metrics=peopleMetrics(members,data,now);
  const rows=stateMetrics(states,branches,members,data,now);
- const groups=stateAdmin?branches.map(b=>({id:b.id,name:(b as DashboardBranch&{name?:string}).name||"Branch",total:members.filter(m=>m.level==="employee"&&m.branch_id===b.id).length})):
+ const stateWideCount=members.filter(m=>m.level==="employee"&&!m.branch_id).length;
+ const groups=stateAdmin?[...branches.map(b=>({id:b.id,name:(b as DashboardBranch&{name?:string}).name||"Branch",total:members.filter(m=>m.level==="employee"&&m.branch_id===b.id).length})),...(stateWideCount?[{id:"state-wide",name:"State-wide",total:stateWideCount}]:[])]:
   rows.map(s=>({id:s.id,name:s.name,total:s.total}));
  const max=Math.max(1,...groups.map(g=>g.total));
  const percent=metrics.total?Math.round(100*metrics.registeredThisMonth/metrics.total):0;
