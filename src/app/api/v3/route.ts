@@ -144,7 +144,7 @@ export async function POST(req:NextRequest){
      if(actor.level==="state_admin"&&event.payload?.stateId!==actor.scope?.state_id)return fail("Only your state events accept extra attendees",403);
     const submitted=await client.query("SELECT 1 FROM v3_attendance_submissions WHERE event_id=$1",[eventId]);
     if(!submitted.rowCount)return fail("Submit registered attendance before adding extras",409);
-    const person=await client.query("SELECT u.id,m.* FROM users u LEFT JOIN v3_memberships m ON m.user_id=u.id WHERE (upper(u.id)=$1 OR upper('EMP-'||left(u.id,8))=$1) AND u.organization_id=$2",[employeeId,org]);
+    const person=await client.query("SELECT u.id,m.* FROM users u JOIN v3_memberships m ON m.user_id=u.id AND m.organization_id=u.organization_id WHERE (upper(u.id)=$1 OR upper('EMP-'||left(u.id,8))=$1) AND u.organization_id=$2 AND u.status='active' AND m.level='employee' AND m.country_code=$3",[employeeId,org,country]);
     if(!person.rowCount)return fail("Select an existing company employee",404);
     if(person.rowCount){
      const m=person.rows[0] as V3Membership;
