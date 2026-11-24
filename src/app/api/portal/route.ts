@@ -280,6 +280,7 @@ export async function POST(req:NextRequest){
     return getSnapshot(user);
    }
    if(action==="grantCompanyAdmin"){
+   if(process.env.PORTAL_V3_ENABLED==="true")return error("Use the V3 country hierarchy to assign managers.",409);
    if(!requireAdmin(user))return denied();
    const id=text(args.userId,120);
    const client=await pool.connect();
@@ -308,6 +309,7 @@ export async function POST(req:NextRequest){
    return getSnapshot(user);
   }
   if(action==="userStatus"||action==="approveUser"){
+   if(action==="approveUser"&&process.env.PORTAL_V3_ENABLED==="true"&&!requireAdmin(user))return denied();
    const id=text(args.userId,120);
    const target=(await pool.query("SELECT id,role,organization_id,verified FROM users WHERE id=$1",[id])).rows[0];
    if(!target||target.role==="platform_admin"||!(requireAdmin(user)||(action==="approveUser"&&requireCompanyAdmin(user,target.organization_id))))return denied();
