@@ -391,10 +391,10 @@ export default function ElixirPortal(){
     const result=await remoteRequest(action,args);
     if(result.error){setNotice(result.error);return false;}
     if(result.data)setData(result.data);
+    else await remoteRefresh();
     if(result.accessLevel)setRemoteRole(result.accessLevel);
     if(result.accessStateId!==undefined)setRemoteStateId(result.accessStateId||null);
-    if(result.accessCountryCode!==undefined)setRemoteCountryCode(result.accessCountryCode||null);setRemoteCountryCode(result.accessCountryCode||null);
-    else if(!result.data)await remoteRefresh();
+    if(result.accessCountryCode!==undefined)setRemoteCountryCode(result.accessCountryCode||null);
     if(success)setNotice(success);return true;
   };
   const save=(newData:PortalData)=>{
