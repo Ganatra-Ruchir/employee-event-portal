@@ -17,7 +17,7 @@ const members=[
 test("monthly people KPIs count unique confirmed registrations, not attendance",()=>{
  const m=peopleMetrics(members,data,now);
  assert.equal(m.total,2);assert.equal(m.active,1);assert.equal(m.suspended,1);
- assert.equal(m.registeredThisMonth,1);assert.equal(m.notRegisteredThisMonth,1);
+ assert.equal(m.registeredThisMonth,1);assert.equal(m.notRegisteredThisMonth,0);
  assert.equal(m.eventCount,1);
 });
 test("state cards use only assigned members, not other state members",()=>{
@@ -25,4 +25,14 @@ test("state cards use only assigned members, not other state members",()=>{
  assert.deepEqual(states.map(x=>x.total),[1,1]);
  assert.deepEqual(states.map(x=>x.registeredThisMonth),[1,0]);
  assert.deepEqual(states.map(x=>x.branches),[0,1]);
+});
+
+test("suspended members are excluded from monthly registration percentage",()=>{
+ const copy=structuredClone(data);
+ copy.registrations.push({id:"suspended-rsvp",eventId:"e1",userId:"b",status:"going",createdAt:start});
+ const metric=peopleMetrics(members,copy,now);
+ assert.equal(metric.total,2);
+ assert.equal(metric.active,1);
+ assert.equal(metric.registeredThisMonth,1);
+ assert.equal(metric.notRegisteredThisMonth,0);
 });
