@@ -169,6 +169,10 @@ try{
  const credit=await write("/api/v3",{action:"verify",organization_id:org,country_code:"IN",event_id:event,user_id:employee,volunteer_minutes:90,contribution:"Valid volunteer attendance"},tokenManager);
  assert.equal(credit.status,200,"A present employee can earn verified hours");
  assert.equal((await db.query("SELECT volunteer_minutes FROM v3_contributions WHERE event_id=$1 AND user_id=$2",[event,employee])).rows[0].volunteer_minutes,90);
+ const cancelVerifiedPast=await write("/api/portal",{action:"cancelEvent",args:{eventId:event,reason:"incorrect history"}},tokenManager);
+ assert.equal(cancelVerifiedPast.status,409,"Completed event with verified credits must not be cancelled");
+ assert.equal((await db.query("SELECT status FROM events WHERE id=$1",[event])).rows[0].status,"published");
+
  response=await write("/api/v3",{action:"attendanceExtra",organization_id:org,country_code:"IN",event_id:event,employee_id:extra,phone:"+919876543210"},tokenManager);
  assert.equal(response.status,200,"Walk-in add: "+JSON.stringify(response.body));
  response=await api("/api/v3",{headers:{"Cookie":"elixir_session="+tokenManager}});
