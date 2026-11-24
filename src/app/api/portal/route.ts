@@ -24,6 +24,14 @@ function jsonPayload(value:unknown){
  if(!raw||raw.length>3_500_000)throw new Error("Event payload is too large");
  return raw;
 }
+/** State Admin event changes are restricted to an authenticated state membership. */
+async function eventEditorState(user:Person,companyId:string):Promise<string|null>{
+ if(process.env.PORTAL_V3_ENABLED!=="true"||user.role!=="employee"||user.companyId!==companyId||!user.verified)return null;
+ const r=await sqlPool().query(
+  "SELECT m.state_id FROM v3_memberships m JOIN v3_states s ON s.id=m.state_id AND s.organization_id=m.organization_id AND s.country_code=m.country_code WHERE m.user_id=$1 AND m.organization_id=$2 AND m.level='state_admin'",
+  [user.id,companyId]);
+ return r.rows[0]?.state_id||null;
+}
 async function getSnapshot(user:Person){
  let accessLevel:"root"|"country_admin"|"state_admin"|"employee"=user.role==="platform_admin"?"root":user.role==="company_admin"?"country_admin":"employee";
  if(process.env.PORTAL_V3_ENABLED==="true"&&user.role!=="platform_admin"){
@@ -309,14 +317,20 @@ export async function POST(req:NextRequest){
   }
   if(action==="saveEvent"){
    const e=args.event as PortalEvent;
-   if(!e||typeof e!=="object"||!requireCompanyAdmin(user,text(e.companyId,120)))return denied();
+   if(!e||typeof e!=="object"||user.companyId!==text(e.companyId,120))return denied();
+   const companyAdmin=requireCompanyAdmin(user,e.companyId);
+   const assignedState=companyAdmin?null:await eventEditorState(user,e.companyId);
+   if(!companyAdmin&&!assignedState)return denied();
    const existing=await pool.query("SELECT id,organization_id,created_by,payload FROM events WHERE id=$1",[text(e.id,120)]);
    if(existing.rowCount&&existing.rows[0].organization_id!==user.companyId)return denied();
    const prior=existing.rows[0]?.payload as PortalEvent|undefined;
+   if(assignedState&&prior?.stateId!==undefined&&prior.stateId!==assignedState)return denied();
+   if(assignedState&&existing.rowCount&&!prior?.stateId)return denied();
+   if(assignedState&&e.stateId&&e.stateId!==assignedState)return denied();
    // Trim speaker text so names don't carry stray spaces into cards, labels and screen-reader text.
    const speakers=Array.isArray(e.speakers)?e.speakers.map(s=>({...s,name:text(s.name,120),jobTitle:text(s.jobTitle,120),company:text(s.company,120),
     talkTitle:text(s.talkTitle,200),bio:text(s.bio,2000),agendaSlot:text(s.agendaSlot,120),linkedIn:text(s.linkedIn,300),github:text(s.github,300),website:text(s.website,300)})):e.speakers;
-   const event:PortalEvent={...e,speakers,title:text(e.title,160),location:text(e.location,300),contactEmail:text(e.contactEmail,255),createdBy:existing.rows[0]?.created_by||user.id};
+   const event:PortalEvent={...e,speakers,stateId:assignedState||prior?.stateId||e.stateId||undefined,title:text(e.title,160),location:text(e.location,300),contactEmail:text(e.contactEmail,255),createdBy:existing.rows[0]?.created_by||user.id};
    // Field validation only: capacity against existing registrations is checked under a row lock below,
    // so the full portal snapshot (with every image) doesn't need to be loaded here.
    const issue=validateEvent(event,{companies:[],users:[],events:[],registrations:[],invitations:[]});
@@ -361,7 +375,10 @@ export async function POST(req:NextRequest){
   if(action==="cancelEvent"){
    const id=text(args.eventId,120);
    const found=await pool.query("SELECT organization_id,payload FROM events WHERE id=$1",[id]);
-   if(!found.rowCount||!requireCompanyAdmin(user,found.rows[0].organization_id))return denied();
+   if(!found.rowCount||user.companyId!==found.rows[0].organization_id)return denied();
+   const companyAdmin=requireCompanyAdmin(user,found.rows[0].organization_id);
+   const assignedState=companyAdmin?null:await eventEditorState(user,found.rows[0].organization_id);
+   if(!companyAdmin&&(!assignedState||found.rows[0].payload?.stateId!==assignedState))return denied();
    const event={...found.rows[0].payload,status:"cancelled",cancellationReason:text(args.reason,500)};
    await pool.query("UPDATE events SET status='cancelled',payload=$1::jsonb,updated_at=now() WHERE id=$2",[jsonPayload(event),id]);
    await logAudit(pool,user,"event.cancel",id);
