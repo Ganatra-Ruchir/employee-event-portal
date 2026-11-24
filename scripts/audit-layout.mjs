@@ -29,7 +29,8 @@ try{
     const navigationStart=Date.now();
     await page.goto(base+"/"+route);
     await page.locator(".ep-shell .ep-main").waitFor();
-    await page.locator(".ep-sidebar [aria-current=page]").waitFor();
+    const expectedView=route==="overview"?"home":route==="accounts"?"users":route;
+    await page.locator(`.ep-sidebar button.ep-nav-link[data-view="${expectedView}"][aria-current="page"]`).waitFor();
     navigationMs.push(Date.now()-navigationStart);
     if(viewport.width===1440&&["overview","attendance","companies","events","profile"].includes(route))await page.screenshot({path:"artifacts/client-ui/"+email.split("@")[0]+"-"+route+".png",fullPage:false});
     const dimensions=await page.evaluate(()=>{
