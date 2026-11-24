@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type {PortalData} from "../src/lib/portal-model";
-import {peopleMetrics,stateMetrics} from "../src/lib/v3-dashboard";
+import {countryMonthEventCount,peopleMetrics,stateMetrics} from "../src/lib/v3-dashboard";
 
 const now=new Date(2026,10,24,12).getTime();
 const start=new Date(2026,10,18,11).toISOString();
@@ -35,4 +35,22 @@ test("suspended members are excluded from monthly registration percentage",()=>{
  assert.equal(metric.active,1);
  assert.equal(metric.registeredThisMonth,1);
  assert.equal(metric.notRegisteredThisMonth,0);
+});
+
+test("country monthly event KPI never counts other countries or companies",()=>{
+ const start=new Date(2026,10,24,11).toISOString();
+ const previous=new Date(2026,9,24,11).toISOString();
+ const fixture={events:[
+  {id:"in",companyId:"company-a",countryCode:"IN",status:"published",startsAt:start},
+  {id:"us",companyId:"company-a",countryCode:"US",status:"published",startsAt:start},
+  {id:"other-org",companyId:"company-b",countryCode:"IN",status:"published",startsAt:start},
+  {id:"draft",companyId:"company-a",countryCode:"IN",status:"draft",startsAt:start},
+  {id:"past",companyId:"company-a",countryCode:"IN",status:"published",startsAt:previous},
+  {id:"legacy",companyId:"company-a",status:"published",startsAt:start},
+  {id:"bad-date",companyId:"company-a",countryCode:"IN",status:"published",startsAt:"invalid"}
+ ]} as unknown as PortalData;
+ assert.equal(countryMonthEventCount(fixture,"company-a","IN",now),1);
+ assert.equal(countryMonthEventCount(fixture,"company-a","US",now),1);
+ assert.equal(countryMonthEventCount(fixture,"company-b","IN",now),1);
+ assert.equal(countryMonthEventCount(fixture,"company-a","",now),0);
 });
