@@ -3,7 +3,7 @@ import {useEffect,useMemo,useState,useRef,useId} from "react";
 import {cityKey,suggestCities,type CityLocation} from "@/lib/city-suggestions";
 import type {Person,PortalData} from "@/lib/portal-model";
 import {previewAction,previewWorkspace,type Row} from "@/lib/v3-preview";
-import {stateMetrics} from "@/lib/v3-dashboard";
+import {countryMonthEventCount,stateMetrics} from "@/lib/v3-dashboard";
 type City=CityLocation;
 export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;data:PortalData;onSave:(data:PortalData)=>boolean;hash:(password:string)=>Promise<string>}){
  const ws=previewWorkspace(user,data);
@@ -51,7 +51,7 @@ export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;da
  }
  const administrators=(ws.members||[]).filter(m=>m.level==="state_admin");
  const stateRows=stateMetrics((ws.states||[]).map(r=>({id:String(r.id),name:String(r.name)})),(ws.branches||[]).map(r=>({id:String(r.id),state_id:String(r.state_id)})),(ws.members||[]).map(m=>({user_id:String(m.user_id),level:String(m.level),state_id:m.state_id?String(m.state_id):null,branch_id:m.branch_id?String(m.branch_id):null,organization_id:String(m.organization_id),status:null})),data,today);
- const monthEventCount=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published"&&new Date(e.startsAt).getMonth()===new Date(today).getMonth()&&new Date(e.startsAt).getFullYear()===new Date(today).getFullYear()).length;
+ const monthEventCount=countryMonthEventCount(data,user.companyId||"",country,today);
  const employeeCount=stateRows.reduce((sum,r)=>sum+r.total,0);
 
  return <section className="ep-panel v3-workspace cc-hierarchy-setup">
