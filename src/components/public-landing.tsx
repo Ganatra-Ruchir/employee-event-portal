@@ -10,7 +10,7 @@ const curations=[
   {label:"Wellbeing",detail:"Make time for wellness",scene:"wellness" as const,icon:HeartPulse}
 ];
 export default function PublicLanding({onEnter}:{onEnter:()=>void}){
- return <div className="landing landing-editorial">
+ return <div className="landing landing-editorial landing-public-theme">
   <header className="landing-header" aria-label="Site navigation">
     <div className="landing-brand"><span className="landing-mark">E</span><span>Employee <span className="landing-brand-light">Volunteer System</span></span></div>
     <nav className="landing-nav"><button onClick={()=>document.getElementById("experiences")?.scrollIntoView({behavior:"smooth"})} className="landing-login">Explore</button><Link href="/apply" className="landing-login">For companies</Link><button onClick={onEnter} className="landing-login">Log in</button><Link href="/signup" className="landing-signup">Join your team <ArrowRight size={15}/></Link></nav>
