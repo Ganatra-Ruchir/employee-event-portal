@@ -13,7 +13,7 @@ export default function CompanyApplicationPage(){
   const r=await fetch("/api/company-applications",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});const j=await r.json();
   if(!r.ok)throw Error(j.error||"Unable to submit application");setDone(true);
  }catch(e){setError(e instanceof Error?e.message:"Unable to submit");}finally{setBusy(false);}}
- return <main className="landing landing-editorial" style={{minHeight:"100vh"}}>
+ return <main className="landing landing-editorial landing-public-theme company-apply" style={{minHeight:"100vh"}}>
  <header className="landing-header" aria-label="Site navigation"><Link href="/" className="landing-brand" style={{textDecoration:"none"}}><span className="landing-mark">E</span><span>Employee <span className="landing-brand-light">Volunteer System</span></span></Link><nav className="landing-nav"><Link href="/" className="landing-login"><ArrowLeft size={15}/> Home</Link><Link href="/login" className="landing-login">Log in</Link><Link href="/signup" className="landing-signup">Join your team <ArrowRight size={15}/></Link></nav></header>
  <div className="join-page" style={{background:"transparent",padding:"22px clamp(14px,4vw,65px) 48px"}}><div className="join-grid" style={{maxWidth:1150,margin:"auto"}}>
  <section className="join-panel" style={{borderRadius:22,padding:26}}>
