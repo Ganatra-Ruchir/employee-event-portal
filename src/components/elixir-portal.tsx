@@ -476,7 +476,7 @@ export default function ElixirPortal(){
       const result=await remoteRequest("login",{email,password});
       if(result.error)return result.error;
       // The login response already carries the portal data; only fall back to a second request if it doesn't.
-      if(result.data&&result.currentId){setData(result.data);setRemoteRole(result.accessLevel||null);setRemoteStateId(result.accessStateId||null);setSession(result.currentId);setNow(Date.now());}
+      if(result.data&&result.currentId){setData(result.data);setRemoteRole(result.accessLevel||null);setRemoteStateId(result.accessStateId||null);setRemoteCountryCode(result.accessCountryCode||null);setSession(result.currentId);setNow(Date.now());}
       else if(!await remoteRefresh())return "Signed in, but could not load your account. Refresh the page.";
       setSignedOut(false);setShowAuth(false);setView("home");window.history.replaceState(null,"","/overview");return null;
     }
