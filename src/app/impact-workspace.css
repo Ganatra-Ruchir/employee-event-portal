@@ -273,3 +273,29 @@ body{background:var(--cc-bg)!important;color:var(--cc-ink)!important}
 .cc-employee-results button:hover,.cc-employee-results button:focus-visible{background:#eaf4ec;outline:2px solid #4a8757;outline-offset:-2px}
 .cc-employee-results button small{color:#627468;font-size:11px}
 @media(max-width:680px){.cc-att-add .cc-employee-picker{min-width:100%;flex-basis:100%}.cc-employee-results{max-height:210px}}
+
+/* Client-ready profile: read-only first, edit/security only after user action. */
+.ep-shell .cc-page-heading,.ep-shell .cc-card-heading,.ep-shell .cc-page-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ep-shell .cc-page-heading{margin-bottom:16px}
+.ep-shell .cc-page-heading h1{font-size:clamp(24px,2.4vw,31px);line-height:1.2;margin:4px 0}
+.ep-shell .cc-page-heading p{color:var(--cc-muted,#65736a);margin:4px 0}
+.ep-shell .cc-page-actions{justify-content:flex-end}
+.ep-shell .cc-profile-layout{align-items:start;grid-template-columns:minmax(0,0.85fr) minmax(0,1.5fr)}
+.ep-shell .cc-profile-layout>*{min-width:0;max-width:100%}
+.ep-shell .cc-profile-summary{min-width:0;overflow-wrap:anywhere;word-break:normal}
+.ep-shell .cc-profile-summary>h2{max-width:100%;font-size:clamp(18px,2vw,24px);line-height:1.25;overflow-wrap:anywhere;white-space:normal;hyphens:auto}
+.ep-shell .cc-profile-summary>p{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.ep-shell .cc-profile-summary .aw-profile-company{min-width:0;overflow-wrap:anywhere}
+.ep-shell .cc-profile-content{min-width:0}
+.ep-shell .cc-profile-readonly{display:grid;gap:18px}
+.ep-shell .cc-card-heading h2,.ep-shell .cc-card-heading h3{margin:0}
+.ep-shell .cc-profile-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0}
+.ep-shell .cc-profile-details>div{min-width:0;padding:0 0 12px;border-bottom:1px solid #e6e9e5}
+.ep-shell .cc-profile-details dt{color:#647369;font-size:12px;line-height:1.4;margin-bottom:4px}
+.ep-shell .cc-profile-details dd{margin:0;color:#1c3325;font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+.ep-shell .cc-profile-details .cc-detail-wide{grid-column:1/-1}
+.ep-shell .cc-profile-preferences{border-top:1px solid #e6e9e5;padding-top:15px}
+.ep-shell .cc-profile-preferences h3{font-size:16px;margin:0 0 8px}
+.ep-shell .cc-profile-content .ep-form-grid>*{min-width:0}
+@media(max-width:900px){.ep-shell .cc-profile-layout{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:480px){.ep-shell .cc-profile-details{grid-template-columns:1fr}.ep-shell .cc-page-actions{justify-content:flex-start;width:100%}.ep-shell .cc-profile-layout{gap:12px}}
