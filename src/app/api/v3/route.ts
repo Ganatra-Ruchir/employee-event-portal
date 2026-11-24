@@ -74,7 +74,7 @@ export async function POST(req:NextRequest){
     subject=target.id;await client.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,$3,'country_admin')",[subject,org,country]);
    }else if(action==="provision"){
     const level=a.level==="state_admin"?"state_admin":a.level==="employee"?"employee":null;
-    if(!level||!canAssign(actor,level,scope)||!state||(level==="employee"&&!branch)||(level==="state_admin"&&branch))return fail("Invalid or unauthorized account scope",403);
+    if(!level||!canAssign(actor,level,scope)||!state||(level==="state_admin"&&branch))return fail("Invalid or unauthorized account scope",403);
     const email=txt(a.email,255).toLowerCase();
     if(name.length<2||name.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return fail("Enter name and valid work email");
     const valid=await client.query("SELECT 1 FROM organization_domains d JOIN organizations o ON o.id=d.organization_id WHERE d.organization_id=$1 AND d.domain=$2 AND o.status='active'",[org,email.split("@")[1]]);
