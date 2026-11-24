@@ -5,6 +5,8 @@ import {ArrowLeft,ArrowRight,Building2,CheckCircle2,HeartHandshake} from "lucide
 import "../landing.css";
 import "../theme.css";
 import "../signup/signup.css";
+// Share the final branded header/CTA palette with the main landing page.
+import "../impact-workspace.css";
 export default function CompanyApplicationPage(){
  const [form,setForm]=useState({organizationName:"",website:"",contactName:"",contactEmail:"",phone:"",workDomain:"",employeeCount:"",message:""});
  const [busy,setBusy]=useState(false),[error,setError]=useState(""),[done,setDone]=useState(false);
