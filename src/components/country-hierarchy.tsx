@@ -3,12 +3,14 @@ import {useEffect,useMemo,useState,useRef,useId} from "react";
 import {cityKey,suggestCities,type CityLocation} from "@/lib/city-suggestions";
 import type {Person,PortalData} from "@/lib/portal-model";
 import {previewAction,previewWorkspace,type Row} from "@/lib/v3-preview";
+import {stateMetrics} from "@/lib/v3-dashboard";
 type City=CityLocation;
 export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;data:PortalData;onSave:(data:PortalData)=>boolean;hash:(password:string)=>Promise<string>}){
  const ws=previewWorkspace(user,data);
  const countries=ws.countries||[];
  const [country,setCountry]=useState(ws.scope?.country_code||""),[cities,setCities]=useState<City[]>([]),[search,setSearch]=useState(""),[selection,setSelection]=useState(""),[email,setEmail]=useState(""),[employeeNumber,setEmployeeNumber]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[geoError,setGeoError]=useState(""),[credentials,setCredentials]=useState<Row|null>(null),[retry,setRetry]=useState(0);
  const [cityOpen,setCityOpen]=useState(false),[activeIndex,setActiveIndex]=useState(-1);
+ const [showCreate,setShowCreate]=useState(false);
  const listId=useId(),cityInput=useRef<HTMLInputElement>(null);
  useEffect(()=>{
   if(!country)return;
@@ -44,12 +46,18 @@ export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;da
  }
  async function submit(e:React.FormEvent){
   e.preventDefault();if(!chosen){setError("Choose a city from the suggestions.");cityInput.current?.focus();return;}
-  if(await run({action:"cityStateAdmin",city:chosen.city,state_name:chosen.state,email,employee_number:employeeNumber})){setEmail("");setEmployeeNumber("");}
+  if(await run({action:"cityStateAdmin",city:chosen.city,state_name:chosen.state,email,employee_number:employeeNumber})){setEmail("");setEmployeeNumber("");setShowCreate(false);}
  }
  const administrators=(ws.members||[]).filter(m=>m.level==="state_admin");
+ const stateRows=stateMetrics((ws.states||[]).map(r=>({id:String(r.id),name:String(r.name)})),(ws.branches||[]).map(r=>({id:String(r.id),state_id:String(r.state_id)})),(ws.members||[]).map(m=>({user_id:String(m.user_id),level:String(m.level),state_id:m.state_id?String(m.state_id):null,branch_id:m.branch_id?String(m.branch_id):null,organization_id:String(m.organization_id),status:m.status?String(m.status):null})),data,Date.now());
+ const monthEventCount=new Set(stateRows.flatMap(r=>r.eventCount?data.events.filter(e=>e.companyId===user.companyId&&e.status==="published"&&new Date(e.startsAt).getMonth()===new Date().getMonth()&&new Date(e.startsAt).getFullYear()===new Date().getFullYear()).map(e=>e.id):[])).size;
+ const employeeCount=stateRows.reduce((sum,r)=>sum+r.total,0);
+
  return <section className="ep-panel v3-workspace cc-hierarchy-setup">
-  <div><div className="ed-eyebrow">ADMINISTRATION · SETUP</div><h2>Create state administrator</h2><p>Choose a city. Its state is detected automatically, and the location is added when you create the account.</p></div>
-  <form className="cc-location-form" onSubmit={submit}>
+  <div className="cc-page-heading"><div><div className="ed-eyebrow">COUNTRY OPERATIONS</div><h2>Existing locations</h2><p>States, branches, teams and event participation at a glance.</p></div><button className="ep-button primary" type="button" onClick={()=>{setShowCreate(v=>!v);setCredentials(null);setError("");}}>{showCreate?"Cancel":"+ Add state"}</button></div>
+  <div className="cc-kpi-grid"><div className="cc-kpi"><span>Total states</span><strong>{ws.states?.length||0}</strong><small>Within your country</small></div><div className="cc-kpi"><span>Cities / branches</span><strong>{ws.branches?.length||0}</strong><small>Registered locations</small></div><div className="cc-kpi"><span>Total employees</span><strong>{employeeCount}</strong><small>State-assigned staff</small></div><div className="cc-kpi"><span>Events this month</span><strong>{monthEventCount}</strong><small>Published in your company</small></div></div>
+  <div className="cc-state-grid">{stateRows.map(r=><article className="cc-state-card" key={r.id}><h3>{r.name}</h3><div className="cc-state-numbers"><div><strong>{r.total}</strong><span>Employees</span></div><div><strong>{r.eventCount}</strong><span>Events this month</span></div><div><strong>{r.branches}</strong><span>Branches</span></div></div><p className="ep-hint">{r.administrators} administrator(s) assigned</p></article>)}{!stateRows.length&&<div className="ep-empty">No states have been added. Use Add state to get started.</div>}</div>
+  {showCreate&&<section className="cc-action-composer"><div className="cc-card-heading"><h3>Add state and assign an administrator</h3><button type="button" className="ep-button secondary" onClick={()=>setShowCreate(false)}>Close</button></div><p className="ep-hint">Choose a city to identify its state automatically, then assign its administrator.</p><form className="cc-location-form" onSubmit={submit}>
    <div className="cc-form-step"><h3>1. Select location</h3><div className="v3-form">
     <label>Country<select required value={country} onChange={e=>{setCountry(e.target.value);setSearch("");setSelection("");setCityOpen(false);setActiveIndex(-1);setCities([]);setLoading(Boolean(e.target.value));setGeoError("");}}><option value="">Select country</option>{countries.map(c=><option key={String(c.code)} value={String(c.code)}>{c.name}</option>)}</select></label>
     <div className="cc-city-field">
@@ -67,10 +75,9 @@ export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;da
     <label>Work email<input required type="email" autoComplete="off" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@company.com"/></label>
     <label>Company ID number<input required maxLength={40} pattern="[A-Za-z0-9][A-Za-z0-9_\-]{0,39}" autoComplete="off" value={employeeNumber} onChange={e=>setEmployeeNumber(e.target.value)} placeholder="EMP-1001"/></label>
    </div><p className="ep-hint">Demo mode: this administrator is created only in this browser profile. Its credentials will not work in another browser or device. A shared PostgreSQL backend is required for real account invitations.</p><p className="ep-hint">A one-time password is generated automatically; it expires in 24 hours and must be replaced after the first sign-in.</p><button type="submit" className="ep-button primary" disabled={busy||!chosen||loading||!!geoError}>{busy?"Creating…":"Create state admin"}</button></div>
-  </form>
+  </form></section>}
   {error&&<p role="alert" className="ep-error">{error}</p>}
   {credentials&&<div className="ep-info cc-issued-credentials" role="status"><h3>One-time login credentials</h3><p>Email: {credentials.email}</p><p>ID number: {credentials.employeeId}</p><p>Temporary password: <code>{credentials.temporaryPassword}</code></p><p>Valid for one sign-in within 24 hours. Share privately.</p><p className="ep-hint"><strong>Browser-only demo:</strong> These credentials work only in the browser profile where this account was created. They cannot be used by a colleague in another browser or on another computer.</p><div className="v3-daily-actions"><button className="ep-button secondary" type="button" onClick={()=>void navigator.clipboard.writeText("Email: "+credentials.email+"\nID: "+credentials.employeeId+"\nTemporary password: "+credentials.temporaryPassword).catch(()=>setError("Clipboard unavailable. Select and copy the credentials."))}>Copy credentials</button><button className="ep-button plain" type="button" onClick={()=>setCredentials(null)}>Hide credentials</button></div></div>}
-  <details className="cc-location-directory"><summary>Existing locations ({ws.states?.length||0} states · {ws.branches?.length||0} cities)</summary><div className="v3-list">{(ws.states||[]).map(s=><div key={String(s.id)}><strong>{s.name}</strong><span>{(ws.branches||[]).filter(b=>b.state_id===s.id).map(b=>b.name).join(", ")||"No city assigned"}</span></div>)}</div></details>
-  <h3>State administrators ({administrators.length})</h3><div className="v3-list">{administrators.map(m=><div key={String(m.user_id)}><strong>{m.email}</strong><span>{(ws.states||[]).find(s=>s.id===m.state_id)?.name||"State"} · ID: {m.employee_number}</span><button type="button" className="ep-button secondary" disabled={busy} onClick={()=>{if(window.confirm("Generate a new temporary password for "+m.email+"? The old password will stop working."))void run({action:"resetStateAdmin",user_id:m.user_id});}}>Generate new temporary password</button></div>)}{!administrators.length&&<p>No state administrators yet.</p>}</div>
+  <details className="cc-location-directory"><summary>View all branches and state administrators</summary><div className="v3-list">{(ws.states||[]).map(s=><div key={String(s.id)}><strong>{s.name}</strong><span>{(ws.branches||[]).filter(b=>b.state_id===s.id).map(b=>b.name).join(", ")||"No branch assigned"}</span><small>{administrators.filter(m=>m.state_id===s.id).map(m=>m.email).join(", ")||"No state admin yet"}</small></div>)}</div></details>
  </section>;
 }
