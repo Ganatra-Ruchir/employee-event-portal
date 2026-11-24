@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {randomUUID} from "node:crypto";
-import {databaseEnabled,getSession,sqlPool,passwordHash,makeToken,logAudit} from "@/lib/db/server";
+import {databaseEnabled,getSessionWithMembership,sqlPool,passwordHash,makeToken,logAudit} from "@/lib/db/server";
 import {sameOrigin} from "@/lib/http";
 import {validWalkInEmployeeId,validWalkInPhone} from "@/lib/attendance-validation";
 import {canAssign,canManageScope,type V3Actor,type V3Membership,type V3Scope} from "@/lib/v3-permissions";
@@ -11,10 +11,11 @@ const fail=(error:string,status=400)=>reply({error},status);
 const txt=(v:unknown,n=160)=>typeof v==="string"?v.trim().slice(0,n):"";
 async function context(req:NextRequest){
  if(process.env.PORTAL_V3_ENABLED!=="true"||!databaseEnabled())return null;
- const user=await getSession(req.cookies.get("elixir_session")?.value);
+ const session=await getSessionWithMembership(req.cookies.get("elixir_session")?.value);
+ const user=session?.user;
  if(!user||!user.verified||user.mustChangePassword)return null;
  const db=sqlPool();
- const membership=(await db.query<V3Membership>("SELECT * FROM v3_memberships WHERE user_id=$1 AND organization_id=$2",[user.id,user.companyId])).rows[0];
+ const membership=session?.membership as V3Membership|null;
  const actor:V3Actor=user.role==="platform_admin"?{level:"root",scope:null}:
   {level:membership?.level==="country_admin"&&user.role==="company_admin"?"country_admin":membership?.level==="state_admin"&&user.role==="employee"?"state_admin":"employee",scope:membership||null};
  return {user,actor,db};
