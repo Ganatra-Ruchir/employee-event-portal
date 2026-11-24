@@ -1,0 +1,102 @@
+/* Shared public-site design language for landing and company application.
+   Green / pink / charcoal; authenticated workspace retains its warm light palette. */
+.landing-public-theme.landing-editorial{
+ --public-green:#286b39;
+ --public-green-dark:#20562d;
+ --public-pink:#f0328d;
+ --public-charcoal:#121313;
+ --public-paper:#f8f8f4;
+ background:var(--public-charcoal)!important;color:var(--public-paper)!important;
+}
+.landing-public-theme.landing-editorial .landing-header{
+ background:#121313!important;border-bottom:1px solid #343736!important;
+}
+.landing-public-theme.landing-editorial .landing-brand,
+.landing-public-theme.landing-editorial .landing-login{
+ color:#f8f8f4!important;
+}
+.landing-public-theme.landing-editorial .landing-brand-light{color:var(--public-pink)!important}
+.landing-public-theme.landing-editorial .landing-mark{
+ background:var(--public-green)!important;color:#f4fff4!important;
+ border-radius:12px!important;box-shadow:0 3px 0 var(--public-pink)!important;
+}
+.landing-public-theme.landing-editorial .landing-signup,
+.landing-public-theme.landing-editorial .landing-cta{
+ background:var(--public-green)!important;color:#fff!important;
+ border-radius:999px!important;border:1px solid var(--public-green)!important;
+}
+.landing-public-theme.landing-editorial .landing-signup:hover,
+.landing-public-theme.landing-editorial .landing-cta:hover{
+ background:var(--public-green-dark)!important;border-color:var(--public-green-dark)!important;
+}
+.landing-public-theme.landing-editorial .landing-photo-hero{background:#151515!important}
+.landing-public-theme.landing-editorial .landing-hero-main{
+ opacity:1!important;transform:none!important;animation:none!important;
+}
+.landing-public-theme.landing-editorial .landing-hero-main h1 span{color:#85cb8c!important}
+.landing-public-theme.landing-editorial .landing-overline,
+.landing-public-theme.landing-editorial .landing-section-intro .landing-eyebrow,
+.landing-public-theme.landing-editorial .landing-eyebrow{
+ color:var(--public-pink)!important;
+}
+.landing-public-theme.landing-editorial .landing-overline-dot{
+ background:var(--public-pink)!important;box-shadow:0 0 0 5px #f0328d29!important;
+}
+.landing-public-theme.landing-editorial .landing-curations,
+.landing-public-theme.landing-editorial .landing-footer-new{background:#121313!important}
+.landing-public-theme.landing-editorial .landing-private-note{
+ background:#1e2220!important;border:1px solid #385141!important;color:#e5e9e5!important;
+}
+.landing-public-theme.landing-editorial .landing-curation-icon{
+ color:#95d9a0!important;background:#203327!important;
+}
+.landing-public-theme.landing-editorial .landing-curation-number{color:var(--public-pink)!important}
+.landing-public-theme.landing-editorial .landing-curation:hover{border-color:#5aab68!important}
+/* Company application lives in the same public site, with a light form surface. */
+.landing-public-theme.company-apply .join-page{background:transparent!important}
+.landing-public-theme.company-apply .join-panel{
+ background:#fbfaf6!important;color:#202820!important;border:1px solid #e4e6df!important;
+ box-shadow:0 16px 50px #0003;
+}
+.landing-public-theme.company-apply .join-panel h1,
+.landing-public-theme.company-apply .join-panel h2{color:#183323!important}
+.landing-public-theme.company-apply .join-panel>small{color:#b32162!important}
+.landing-public-theme.company-apply .join-panel p,
+.landing-public-theme.company-apply .join-panel label{color:#4c5c50!important}
+.landing-public-theme.company-apply .join-panel input,
+.landing-public-theme.company-apply .join-panel textarea,
+.landing-public-theme.company-apply .join-panel select{
+ background:#fff!important;color:#18241d!important;border:1px solid #bfcbbf!important;
+ color-scheme:light!important;
+}
+.landing-public-theme.company-apply .join-panel input:focus,
+.landing-public-theme.company-apply .join-panel textarea:focus,
+.landing-public-theme.company-apply .join-panel select:focus{
+ border-color:var(--public-green)!important;outline:2px solid #4c955d!important;outline-offset:1px;
+}
+.landing-public-theme.company-apply .join-panel button[type=submit]{
+ background:var(--public-green)!important;color:#fff!important;border-radius:10px!important;
+}
+.landing-public-theme.company-apply .join-panel button[type=submit]:hover{background:var(--public-green-dark)!important}
+.landing-public-theme.company-apply .join-tip{
+ border-color:#bcd4c0!important;background:#edf6ee!important;color:#284b31!important;
+}
+.landing-public-theme.company-apply .join-aside a{color:#1c6b39!important}
+@media(max-width:680px){
+ .landing-public-theme.landing-editorial .landing-photo-hero{
+  height:auto!important;min-height:360px!important;
+ }
+ .landing-public-theme.landing-editorial .landing-hero-wrap{
+  min-height:360px!important;padding:42px 20px 55px!important;
+  align-items:flex-start!important;
+ }
+ .landing-public-theme.landing-editorial .landing-hero-main h1{
+  font-size:clamp(35px,10vw,50px)!important;line-height:1.1!important;
+ }
+ .landing-public-theme.company-apply .landing-header{gap:8px!important}
+ .landing-public-theme.company-apply .landing-brand{font-size:20px!important;white-space:normal!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .landing-public-theme .landing-hero-main,
+ .landing-public-theme .landing-signup{animation:none!important;transition:none!important}
+}
