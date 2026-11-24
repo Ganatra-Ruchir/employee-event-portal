@@ -361,6 +361,11 @@ export async function POST(req:NextRequest){
    // Past events can still be edited (e.g. fixing a typo), but a new or moved start time must be in the future.
    // Compare instants, not strings: older rows store the same time in other ISO formats.
    const sameTime=(a?:string,b?:string)=>Boolean(a)&&Boolean(b)&&new Date(a!).getTime()===new Date(b!).getTime();
+   if(prior&&new Date(prior.startsAt).getTime()<=now&&(!sameTime(prior.startsAt,event.startsAt)||!sameTime(prior.endsAt,event.endsAt)))return error("An event that has started cannot change its scheduled dates.",409);
+   if(prior&&event.status==="cancelled"&&prior.status!=="cancelled"&&new Date(prior.endsAt).getTime()<=now){
+    const verified=await pool.query("SELECT 1 FROM v3_contributions WHERE event_id=$1 LIMIT 1",[event.id]);
+    if(verified.rowCount)return error("Completed events with verified contributions cannot be cancelled.",409);
+   }
    if(!sameTime(prior?.startsAt,event.startsAt)&&startMs<=now)return error("The event start time must be in the future.");
    if(event.status==="published"&&prior?.status!=="published"&&startMs<=now)return error("This event has already started, so it can't be published.");
    if(event.deadline&&!sameTime(prior?.deadline,event.deadline)&&new Date(event.deadline).getTime()<=now)return error("The registration deadline must be in the future.");
@@ -404,6 +409,10 @@ export async function POST(req:NextRequest){
    if(process.env.PORTAL_V3_ENABLED==="true"&&!editorCountry)return denied();
    if(!companyAdmin&&(!assignedState||found.rows[0].payload?.stateId!==assignedState))return denied();
    if(editorCountry&&found.rows[0].payload?.countryCode&&found.rows[0].payload.countryCode!==editorCountry)return denied();
+   if(new Date(found.rows[0].payload?.endsAt||0).getTime()<=Date.now()){
+    const credits=await pool.query("SELECT 1 FROM v3_contributions WHERE event_id=$1 LIMIT 1",[id]);
+    if(credits.rowCount)return error("Completed events with verified contributions cannot be cancelled.",409);
+   }
    const event={...found.rows[0].payload,status:"cancelled",cancellationReason:text(args.reason,500)};
    const changed=await pool.query(
     "UPDATE events SET status='cancelled',payload=$1::jsonb,updated_at=now() WHERE id=$2 AND organization_id=$3 AND "+
