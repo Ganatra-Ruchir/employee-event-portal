@@ -1,5 +1,6 @@
 import type {Person,PortalData} from "./portal-model";
 import {eventAccess} from "./portal-model";
+import {validWalkInEmployeeId,validWalkInPhone} from "./attendance-validation";
 import {previewActor,seedPreview,type PreviewData} from "./v3-preview";
 import {canManageScope} from "./v3-permissions";
 export type AttendanceStatus="present"|"absent"|"unmarked";
@@ -9,7 +10,6 @@ export type AttendanceRow={userId:string;status:AttendanceStatus;minutes:string;
 export type WalkInInput={employeeId:string;phone:string};
 export const employeeId=(person:Person)=>person.employeeNumber||(person.id.startsWith("EMP-")?person.id:"EMP-"+person.id.slice(0,8).toUpperCase());
 const normalize=(id:string)=>id.trim().toUpperCase();
-const phoneValid=(phone:string)=>/^\+?[0-9][0-9 ()-]{5,24}$/.test(phone)&&phone.replace(/\D/g,"").length>=7&&phone.replace(/\D/g,"").length<=15;
 const findPerson=(data:PortalData,id:string)=>data.users.find(p=>[p.id,employeeId(p),p.employeeNumber||""].some(x=>normalize(x)===normalize(id)));
 function context(user:Person,input:PreviewData){
  const data=seedPreview(input),actor=previewActor(user,data);
@@ -48,7 +48,7 @@ export function saveEventAttendance(user:Person,input:PreviewData,eventId:string
  const stamp=new Date(now).toISOString();
  const newExtras:WalkIn[]=extras.map(item=>{
   const id=normalize(item.employeeId),phone=item.phone.trim();
-  if(!/^[A-Z0-9][A-Z0-9_.\/-]{0,79}$/.test(id)||!phoneValid(phone))throw Error("Each extra attendee needs a valid employee ID and phone number (7–15 digits).");
+  if(!validWalkInEmployeeId(id)||!validWalkInPhone(phone))throw Error("Each extra attendee needs a valid employee ID and phone number (7–15 digits).");
   const p=findPerson(data,id),m=p?v.members.find(x=>x.user_id===p.id):undefined;
   if(p&&(!m||m.level!=="employee"||!canManageScope(actor,m)))throw Error("Employee ID belongs to an account outside your attendance scope.");
   if(p&&registeredIds.has(p.id))throw Error("Employee "+id+" is already registered. Mark them in the registered list.");
