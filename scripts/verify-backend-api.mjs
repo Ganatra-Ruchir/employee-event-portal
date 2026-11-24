@@ -46,6 +46,10 @@ try{
  assert.equal(response.status,200,"Approve application: "+JSON.stringify(response.body));
  const approved=await db.query("SELECT o.id FROM organizations o JOIN organization_domains d ON d.organization_id=o.id WHERE d.domain='ci-newpartner.example'");
  assert.equal(approved.rowCount,1);
+ response=await write("/api/v3",{action:"attendanceSubmit",organization_id:uuid(),country_code:"IN",event_id:event,rows:[]},tokenManager);
+ assert.equal(response.status,403,"Country manager must not write to another company");
+ response=await api("/api/company-applications");
+ assert.equal(response.status,403,"Anonymous visitors must not read applications");
  const simultaneous=await Promise.all(Array.from({length:5},async()=>{const started=performance.now();const r=await api("/api/v3",{headers:{"Cookie":"elixir_session="+tokenManager}});return {status:r.status,ms:Math.round(performance.now()-started)};}));
  assert(simultaneous.every(x=>x.status===200),"Five concurrent read requests failed");
  const times=simultaneous.map(x=>x.ms).sort((a,b)=>a-b);
