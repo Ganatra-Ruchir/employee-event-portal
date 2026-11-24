@@ -6,10 +6,10 @@ Next.js event management for Elixir Foundation and its partner organizations, wi
 
 | Environment | Storage | Status |
 | --- | --- | --- |
-| [Production](https://emplatfors.vercel.app/) (\`main\`) | Legacy browser-local demo | No production database migration |
+| [Current production](https://employee-event-portal.vercel.app/) (\`main\`) | Browser-local fictional demo | Not ready for real employee or company data |\n| [Legacy, separate project](https://emplatfors.vercel.app/) | Older unrelated deployment | Do not use for this acceptance audit |\n| [V4 UI preview](https://employee-volunteer-v4.vercel.app/) | Railway PostgreSQL staging proxy | Separate feature branch; not current production |
 | \`feature/neon-postgres-backend\` on Vercel Preview | Neon PostgreSQL + private Neon Object Storage | Staging backend and health checks operational |
 
-The legacy demo still supports fictional companies and demo credentials. **Never use real credentials or employee data in demo mode.** The database-enabled preview has its own administrator setup flow and is not seeded with fictional accounts.
+The current production demo still supports fictional companies and demo credentials. **Never use real credentials or employee data in demo mode.** The database-enabled staging branch has its own administrator setup flow and is not seeded with fictional accounts. For a five-reviewer UI audit, use [the client acceptance checklist](docs/CLIENT_ACCEPTANCE_5_REVIEWERS.md).
 
 ## Staging PostgreSQL integration
 
@@ -47,6 +47,6 @@ For database testing, configure \`DATABASE_URL\` for the appropriate non-product
 - Work-email ownership verification and automated recovery emails are not implemented in the custom staging authentication flow. New accounts require manual administrator approval.
 - Event email notifications and reminders are not yet connected to a transactional email provider.
 - Independent cross-device RSVP and concurrent booking tests require activated accounts and staging acceptance testing.
-- A separate audited production migration and public access review are required before real employee data is processed.
+- A separate audited production migration and public access review are required before real employee data is processed.\n- Manager credential emails require a verified transactional-email sender and server configuration.\n- Production is not configured with persistent PostgreSQL; browser demo data is not shared across devices.\n- CI includes [PostgreSQL schema and HTTP endpoint smoke tests](.github/workflows/backend-schema.yml) and [UI navigation/layout checks](.github/workflows/ci.yml). These do not replace real-device and real-account acceptance tests.
 
 See [GitHub draft pull request](https://github.com/Ganatra-Ruchir/Corporate-Event-Management-Employee-Registration-Portal/pull/1) for the proposed database integration. Do not merge without approval and staged validation.
