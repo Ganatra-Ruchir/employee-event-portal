@@ -783,6 +783,12 @@ export default function ElixirPortal(){
         {view==="events"&&(current.role==="company_admin"||current.role==="platform_admin")&&<>
           <WorkspaceHeading eyebrow={(company?.name||"COMPANY").toUpperCase()+" · EVENT MANAGEMENT"} title={current.role==="platform_admin"?"All partner events":"Manage events"} description={current.role==="platform_admin"?"Track events across partner organizations.":"Plan, publish and manage events for your organization."}
             action={current.role==="company_admin"?<Action onClick={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),contactEmail:current.email});goto("eventForm");}}><Plus size={17}/> Create event</Action>:undefined}/>
+          <div className="cc-kpi-grid">
+            <div className="cc-kpi"><span>All events</span><strong>{companyEvents.length}</strong><small>Within accessible organizations</small></div>
+            <div className="cc-kpi"><span>Upcoming</span><strong>{companyEvents.filter(e=>e.status==="published"&&new Date(e.startsAt).getTime()>=now).length}</strong><small>Published future events</small></div>
+            <div className="cc-kpi"><span>Completed</span><strong>{companyEvents.filter(e=>e.status==="published"&&new Date(e.endsAt).getTime()<now).length}</strong><small>Past published events</small></div>
+            <div className="cc-kpi"><span>Registrations</span><strong>{data.registrations.filter(r=>r.status==="going"&&companyEvents.some(e=>e.id===r.eventId)).length}</strong><small>Confirmed registrations, not attendance</small></div>
+          </div>
           <div className="aw-browse-bar"><strong>{filteredEvents.length} events</strong><button className="ed-search-toggle" type="button" aria-expanded={searchOpen} onClick={()=>setSearchOpen(v=>!v)}>{searchOpen?<X size={19}/>:<Search size={19}/>}<span>{searchOpen?"Close filters":"Search & filters"}</span></button></div>
           {searchOpen&&<div className="ep-filters aw-filter-panel">
             <FormRow label="Search events"><div className="ep-search"><Search size={18}/><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search titles, places and categories"/></div></FormRow>
