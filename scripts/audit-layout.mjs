@@ -51,7 +51,38 @@ try{
      assert.equal(await page.locator(".cc-chart-legend").first().evaluate(el=>getComputedStyle(el).overflowY),"visible");
      assert.ok(await page.locator(".cc-impact-grid").evaluate(el=>el.getBoundingClientRect().top<document.querySelector(".v3-list").getBoundingClientRect().top));
     }
+    if(route==="profile"){
+     assert.equal(await page.locator(".cc-profile-details").count(),1,label+": read-only profile missing");
+     assert.equal(await page.locator(".aw-profile-form").count(),0,label+": inputs shown before Edit");
+     const inside=await page.locator(".cc-profile-summary").evaluate(el=>[...el.querySelectorAll("h2,p")].every(node=>node.getBoundingClientRect().right<=el.getBoundingClientRect().right+2));
+     assert.ok(inside,label+": long name/email overflows profile card");
+     if(viewport.width===1440){
+      await page.getByRole("button",{name:"Edit profile"}).first().click();
+      await page.locator(".aw-profile-form").waitFor();
+      await page.getByRole("button",{name:"Cancel"}).last().click();
+      assert.equal(await page.locator(".aw-profile-form").count(),0,label+": Cancel left editor visible");
+     }
+    }
+    if(route==="hierarchy"&&email.startsWith("country")){
+     assert.ok(await page.locator(".cc-kpi-grid").count()>0,label+": missing location KPIs");
+     assert.equal(await page.locator(".cc-location-form").count(),0,label+": setup form shown before Add state");
+     assert.equal(await page.getByRole("button",{name:/Generate new temporary password/i}).count(),0,label+": unwanted reset action");
+     if(viewport.width===1440){await page.getByRole("button",{name:/Add state/i}).first().click();assert.equal(await page.locator(".cc-location-form").count(),1,label+": Add state did not open form");}
+    }
+    if(route==="people"&&(email.startsWith("country")||email.startsWith("state"))){
+     assert.ok(await page.locator(".cc-kpi-grid").count()>0,label+": People summary missing");
+     assert.ok(await page.locator(".cc-participation-donut").count()>0,label+": People chart missing");
+     assert.equal(await page.locator(".cc-action-composer").count(),0,label+": Add employee form open by default");
+     if(viewport.width===1440){await page.getByRole("button",{name:/Add employee/i}).first().click();assert.equal(await page.locator(".cc-action-composer").count(),1,label+": Add employee failed");}
+    }
     checked++;console.log("PASS",label);
+   }
+   if(viewport.width===1440&&email.startsWith("country")){
+    await page.locator('.ep-sidebar button[data-view="events"]').click();
+    await page.getByRole("button",{name:/Create event/i}).first().click();
+    await page.locator("form.ep-form").waitFor();
+    assert.equal(await page.getByRole("button",{name:/Add speaker/i}).count(),0,"Event creation offers an unwanted speaker control");
+    console.log("PASS speaker-free event creation");
    }
    if(viewport.width===1440){
     const buttons=page.locator(".ep-sidebar button.ep-nav-link");
