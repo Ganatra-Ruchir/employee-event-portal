@@ -65,6 +65,10 @@ try{
  const countryEvent={...eventTemplate,id:uuid(),title:"Company-wide Event",createdBy:manager,stateId:undefined};
  const countryEventCreated=await write("/api/portal",{action:"saveEvent",args:{event:countryEvent}},tokenManager);
  assert.equal(countryEventCreated.status,200,"Company admin must retain company-wide event creation");
+ const gujaratEvent={...countryEvent,id:uuid(),title:"Gujarat State Event",stateId:state};
+ assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:gujaratEvent}},tokenManager)).status,200,"Company admin must create a Gujarat state event");
+ assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gujaratEvent,title:"Forbidden Bihar Edit"}}},biharToken)).status,403,"Bihar admin cannot edit Gujarat state event");
+ assert.equal((await write("/api/portal",{action:"cancelEvent",args:{eventId:gujaratEvent.id,reason:"unauthorized"}},biharToken)).status,403,"Bihar admin cannot cancel Gujarat state event");
  const forbiddenEdit=await write("/api/portal",{action:"saveEvent",args:{event:{...countryEvent,title:"Bihar hijack of company event",stateId:biharState}}},biharToken);
  assert.equal(forbiddenEdit.status,403,"State admin must not edit company-wide events");
  const forbiddenCancel=await write("/api/portal",{action:"cancelEvent",args:{eventId:countryEvent.id,reason:"unauthorized"}},biharToken);
@@ -115,6 +119,8 @@ try{
  await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '1 hour')",[createHash("sha256").update(employeeToken).digest("hex"),employee]);
  const employeeSnapshot=await api("/api/portal",{headers:{"Cookie":"elixir_session="+employeeToken}});
  assert.equal(employeeSnapshot.body.accessLevel,"employee");
+ const employeeCreateEvent=await write("/api/portal",{action:"saveEvent",args:{event:{...eventTemplate,id:uuid(),stateId:state}}},employeeToken);
+ assert.equal(employeeCreateEvent.status,403,"Regular employees must never create events");
  const employeeProvision=await write("/api/v3",{action:"provision",level:"employee",organization_id:org,country_code:"IN",state_id:state,branch_id:branch,name:"Unauthorized",email:"not-allowed@ci-company.example"},employeeToken);
  assert.equal(employeeProvision.status,403,"Regular employee cannot provision accounts");
  const unscopedLegacy=await write("/api/portal",{action:"createEmployee",args:{name:"Unscoped",email:"unscoped@ci-company.example"}},tokenManager);
