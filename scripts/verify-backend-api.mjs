@@ -31,11 +31,8 @@ try{
  await db.query("INSERT INTO v3_countries(organization_id,code,name) VALUES($1,'GB','United Kingdom')",[org]);
  await db.query("INSERT INTO v3_states(id,organization_id,country_code,name) VALUES($1,$2,'GB','England')",[gbState,org]);
  await db.query("INSERT INTO users(id,full_name,email,password_hash,role,organization_id,verified) VALUES($1,'GB Country Manager','gb-manager@ci-company.example','test-hash','company_admin',$3,true),($2,'GB Employee','gb-employee@ci-company.example','test-hash','employee',$3,true)",[gbManager,gbEmployee,org]);
- await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$3,'GB','country_admin'),($2,$3,'GB','employee')",[gbManager,gbEmployee,org]).catch(async()=>{
-  // Employees require a state but not necessarily a branch.
-  await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,'GB','country_admin')",[gbManager,org]);
-  await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,state_id,level) VALUES($1,$2,'GB',$3,'employee')",[gbEmployee,org,gbState]);
- });
+ await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,'GB','country_admin')",[gbManager,org]);
+ await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,state_id,level) VALUES($1,$2,'GB',$3,'employee')",[gbEmployee,org,gbState]);
  await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '1 hour')",[createHash("sha256").update(gbToken).digest("hex"),gbManager]);
  const nextWeek=new Date(Date.now()+8*86400000).toISOString(),endNextWeek=new Date(Date.now()+8*86400000+3600000).toISOString(),gbEventId=uuid();
  const gbEvent={id:gbEventId,companyId:org,stateId:gbState,title:"GB State Event",summary:"GB demo",description:"Demonstration in GB",category:"Volunteering",format:"in_person",location:"London",onlineLink:"",startsAt:nextWeek,endsAt:endNextWeek,capacity:20,deadline:"",contactEmail:"gb-manager@ci-company.example",status:"published",cancellationReason:"",createdBy:gbManager,waitlistEnabled:true};
