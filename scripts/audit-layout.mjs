@@ -32,6 +32,12 @@ try{
     await page.locator(".ep-shell .ep-main").waitFor();
     const expectedView=route==="overview"?"home":route==="accounts"?"users":route;
     await page.locator(`.ep-sidebar button.ep-nav-link[data-view="${expectedView}"][aria-current="page"]`).waitFor();
+    // A dynamically loaded workspace can activate its sidebar before its content is ready.
+    // Wait for actual page content, so screenshots and latency describe usable screens.
+    if(route==="people"||route==="hierarchy"||(route==="overview"&&email.startsWith("state"))){
+     await page.locator(".cc-kpi-grid").first().waitFor({timeout:20000});
+    }
+    if(route==="overview"&&email.startsWith("employee"))await page.locator(".cc-impact-grid").waitFor({timeout:20000});
     navigationMs.push(Date.now()-navigationStart);
     if((viewport.width===1440||viewport.width===768)&&["overview","attendance","companies","events","people","hierarchy","accounts","registrations","profile"].includes(route))await page.screenshot({path:"artifacts/client-ui/"+email.split("@")[0]+"-"+route+(viewport.width===768?"-tablet":"")+".png",fullPage:false});
     const dimensions=await page.evaluate(()=>{
