@@ -265,6 +265,7 @@ function AuthPage({data,onLogin,onSignup,onVerified,onReset,remoteMode=false,onB
 export default function ElixirPortal(){
   const [data,setData]=useState<PortalData>(()=>({companies:[],users:[],events:[],registrations:[],invitations:[]}));
   const [remote,setRemote]=useState(false);
+  const [remoteRole,setRemoteRole]=useState<"root"|"country_admin"|"state_admin"|"employee"|null>(null);
   const [remoteError,setRemoteError]=useState("");
   const [session,setSession]=useState<string|null>(null);
   const [ready,setReady]=useState(false);
@@ -362,6 +363,21 @@ export default function ElixirPortal(){
     },60_000);
     return ()=>window.clearInterval(timer);
   },[remote,session]);
+  // The database stores state administrators as role=employee with V3 membership.
+  // Resolve their effective role from the authenticated server, never from the
+  // generic users.role field (which would hide People and Attendance).
+  useEffect(()=>{
+    if(!remote||!session){return;}
+    let active=true;
+    void fetch("/api/v3",{cache:"no-store"}).then(async response=>{
+      if(!response.ok)throw Error("V3 workspace not available");
+      const result=await response.json() as {level?:string};
+      if(active&&["root","country_admin","state_admin","employee"].includes(result.level||"")){
+        setRemoteRole(result.level as "root"|"country_admin"|"state_admin"|"employee");
+      }
+    }).catch(()=>{if(active)setRemoteRole(null);});
+    return()=>{active=false;};
+  },[remote,session]);
   const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string}>=>{
     try{
       const r=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args}),cache:"no-store"});
@@ -401,7 +417,7 @@ export default function ElixirPortal(){
   const blocked=Boolean(current&&(current.status==="suspended"||(current.companyId&&(!company||company.status==="suspended"))));
   const events=current?.role==="platform_admin"?data.events:current?.companyId?data.events.filter(e=>e.companyId===current.companyId):[];
   const companyEvents=events;
-  const isStateAdmin=Boolean(current&&!remote&&previewActor(current,data).level==="state_admin");
+  const isStateAdmin=Boolean(current&&(remote?remoteRole==="state_admin":previewActor(current,data).level==="state_admin"));
   const isCountryAdmin=Boolean(current&&(remote?current.role==="company_admin":previewActor(current,data).level==="country_admin"));
   const dailyNav:View[]=current?.role==="platform_admin"?["home","events","users"]:isStateAdmin?["home","events","attendance","people"]:current?.role==="company_admin"?["home","events",...(isCountryAdmin?["attendance" as View]:[]),"people","registrations"]:["home","events","registrations"];
   const settingsNav:View[]=current?.role==="platform_admin"?["companies","invitations","hierarchy","profile"]:isCountryAdmin?["hierarchy","profile"]:["profile"];
@@ -439,6 +455,7 @@ export default function ElixirPortal(){
 
   async function login(email:string,password:string):Promise<string|null>{
     if(remote){
+      setRemoteRole(null);
       const result=await remoteRequest("login",{email,password});
       if(result.error)return result.error;
       // The login response already carries the portal data; only fall back to a second request if it doesn't.
@@ -493,7 +510,7 @@ export default function ElixirPortal(){
   async function logout(){
     // Wait for the server to revoke the session; otherwise a quick refresh signs the user straight back in.
     if(remote)await remoteRequest("logout");
-    setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
+    setRemoteRole(null);setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
   }
 
   function saveEvent(e:PortalEvent){
@@ -717,7 +734,7 @@ export default function ElixirPortal(){
     </header>
     <div className="ep-layout">
       <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
-        <div className="ep-nav-title">{!remote&&previewActor(current,data).level==="state_admin"?"State admin":roleName(current.role)}</div>
+        <div className="ep-nav-title">{isStateAdmin?"State admin":roleName(current.role)}</div>
         {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} data-view={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
       </nav>
       <main className="ep-main" id="main-content" tabIndex={-1}>
