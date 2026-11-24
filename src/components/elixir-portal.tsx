@@ -7,6 +7,7 @@ import V3Workspace from "@/components/v3-workspace";
 import {SDG_NAMES,eventGoal} from "@/lib/employee-impact";
 import {previewActor} from "@/lib/v3-preview";
 import {navigationForLevel} from "@/lib/v3-navigation";
+import {invalidateV3Workspace} from "@/lib/v3-client-cache";
 import {createDemoData,DEMO_DATA_VERSION} from "@/lib/demo-data";
 import {DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
 import dynamic from "next/dynamic";
@@ -338,6 +339,7 @@ export default function ElixirPortal(){
           setReady(true);return;
         }
         if(payload.data)setData(payload.data);
+        setRemoteRole(payload.accessLevel||null);
         setSession(payload.currentId||null);
         setNow(Date.now());setReady(true);return;
       }catch{
@@ -363,21 +365,6 @@ export default function ElixirPortal(){
       }).catch(()=>{});
     },60_000);
     return ()=>window.clearInterval(timer);
-  },[remote,session]);
-  // The database stores state administrators as role=employee with V3 membership.
-  // Resolve their effective role from the authenticated server, never from the
-  // generic users.role field (which would hide People and Attendance).
-  useEffect(()=>{
-    if(!remote||!session){return;}
-    let active=true;
-    void fetch("/api/v3",{cache:"no-store"}).then(async response=>{
-      if(!response.ok)throw Error("V3 workspace not available");
-      const result=await response.json() as {level?:string};
-      if(active&&["root","country_admin","state_admin","employee"].includes(result.level||"")){
-        setRemoteRole(result.level as "root"|"country_admin"|"state_admin"|"employee");
-      }
-    }).catch(()=>{if(active)setRemoteRole(null);});
-    return()=>{active=false;};
   },[remote,session]);
   const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string;accessLevel?:"root"|"country_admin"|"state_admin"|"employee"}>=>{
     try{
@@ -471,6 +458,7 @@ export default function ElixirPortal(){
 
   async function login(email:string,password:string):Promise<string|null>{
     if(remote){
+      invalidateV3Workspace();
       setRemoteRole(null);
       const result=await remoteRequest("login",{email,password});
       if(result.error)return result.error;
@@ -526,7 +514,7 @@ export default function ElixirPortal(){
   async function logout(){
     // Wait for the server to revoke the session; otherwise a quick refresh signs the user straight back in.
     if(remote)await remoteRequest("logout");
-    setRemoteRole(null);setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
+    invalidateV3Workspace();setRemoteRole(null);setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
   }
 
   function saveEvent(e:PortalEvent){
