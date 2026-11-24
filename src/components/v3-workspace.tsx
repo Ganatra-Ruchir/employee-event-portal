@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
+import {fetchV3Workspace,invalidateV3Workspace} from "@/lib/v3-client-cache";
 import type {Person,PortalData} from "@/lib/portal-model";
 import {previewWorkspace,previewAction} from "@/lib/v3-preview";
 import CountryHierarchy from "@/components/country-hierarchy";
@@ -19,10 +20,10 @@ export default function V3Workspace({user,data,remote,now,onEvent,onSave,hash,se
  const [showComposer,setShowComposer]=useState(false);
  const [showAllStates,setShowAllStates]=useState(false),[showAllMembers,setShowAllMembers]=useState(false),[memberSearch,setMemberSearch]=useState("");
  async function load(){
-  const r=await fetch("/api/v3",{cache:"no-store"});if(r.status===404)return;
-  const j=await r.json();if(!r.ok)throw Error(j.error||"Workspace unavailable");setWorkspace(j);
+  invalidateV3Workspace();
+  const result=await fetchV3Workspace<Workspace>();setWorkspace(result);
  }
- useEffect(()=>{if(!remote)return;let active=true;fetch("/api/v3",{cache:"no-store"}).then(async r=>{if(r.status===404)return;const j=await r.json();if(!r.ok)throw Error(j.error);if(active)setWorkspace(j);}).catch(e=>{if(active)setIssue(e.message);});return()=>{active=false;};},[remote,user.id]);
+ useEffect(()=>{if(!remote)return;let active=true;void fetchV3Workspace<Workspace>().then(result=>{if(active)setWorkspace(result);}).catch(e=>{if(active)setIssue(e instanceof Error?e.message:"Workspace unavailable");});return()=>{active=false;};},[remote,user.id]);
  const workspace:Workspace|null=remote?remoteWorkspace:previewWorkspace(user,data);
  const level=workspace?.level,scope=workspace?.scope;
  const root=level==="root",countryAdmin=level==="country_admin",stateAdmin=level==="state_admin";
