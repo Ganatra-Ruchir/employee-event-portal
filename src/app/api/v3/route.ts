@@ -161,7 +161,7 @@ export async function POST(req:NextRequest){
      const eventOwner=await client.query("SELECT payload FROM events WHERE id=$1",[eventId]);
      if(actor.level==="state_admin"&&eventOwner.rows[0]?.payload?.stateId!==actor.scope?.state_id)return fail("Cannot verify another state's event",403);
      const attendanceMark=await client.query("SELECT status FROM v3_attendance_marks WHERE event_id=$1 AND user_id=$2",[eventId,userId]);
-     if(attendanceMark.rows[0]?.status==="absent")return fail("Cannot award volunteer hours to an employee marked absent",409);
+     if(attendanceMark.rows[0]?.status!=="present")return fail("Mark this employee present and submit attendance before verifying volunteer hours",409);
     subject=eventId+":"+userId;
     await client.query("INSERT INTO v3_contributions(event_id,user_id,volunteer_minutes,contribution,verified_by) VALUES($1,$2,$3,$4,$5) ON CONFLICT(event_id,user_id) DO UPDATE SET volunteer_minutes=excluded.volunteer_minutes,contribution=excluded.contribution,verified_by=excluded.verified_by,verified_at=now()",[eventId,userId,minutes,txt(a.contribution,1000),user.id]);
    }else return fail("Not authorized",403);
