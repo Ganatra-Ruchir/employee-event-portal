@@ -6,12 +6,13 @@
  */
 let cache:{value:unknown;expiresAt:number}|null=null;
 let pending:Promise<unknown>|null=null;
-const TTL_MS=15_000;
+const TTL_MS=45_000;
 export function invalidateV3Workspace(){
  cache=null;
  pending=null;
 }
-export async function fetchV3Workspace<T=unknown>():Promise<T>{
+export async function fetchV3Workspace<T=unknown>(options:{force?:boolean}={}):Promise<T>{
+ if(options.force)cache=null;
  if(cache&&cache.expiresAt>Date.now())return cache.value as T;
  if(pending)return pending as Promise<T>;
  const request=fetch("/api/v3",{cache:"no-store"}).then(async response=>{
