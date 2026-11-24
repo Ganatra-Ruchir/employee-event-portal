@@ -10,7 +10,6 @@ import {navigationForLevel} from "@/lib/v3-navigation";
 import {createDemoData,DEMO_DATA_VERSION} from "@/lib/demo-data";
 import {DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
 import dynamic from "next/dynamic";
-const SpeakerEditor=dynamic(()=>import("@/components/speaker-editor").then(m=>m.SpeakerEditor),{loading:()=> <div className="ep-hint">Loading speaker editor…</div>});
 const SpeakerGallery=dynamic(()=>import("@/components/speaker-gallery").then(m=>m.SpeakerGallery),{loading:()=> <div className="ep-hint">Loading speaker cards…</div>});
 import {PlatformOverview,CompanyOverview,WorkspaceHeading,WorkspaceSection} from "@/components/admin-workspace";
 import {CompanyDirectory,PeopleDirectory,AccountDirectory,InvitationDirectory} from "@/components/admin-directory";
@@ -141,7 +140,7 @@ function EventEditor({event,data,onSave,onBack}:{event:PortalEvent;data:PortalDa
   }
   return <div>
     <button className="ep-back" type="button" onClick={leave}><ArrowLeft size={16}/> Back</button>
-    <WorkspaceHeading eyebrow="COMPANY EVENT MANAGEMENT" title={isNew?"Create event":"Edit event"} description="Add event details, banners and speakers, then save or publish."/>
+    <WorkspaceHeading eyebrow="COMPANY EVENT MANAGEMENT" title={isNew?"Create event":"Edit event"} description="Set up event details, timing and registration, then save or publish."/>
     <form className="ep-panel ep-form" onSubmit={submit}>
       <h2>Event information</h2>
       <FormRow label="Event banner (optional, JPG/PNG/WebP up to 5 MB)"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void uploadBanner(e.target.files?.[0])}/></FormRow>
@@ -161,7 +160,6 @@ function EventEditor({event,data,onSave,onBack}:{event:PortalEvent;data:PortalDa
         <FormRow label="Maximum participants"><input required min={1} max={100000} type="number" value={form.capacity} onChange={e=>update("capacity",Number(e.target.value))}/></FormRow>
         <FormRow label="Registration deadline (optional)"><input type="datetime-local" value={toInput(form.deadline)} onChange={e=>update("deadline",e.target.value?new Date(e.target.value).toISOString():"")}/></FormRow>
       </div>
-      <SpeakerEditor speakers={form.speakers||[]} onChange={speakers=>update("speakers",speakers)}/>
       <label className="ep-check"><input type="checkbox" checked={form.waitlistEnabled!==false} onChange={e=>update("waitlistEnabled",e.target.checked)}/> Allow a waitlist when the event is full</label>
       <FormRow label="Organiser contact email"><input type="email" required value={form.contactEmail} onChange={e=>update("contactEmail",e.target.value)}/></FormRow>
       <FormRow label="Status"><select value={form.status} onChange={e=>update("status",e.target.value as EventStatus)}><option value="draft">Draft: only admins can see it</option><option value="published">Published: employees can see and join it</option>{!isNew&&<option value="cancelled">Cancelled</option>}</select></FormRow>
