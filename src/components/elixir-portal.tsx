@@ -267,6 +267,7 @@ export default function ElixirPortal(){
   const [remote,setRemote]=useState(false);
   const [remoteRole,setRemoteRole]=useState<"root"|"country_admin"|"state_admin"|"employee"|null>(null);
   const [remoteStateId,setRemoteStateId]=useState<string|null>(null);
+  const [remoteCountryCode,setRemoteCountryCode]=useState<string|null>(null);
   const [remoteError,setRemoteError]=useState("");
   const [session,setSession]=useState<string|null>(null);
   const [ready,setReady]=useState(false);
@@ -343,6 +344,7 @@ export default function ElixirPortal(){
         if(payload.data)setData(payload.data);
         setRemoteRole(payload.accessLevel||null);
         setRemoteStateId(payload.accessStateId||null);
+        setRemoteCountryCode(payload.accessCountryCode||null);
         setSession(payload.currentId||null);
         setNow(Date.now());setReady(true);return;
       }catch{
@@ -369,7 +371,7 @@ export default function ElixirPortal(){
     },60_000);
     return ()=>window.clearInterval(timer);
   },[remote,session]);
-  const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string;accessLevel?:"root"|"country_admin"|"state_admin"|"employee";accessStateId?:string|null}>=>{
+  const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string;accessLevel?:"root"|"country_admin"|"state_admin"|"employee";accessStateId?:string|null;accessCountryCode?:string|null}>=>{
     try{
       const r=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args}),cache:"no-store"});
       const result=await r.json();
@@ -381,7 +383,7 @@ export default function ElixirPortal(){
     try{
       const r=await fetch("/api/portal",{cache:"no-store"});
       const json=await r.json();
-      if(r.ok&&json.data){setData(json.data);setRemoteRole(json.accessLevel||null);setRemoteStateId(json.accessStateId||null);setSession(json.currentId||null);return true;}
+      if(r.ok&&json.data){setData(json.data);setRemoteRole(json.accessLevel||null);setRemoteStateId(json.accessStateId||null);setRemoteCountryCode(json.accessCountryCode||null);setSession(json.currentId||null);return true;}
     }catch{}
     return false;
   };
@@ -391,6 +393,7 @@ export default function ElixirPortal(){
     if(result.data)setData(result.data);
     if(result.accessLevel)setRemoteRole(result.accessLevel);
     if(result.accessStateId!==undefined)setRemoteStateId(result.accessStateId||null);
+    if(result.accessCountryCode!==undefined)setRemoteCountryCode(result.accessCountryCode||null);setRemoteCountryCode(result.accessCountryCode||null);
     else if(!result.data)await remoteRefresh();
     if(success)setNotice(success);return true;
   };
@@ -424,7 +427,11 @@ export default function ElixirPortal(){
   const isStateAdmin=Boolean(current&&(remote?remoteRole==="state_admin":previewActor(current,data).level==="state_admin"));
   const isCountryAdmin=Boolean(current&&(remote?remoteRole==="country_admin":previewActor(current,data).level==="country_admin"));
   const assignedEventState=isStateAdmin&&current?(remote?remoteStateId:previewActor(current,data).scope?.state_id||null):null;
-  const canManageEvent=(event:PortalEvent)=>Boolean(current?.role==="company_admin"&&current.companyId===event.companyId||isStateAdmin&&assignedEventState&&event.stateId===assignedEventState&&event.companyId===current?.companyId);
+  const canManageEvent=(event:PortalEvent)=>Boolean(
+   current?.role==="company_admin"&&current.companyId===event.companyId&&
+    (!remote||remoteCountryCode&&(event.countryCode===remoteCountryCode||!event.countryCode&&event.createdBy===current.id))||
+   isStateAdmin&&assignedEventState&&event.stateId===assignedEventState&&event.companyId===current?.companyId
+  );
   const effectiveLevel=current?(remote?remoteRole||"employee":previewActor(current,data).level):"employee";
   const roleNavigation=navigationForLevel(effectiveLevel);
   const dailyNav:View[]=roleNavigation.daily;
@@ -465,7 +472,7 @@ export default function ElixirPortal(){
   async function login(email:string,password:string):Promise<string|null>{
     if(remote){
       invalidateV3Workspace();
-      setRemoteRole(null);setRemoteStateId(null);
+      setRemoteRole(null);setRemoteStateId(null);setRemoteCountryCode(null);
       const result=await remoteRequest("login",{email,password});
       if(result.error)return result.error;
       // The login response already carries the portal data; only fall back to a second request if it doesn't.
@@ -520,7 +527,7 @@ export default function ElixirPortal(){
   async function logout(){
     // Wait for the server to revoke the session; otherwise a quick refresh signs the user straight back in.
     if(remote)await remoteRequest("logout");
-    invalidateV3Workspace();setRemoteRole(null);setRemoteStateId(null);setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
+    invalidateV3Workspace();setRemoteRole(null);setRemoteStateId(null);setRemoteCountryCode(null);setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
   }
 
   function saveEvent(e:PortalEvent){
@@ -778,7 +785,7 @@ export default function ElixirPortal(){
         />}
         {view==="events"&&(current.role==="company_admin"||current.role==="platform_admin"||isStateAdmin)&&<>
           <WorkspaceHeading eyebrow={(company?.name||"COMPANY").toUpperCase()+" · EVENT MANAGEMENT"} title={current.role==="platform_admin"?"All partner events":isStateAdmin?"State events":"Manage events"} description={current.role==="platform_admin"?"Track events across partner organizations.":isStateAdmin?"Create and manage events for your assigned state. Other states are view-only.":"Plan, publish and manage events for your organization."}
-            action={current.role==="company_admin"||isStateAdmin?<Action onClick={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),stateId:assignedEventState||undefined,contactEmail:current.email});goto("eventForm");}}><Plus size={17}/> Create event</Action>:undefined}/>
+            action={current.role==="company_admin"||isStateAdmin?<Action onClick={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),stateId:assignedEventState||undefined,countryCode:remote?remoteCountryCode||undefined:previewActor(current,data).scope?.country_code||undefined,contactEmail:current.email});goto("eventForm");}}><Plus size={17}/> Create event</Action>:undefined}/>
           <div className="cc-kpi-grid">
             <div className="cc-kpi"><span>All events</span><strong>{companyEvents.length}</strong><small>Within accessible organizations</small></div>
             <div className="cc-kpi"><span>Upcoming</span><strong>{companyEvents.filter(e=>e.status==="published"&&new Date(e.startsAt).getTime()>=now).length}</strong><small>Published future events</small></div>
