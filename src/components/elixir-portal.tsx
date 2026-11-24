@@ -266,6 +266,7 @@ export default function ElixirPortal(){
   const [data,setData]=useState<PortalData>(()=>({companies:[],users:[],events:[],registrations:[],invitations:[]}));
   const [remote,setRemote]=useState(false);
   const [remoteRole,setRemoteRole]=useState<"root"|"country_admin"|"state_admin"|"employee"|null>(null);
+  const [remoteStateId,setRemoteStateId]=useState<string|null>(null);
   const [remoteError,setRemoteError]=useState("");
   const [session,setSession]=useState<string|null>(null);
   const [ready,setReady]=useState(false);
@@ -341,6 +342,7 @@ export default function ElixirPortal(){
         }
         if(payload.data)setData(payload.data);
         setRemoteRole(payload.accessLevel||null);
+        setRemoteStateId(payload.accessStateId||null);
         setSession(payload.currentId||null);
         setNow(Date.now());setReady(true);return;
       }catch{
@@ -367,7 +369,7 @@ export default function ElixirPortal(){
     },60_000);
     return ()=>window.clearInterval(timer);
   },[remote,session]);
-  const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string;accessLevel?:"root"|"country_admin"|"state_admin"|"employee"}>=>{
+  const remoteRequest=async(action:string,args:Record<string,unknown>={}):Promise<{error?:string;data?:PortalData;currentId?:string;message?:string;accessLevel?:"root"|"country_admin"|"state_admin"|"employee";accessStateId?:string|null}>=>{
     try{
       const r=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args}),cache:"no-store"});
       const result=await r.json();
@@ -379,7 +381,7 @@ export default function ElixirPortal(){
     try{
       const r=await fetch("/api/portal",{cache:"no-store"});
       const json=await r.json();
-      if(r.ok&&json.data){setData(json.data);setRemoteRole(json.accessLevel||null);setSession(json.currentId||null);return true;}
+      if(r.ok&&json.data){setData(json.data);setRemoteRole(json.accessLevel||null);setRemoteStateId(json.accessStateId||null);setSession(json.currentId||null);return true;}
     }catch{}
     return false;
   };
@@ -388,6 +390,7 @@ export default function ElixirPortal(){
     if(result.error){setNotice(result.error);return false;}
     if(result.data)setData(result.data);
     if(result.accessLevel)setRemoteRole(result.accessLevel);
+    if(result.accessStateId!==undefined)setRemoteStateId(result.accessStateId||null);
     else if(!result.data)await remoteRefresh();
     if(success)setNotice(success);return true;
   };
@@ -420,6 +423,8 @@ export default function ElixirPortal(){
   const inviteCountryOptions=inviteCountries.filter(c=>c.organization_id===inviteCompany);
   const isStateAdmin=Boolean(current&&(remote?remoteRole==="state_admin":previewActor(current,data).level==="state_admin"));
   const isCountryAdmin=Boolean(current&&(remote?remoteRole==="country_admin":previewActor(current,data).level==="country_admin"));
+  const assignedEventState=isStateAdmin&&current?(remote?remoteStateId:previewActor(current,data).scope?.state_id||null):null;
+  const canManageEvent=(event:PortalEvent)=>Boolean(current?.role==="company_admin"&&current.companyId===event.companyId||isStateAdmin&&assignedEventState&&event.stateId===assignedEventState&&event.companyId===current?.companyId);
   const effectiveLevel=current?(remote?remoteRole||"employee":previewActor(current,data).level):"employee";
   const roleNavigation=navigationForLevel(effectiveLevel);
   const dailyNav:View[]=roleNavigation.daily;
@@ -460,7 +465,7 @@ export default function ElixirPortal(){
   async function login(email:string,password:string):Promise<string|null>{
     if(remote){
       invalidateV3Workspace();
-      setRemoteRole(null);
+      setRemoteRole(null);setRemoteStateId(null);
       const result=await remoteRequest("login",{email,password});
       if(result.error)return result.error;
       // The login response already carries the portal data; only fall back to a second request if it doesn't.
@@ -515,13 +520,14 @@ export default function ElixirPortal(){
   async function logout(){
     // Wait for the server to revoke the session; otherwise a quick refresh signs the user straight back in.
     if(remote)await remoteRequest("logout");
-    invalidateV3Workspace();setRemoteRole(null);setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
+    invalidateV3Workspace();setRemoteRole(null);setRemoteStateId(null);setSession(null);setSignedOut(false);setShowAuth(false);setResetResult(null);try{localStorage.removeItem(SESSION);}catch{}setView("home");window.history.replaceState(null,"","/");
   }
 
   function saveEvent(e:PortalEvent){
     // openEvent() clears notices, so the confirmation is set after navigating to the saved event.
     if(remote){void (async()=>{if(await remoteAction("saveEvent",{event:e},"")){setEditingEvent(null);openEvent(e.id);setNotice(e.status==="published"?"Event saved and published.":e.status==="draft"?"Draft saved. Only admins can see it until you publish it.":"Event saved.");}})();return;}
-    if(current?.role!=="company_admin"||!current.companyId||e.companyId!==current.companyId){flash("Permission denied.");return;}
+    if(!current?.companyId||e.companyId!==current.companyId||!(current.role==="company_admin"||isStateAdmin&&assignedEventState&&(!e.stateId||e.stateId===assignedEventState)&&(!data.events.some(x=>x.id===e.id)||data.events.some(x=>x.id===e.id&&x.stateId===assignedEventState)))){flash("Permission denied.");return;}
+    if(isStateAdmin&&assignedEventState)e={...e,stateId:assignedEventState};
     const existing=data.events.some(x=>x.id===e.id);
     const next={...data,events:existing?data.events.map(x=>x.id===e.id?e:x):[...data.events,e]};
     if(save(promoteWaitlistLocally(e,next))){setEditingEvent(null);openEvent(e.id);flash(existing?"Event updated.":"Event created.");}
@@ -539,7 +545,7 @@ export default function ElixirPortal(){
   }
   function cancelEvent(event:PortalEvent){
     if(remote){const reason=window.prompt("Cancellation reason (optional)","");if(reason===null||!window.confirm("Cancel this event?"))return;void remoteAction("cancelEvent",{eventId:event.id,reason},"Event cancelled.");return;}
-    if(current?.role!=="company_admin"||event.companyId!==current.companyId)return;
+    if(!canManageEvent(event))return;
     const reason=window.prompt("Reason for cancellation (optional):","")??null;
     if(reason===null)return;
     if(!window.confirm("Cancel this event? Employees will see the cancellation status."))return;
@@ -753,7 +759,7 @@ export default function ElixirPortal(){
         {view==="eventForm"&&editingEvent&&<EventEditor key={editingEvent.id} event={editingEvent} data={data} onSave={saveEvent} onBack={()=>goto("events")}/>}
         {view==="companyForm"&&<CompanyEditor key={editingCompany?.id||"new"} company={editingCompany||undefined} data={data} onSave={saveCompany} onBack={()=>goto("companies")}/>}
         {(view==="home"&&current.role==="employee"||view==="attendance"&&(isCountryAdmin||isStateAdmin)||view==="people"&&(isStateAdmin||isCountryAdmin)||view==="hierarchy"&&(current.role==="platform_admin"||isCountryAdmin))&&<V3Workspace key={current.id+":"+view} user={current} data={data} remote={remote} now={now} onEvent={openEvent} onSave={save} hash={encodePassword} showPeopleDirectory={current.role!=="company_admin"} section={view==="attendance"||view==="people"||view==="hierarchy"?view:"home"}/> }
-        {view==="events"&&current.role==="employee"&&<DiscoverBrowse
+        {view==="events"&&current.role==="employee"&&!isStateAdmin&&<DiscoverBrowse
           data={data} events={companyEvents} now={now}
           onOpen={e=>{openEvent(e.id);}}
           search={search} setSearch={setSearch}
@@ -770,9 +776,9 @@ export default function ElixirPortal(){
           data={data} current={current} company={company} now={now}
           onEvent={e=>openEvent(e.id)}
         />}
-        {view==="events"&&(current.role==="company_admin"||current.role==="platform_admin")&&<>
-          <WorkspaceHeading eyebrow={(company?.name||"COMPANY").toUpperCase()+" · EVENT MANAGEMENT"} title={current.role==="platform_admin"?"All partner events":"Manage events"} description={current.role==="platform_admin"?"Track events across partner organizations.":"Plan, publish and manage events for your organization."}
-            action={current.role==="company_admin"?<Action onClick={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),contactEmail:current.email});goto("eventForm");}}><Plus size={17}/> Create event</Action>:undefined}/>
+        {view==="events"&&(current.role==="company_admin"||current.role==="platform_admin"||isStateAdmin)&&<>
+          <WorkspaceHeading eyebrow={(company?.name||"COMPANY").toUpperCase()+" · EVENT MANAGEMENT"} title={current.role==="platform_admin"?"All partner events":isStateAdmin?"State events":"Manage events"} description={current.role==="platform_admin"?"Track events across partner organizations.":isStateAdmin?"Create and manage events for your assigned state. Other states are view-only.":"Plan, publish and manage events for your organization."}
+            action={current.role==="company_admin"||isStateAdmin?<Action onClick={()=>{setEditingEvent({...initialEvent(current.companyId!,current.id),stateId:assignedEventState||undefined,contactEmail:current.email});goto("eventForm");}}><Plus size={17}/> Create event</Action>:undefined}/>
           <div className="cc-kpi-grid">
             <div className="cc-kpi"><span>All events</span><strong>{companyEvents.length}</strong><small>Within accessible organizations</small></div>
             <div className="cc-kpi"><span>Upcoming</span><strong>{companyEvents.filter(e=>e.status==="published"&&new Date(e.startsAt).getTime()>=now).length}</strong><small>Published future events</small></div>
@@ -818,7 +824,7 @@ export default function ElixirPortal(){
                 ["closed","started","cancelled","draft"].includes(registrationState(selected,data,now))?
                 <div className="ep-registration-closed" role="status"><strong>{registrationLabel(selected,data,now)}</strong><span>{canRegister(current,selected,data)||"Registration is not open."}</span></div>:
                 <><Action disabled={!!canRegister(current,selected,data)} onClick={()=>modifyRegistration(selected,false)}>{remainingPlaces(selected,data)===0?"Join waitlist":"Attend"}</Action>{canRegister(current,selected,data)&&<p className="ep-hint">{canRegister(current,selected,data)}</p>}</>}
-              {current.role==="company_admin"&&<div className="ep-admin-actions"><h3>Manage event</h3><Action kind="secondary" onClick={()=>{setEditingEvent(selected);goto("eventForm");}}>Edit event</Action>{selected.status!=="cancelled"&&<Action kind="danger" onClick={()=>cancelEvent(selected)}>Cancel event</Action>}</div>}
+              {canManageEvent(selected)&&<div className="ep-admin-actions"><h3>Manage event</h3><Action kind="secondary" onClick={()=>{setEditingEvent(selected);goto("eventForm");}}>Edit event</Action>{selected.status!=="cancelled"&&<Action kind="danger" onClick={()=>cancelEvent(selected)}>Cancel event</Action>}</div>}
             </section></aside>
           </div>
           <footer className="ed-event-bottom-info">
