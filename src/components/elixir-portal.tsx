@@ -14,7 +14,6 @@ const SpeakerEditor=dynamic(()=>import("@/components/speaker-editor").then(m=>m.
 const SpeakerGallery=dynamic(()=>import("@/components/speaker-gallery").then(m=>m.SpeakerGallery),{loading:()=> <div className="ep-hint">Loading speaker cards…</div>});
 import {PlatformOverview,CompanyOverview,WorkspaceHeading,WorkspaceSection} from "@/components/admin-workspace";
 import {CompanyDirectory,PeopleDirectory,AccountDirectory,InvitationDirectory} from "@/components/admin-directory";
-import {EmployeeProvisioner} from "@/components/employee-provisioner";
 import CompanyApplicationsAdmin from "@/components/company-applications-admin";
 import {EmployeeEditor} from "@/components/employee-editor";
 import {PersonAvatar} from "@/components/person-avatar";
@@ -845,22 +844,10 @@ export default function ElixirPortal(){
              <Chip tone={r.status==="going"?"green":r.status==="waitlisted"?"orange":"neutral"}>{r.status==="going"?"Going":r.status==="waitlisted"?"Waitlisted":"Cancelled"}</Chip><ChevronRight size={20}/>
             </button>})}</div>:<div className="aw-empty"><CalendarDays size={23}/><strong>No registrations found</strong><p>Join an event to see it here, or choose another filter.</p></div>}
         </>}
-        {view==="people"&&current.role==="company_admin"&&<>
+        {view==="people"&&remote&&current.role==="company_admin"&&!isCountryAdmin&&<div className="ep-info" role="alert"><strong>Country access not assigned.</strong> The platform administrator must assign this company admin to a country under Global hierarchy before employees can be managed.</div>}
+        {view==="people"&&current.role==="company_admin"&&!remote&&<>
           {(!isCountryAdmin||remote)&&<WorkspaceHeading eyebrow={company?.name.toUpperCase()||"COMPANY"} title="Your people" description="Manage employee accounts."/>}
           {remote&&remoteRole==="employee"&&<div className="ep-info" role="alert"><strong>Country access not assigned.</strong> A platform administrator must assign this company admin to a country under Global hierarchy before employee provisioning can be used.</div>}
-          {remote&&!isCountryAdmin&&remoteRole!=="employee"&&<div className="ep-panel ep-invite-employees">
-            <div><strong>Invite employees</strong><p>Share the signup page with employees. They confirm their work email with a one-time code, and their account is ready to use.</p></div>
-            <button type="button" className="aw-primary" onClick={()=>{void navigator.clipboard.writeText(new URL("/signup",window.location.origin).toString()).then(()=>setNotice("Employee signup link copied."),()=>setNotice("Copy this link from your browser address: /signup"));}}>Copy employee signup link</button>
-          </div>}
-          {remote&&remoteRole!=="employee"&&!isCountryAdmin&&<EmployeeProvisioner onCreate={async fields=>{
-            try{
-              const response=await fetch("/api/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"createEmployee",args:fields})});
-              const result=await response.json();
-              if(!response.ok)return {error:result.error||"Could not create employee"};
-              if(result.data)setData(result.data);
-              return {result:{email:result.email,employeeId:result.employeeId,temporaryPassword:result.temporaryPassword}};
-            }catch{return {error:"Unable to reach the employee creation service"};}
-          }}/>}
           <div className="employee-list-stats">
             <span>{companyPeople.length} total staff</span>
             <span>{companyPeople.filter(p=>p.status==="active").length} active</span>
