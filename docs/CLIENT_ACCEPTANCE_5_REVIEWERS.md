@@ -58,3 +58,16 @@ Record **pass / fail / not available**, browser, device size, video/screenshot, 
 - No Resend sender/API credentials are configured on production, so manager credentials are not automatically emailed there.
 - Railway V4 staging branch is not the same as current main production branch; do not merge it without feature parity, migrations and auth checks.
 - Browser CI measures local demo navigation, not actual real-user production latency. Real-device/connection performance verification is still required.
+
+## Fictional demo accounts (for isolated UI review only)
+The built-in demo uses a shared **demo password** `Demo@2026!`, but each tester's browser stores its own separate local state. Do not treat a change made in one browser as visible in another. Never use real employee emails or data in this mode.
+
+| Perspective | Demo email |
+|---|---|
+| Root | `admin@elixir.example` |
+| Country/company | `country@micron.example` |
+| State | `state@microsoft.example` |
+| Employee | `employee@elixir.example` |
+| Public | No login required |
+
+For acceptance of cross-device persistence, manager emails and real company applications, switch to an approved staging environment with a transactional email provider and seeded test accounts. These cannot be signed off from local-demo mode.
