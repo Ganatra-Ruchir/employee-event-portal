@@ -234,11 +234,20 @@ export async function POST(req:NextRequest){
    if(!org.rowCount)return error("Email domain does not belong to the active organization");
    if((await pool.query("SELECT 1 FROM users WHERE email=$1",[email])).rowCount)return error("Account already exists");
    if(!process.env.RESEND_API_KEY||!process.env.ONBOARDING_FROM_EMAIL)return error("Manager email delivery is not configured. Configure RESEND_API_KEY and ONBOARDING_FROM_EMAIL first.",503);
+   let countryCode="";
+   if(process.env.PORTAL_V3_ENABLED==="true"){
+    countryCode=text(args.countryCode,2).toUpperCase();
+    const countries=await pool.query("SELECT code FROM v3_countries WHERE organization_id=$1 ORDER BY code",[companyId]);
+    if(!countries.rowCount)return error("Add a country under Global hierarchy before inviting its manager.",409);
+    if(!countryCode&&countries.rows.length===1)countryCode=countries.rows[0].code;
+    if(!countries.rows.some((row:{code:string})=>row.code===countryCode))return error("Select the manager's assigned country before creating access.",400);
+   }
    const id=randomUUID(),initialPassword=makeToken().slice(0,24);
    const client=await pool.connect();
    try{
     await client.query("BEGIN");
     await client.query("INSERT INTO users(id,full_name,email,password_hash,department,role,organization_id,verified,status,must_change_password,v3_temporary_password_expires_at) VALUES($1,$2,$3,$4,'Management','company_admin',$5,true,'active',true,now()+interval '24 hours')",[id,managerName,email,await passwordHash(initialPassword),companyId]);
+    if(countryCode)await client.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,$3,\'country_admin\')",[id,companyId,countryCode]);
     await logAudit(client,user,"manager.provisioned",id,companyId);
     const loginUrl=new URL("/login",req.url).toString();
     await sendOnboardingEmail({to:email,name:managerName,organization:org.rows[0].name,employeeId:"MGR-"+id.slice(0,8).toUpperCase(),temporaryPassword:initialPassword,loginUrl});
