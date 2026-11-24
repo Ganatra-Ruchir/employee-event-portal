@@ -26,6 +26,34 @@ try{
  await db.query("INSERT INTO events(id,organization_id,created_by,title,status,starts_at,ends_at,capacity,payload) VALUES($1,$2,$3,'CI Completed Volunteer Event','published',now()-interval '2 hours',now()-interval '1 hour',50,'{}'::jsonb)",[event,org,manager]);
  await db.query("INSERT INTO registrations(id,event_id,user_id,status) VALUES($1,$2,$3,'going')",[uuid(),event,employee]);
  for(const [id,token] of [[root,tokenRoot],[manager,tokenManager]])await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '1 hour')",[createHash("sha256").update(token).digest("hex"),id]);
+ // Multi-country permission matrix within one company: IN managers must not read or modify GB staff/events.
+ const gbState=uuid(),gbManager=uuid(),gbEmployee=uuid(),gbToken=uuid();
+ await db.query("INSERT INTO v3_countries(organization_id,code,name) VALUES($1,'GB','United Kingdom')",[org]);
+ await db.query("INSERT INTO v3_states(id,organization_id,country_code,name) VALUES($1,$2,'GB','England')",[gbState,org]);
+ await db.query("INSERT INTO users(id,full_name,email,password_hash,role,organization_id,verified) VALUES($1,'GB Country Manager','gb-manager@ci-company.example','test-hash','company_admin',$3,true),($2,'GB Employee','gb-employee@ci-company.example','test-hash','employee',$3,true)",[gbManager,gbEmployee,org]);
+ await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$3,'GB','country_admin'),($2,$3,'GB','employee')",[gbManager,gbEmployee,org]).catch(async()=>{
+  // Employees require a state but not necessarily a branch.
+  await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,level) VALUES($1,$2,'GB','country_admin')",[gbManager,org]);
+  await db.query("INSERT INTO v3_memberships(user_id,organization_id,country_code,state_id,level) VALUES($1,$2,'GB',$3,'employee')",[gbEmployee,org,gbState]);
+ });
+ await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '1 hour')",[createHash("sha256").update(gbToken).digest("hex"),gbManager]);
+ const nextWeek=new Date(Date.now()+8*86400000).toISOString(),endNextWeek=new Date(Date.now()+8*86400000+3600000).toISOString(),gbEventId=uuid();
+ const gbEvent={id:gbEventId,companyId:org,stateId:gbState,title:"GB State Event",summary:"GB demo",description:"Demonstration in GB",category:"Volunteering",format:"in_person",location:"London",onlineLink:"",startsAt:nextWeek,endsAt:endNextWeek,capacity:20,deadline:"",contactEmail:"gb-manager@ci-company.example",status:"published",cancellationReason:"",createdBy:gbManager,waitlistEnabled:true};
+ const gbCreated=await write("/api/portal",{action:"saveEvent",args:{event:gbEvent}},gbToken);
+ assert.equal(gbCreated.status,200,"GB manager should create an event in assigned country");
+ const gbPayload=(await db.query("SELECT payload FROM events WHERE id=$1",[gbEventId])).rows[0].payload;
+ assert.equal(gbPayload.countryCode,"GB","Country ownership must be persisted");
+ const inSnapshot=await api("/api/portal",{headers:{Cookie:"elixir_session="+tokenManager}});
+ assert.equal(inSnapshot.status,200);
+ assert(!inSnapshot.body.data.users.some(u=>u.id===gbEmployee),"IN manager must not read GB employee data");
+ assert(!inSnapshot.body.data.events.some(e=>e.id===gbEventId),"IN manager must not read GB state events");
+ assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gbEvent,title:"Forbidden cross-country edit"}}},tokenManager)).status,403,"IN admin cannot edit GB event");
+ assert.equal((await write("/api/portal",{action:"cancelEvent",args:{eventId:gbEventId,reason:"Forbidden"}}},tokenManager)).status,403,"IN admin cannot cancel GB event");
+ assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gbEvent,id:uuid(),title:"Forged event"}}},tokenManager)).status,403,"IN admin cannot create GB state event");
+ const gbSnapshot=await api("/api/portal",{headers:{Cookie:"elixir_session="+gbToken}});
+ assert(gbSnapshot.body.data.events.some(e=>e.id===gbEventId),"GB admin sees GB event");
+ assert(!gbSnapshot.body.data.users.some(u=>u.id===employee),"GB admin cannot read IN employee data");
+ console.log("PASS: cross-country staff, event visibility, creation, editing and cancellation are isolated");
  let provision=await write("/api/v3",{action:"provision",level:"state_admin",organization_id:org,country_code:"IN",state_id:state,name:"Second Browser CI Admin",email:"second-browser@ci-company.example",department:"Operations"},tokenManager);
  assert.equal(provision.status,200,"Provision state administrator: "+JSON.stringify(provision.body));
  assert(provision.body.temporaryPassword,"Provisioned account must have a temporary password");
