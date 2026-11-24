@@ -49,7 +49,7 @@ export default function CountryHierarchy({user,data,onSave,hash}:{user:Person;da
   if(await run({action:"cityStateAdmin",city:chosen.city,state_name:chosen.state,email,employee_number:employeeNumber})){setEmail("");setEmployeeNumber("");setShowCreate(false);}
  }
  const administrators=(ws.members||[]).filter(m=>m.level==="state_admin");
- const stateRows=stateMetrics((ws.states||[]).map(r=>({id:String(r.id),name:String(r.name)})),(ws.branches||[]).map(r=>({id:String(r.id),state_id:String(r.state_id)})),(ws.members||[]).map(m=>({user_id:String(m.user_id),level:String(m.level),state_id:m.state_id?String(m.state_id):null,branch_id:m.branch_id?String(m.branch_id):null,organization_id:String(m.organization_id),status:m.status?String(m.status):null})),data,Date.now());
+ const stateRows=stateMetrics((ws.states||[]).map(r=>({id:String(r.id),name:String(r.name)})),(ws.branches||[]).map(r=>({id:String(r.id),state_id:String(r.state_id)})),(ws.members||[]).map(m=>({user_id:String(m.user_id),level:String(m.level),state_id:m.state_id?String(m.state_id):null,branch_id:m.branch_id?String(m.branch_id):null,organization_id:String(m.organization_id),status:null})),data,Date.now());
  const monthEventCount=data.events.filter(e=>e.companyId===user.companyId&&e.status==="published"&&new Date(e.startsAt).getMonth()===new Date().getMonth()&&new Date(e.startsAt).getFullYear()===new Date().getFullYear()).length;
  const employeeCount=stateRows.reduce((sum,r)=>sum+r.total,0);
 
