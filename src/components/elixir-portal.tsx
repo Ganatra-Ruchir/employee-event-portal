@@ -451,6 +451,7 @@ export default function ElixirPortal(){
     restore();window.addEventListener("popstate",restore);return ()=>window.removeEventListener("popstate",restore);
   },[ready,current?.id,nav.join(",")]);
   const goto=(v:View)=>{
+    if(v==="profile")setProfileMode("view");
     setView(v);setNotice("");setParticipantSearch("");setSearch("");
     if(typeof window!=="undefined"&&v!=="event"&&v!=="eventForm"&&v!=="companyForm"){
       const slug=v==="home"?"overview":v==="users"?"accounts":v;
@@ -653,7 +654,7 @@ export default function ElixirPortal(){
     if(profilePw&&profilePw.length<6){setProfileError("Use at least six characters for the demonstration password.");return;}
     const password=profilePw?await encodePassword(profilePw):current.password;
     save({...data,users:data.users.map(u=>u.id===current.id?{...u,fullName:fullName.trim(),department:department.trim(),jobTitle:profileJobTitle??current.jobTitle??"",phone:profilePhone??current.phone??"",password}:u)});
-    setProfilePw("");setProfilePwConfirm("");setProfileSuccess("Profile saved in this browser.");setProfileMode("view");
+    setProfilePw("");setProfilePwConfirm("");setProfileSuccess("Profile saved in this browser.");setProfileName(null);setProfileDepartment(null);setProfileJobTitle(null);setProfilePhone(null);setProfileMode("view");
   }
   function saveLocalPhoto(userId:string,avatarUrl:string|undefined){
     if(localStorage.getItem(SESSION)!==userId)throw Error("Your session changed. Sign in again before changing your photo.");
