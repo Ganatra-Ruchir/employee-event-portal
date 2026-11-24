@@ -9,6 +9,7 @@ const emptyDraft:EmployeeDraft={userId:"",name:"",email:"",department:"",jobTitl
 /** Access control is enforced in /api/v3 using the employee's real membership. */
 export default function V3ScopedPeople({members,scope,onRefresh}:{members:Entry[];scope:Entry|null;onRefresh:()=>Promise<void>}){
  const [query,setQuery]=useState(""),[draft,setDraft]=useState<EmployeeDraft>(emptyDraft);
+ const [expandedId,setExpandedId]=useState<string|null>(null),[showAll,setShowAll]=useState(false);
  const [busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
  const [credentials,setCredentials]=useState<{email:string;temporaryPassword:string;employeeId:string}|null>(null);
  const employees=members.filter(m=>m.level==="employee");
@@ -53,16 +54,18 @@ export default function V3ScopedPeople({members,scope,onRefresh}:{members:Entry[
     <label>Phone<input type="tel" value={draft.phone} onChange={e=>setDraft(d=>({...d,phone:e.target.value}))}/></label>
     <div className="v3-daily-actions"><button className="ep-button primary" type="submit" disabled={busy}>Save changes</button><button className="ep-button secondary" type="button" disabled={busy} onClick={()=>setDraft(emptyDraft)}>Cancel</button></div>
    </form>}
-  <div className="v3-list">{visible.map(m=><div key={asText(m.user_id)}>
+  <div className="v3-list">{(showAll?visible:visible.slice(0,5)).map(m=><div key={asText(m.user_id)}>
    <strong>{asText(m.full_name)}</strong>
    <span>{asText(m.email)} · {asText(m.department)||"No department"} · {asText(m.status)||"active"}</span>
    <span>State: {asText(m.state_id)||"Not assigned"} · Branch: {asText(m.branch_id)||"State-wide"}</span>
-   <div className="v3-daily-actions">
+   <button type="button" className="ep-button secondary" aria-expanded={expandedId===asText(m.user_id)} onClick={()=>{setExpandedId(v=>v===asText(m.user_id)?null:asText(m.user_id));setDraft(emptyDraft);}}>{expandedId===asText(m.user_id)?"Hide actions":"Manage employee"}</button>
+   {expandedId===asText(m.user_id)&&<div className="v3-daily-actions cc-employee-actions">
     <button type="button" className="ep-button secondary" disabled={busy} onClick={()=>{setCredentials(null);setDraft({userId:asText(m.user_id),name:asText(m.full_name),email:asText(m.email),department:asText(m.department),jobTitle:asText(m.job_title),phone:asText(m.phone)});}}>Edit</button>
     <button type="button" className="ep-button secondary" disabled={busy} onClick={()=>{const status=m.status==="suspended"?"active":"suspended";if(window.confirm((status==="suspended"?"Suspend ":"Reactivate ")+asText(m.full_name)+"?"))void execute("employeeStatus",m,{status});}}>{m.status==="suspended"?"Reactivate":"Suspend"}</button>
     <button type="button" className="ep-button secondary" disabled={busy} onClick={()=>{if(window.confirm("Reset the password for "+asText(m.email)+"? Existing sessions will be signed out."))void execute("employeeReset",m);}}>Reset password</button>
-   </div>
+   </div>}
   </div>)}
+  {visible.length>5&&<button type="button" className="ep-button secondary" onClick={()=>setShowAll(v=>!v)}>{showAll?"Show first 5":"Show all "+visible.length+" employees"}</button>}
   {!visible.length&&<p>{query?"No employees match your search.":"No employees assigned yet. Use Create employee above."}</p>}</div>
  </section>;
 }
