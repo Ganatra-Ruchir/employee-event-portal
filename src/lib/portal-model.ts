@@ -30,7 +30,7 @@ function isValidHttpsUrl(value:string){
  try{const u=new URL(value);return u.protocol==="https:"&&Boolean(u.hostname.includes("."));}catch{return false;}
 }
 export type PortalEvent = {
-  id:string; companyId:string; stateId?:string; title:string; summary:string; description:string; category:string; format:EventFormat;
+  id:string; companyId:string; stateId?:string; countryCode?:string; title:string; summary:string; description:string; category:string; format:EventFormat;
   location:string; onlineLink:string; startsAt:string; endsAt:string; capacity:number; deadline:string;
   contactEmail:string; status:EventStatus; cancellationReason:string; createdBy:string;
   primarySdg?:number;
