@@ -14,6 +14,7 @@ let checked=0;
 const navigationMs=[];
 await mkdir("artifacts/client-ui",{recursive:true});
 const pageErrors=[];
+let landingPalette=null;
 try{
  for(const viewport of viewportSizes){
   for(const [email,routes] of roles){
@@ -74,7 +75,20 @@ try{
   await page.goto(base+route);
   await page.waitForLoadState("domcontentloaded");
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),route+": public mobile overflow");
-  if(route==="/"||route==="/apply")await page.screenshot({path:"artifacts/client-ui/public-"+(route==="/"?"landing":"apply")+".png",fullPage:false});
+  if(route==="/"||route==="/apply"){
+   const colors=await page.evaluate(()=>{
+    const get=(selector,property)=>{const node=document.querySelector(selector);return node?getComputedStyle(node)[property]:null;};
+    return {logo:get(".landing-mark","backgroundColor"),accent:get(".landing-brand-light","color"),action:get(".landing-signup","backgroundColor")};
+   });
+   if(route==="/")landingPalette=colors;
+   else assert.deepEqual(colors,landingPalette,"Public application uses a different logo/accent/CTA palette");
+   if(route==="/"){
+    const hero=await page.locator(".landing-hero-main").evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,opacity:Number(getComputedStyle(el).opacity)};});
+    assert.ok(hero.opacity>.9,"Mobile landing hero begins invisible");
+    assert.ok(hero.top<265,"Mobile landing hero has excessive empty space above the headline: "+JSON.stringify(hero));
+   }
+   await page.screenshot({path:"artifacts/client-ui/public-"+(route==="/"?"landing":"apply")+".png",fullPage:false});
+  }
   if(route==="/apply"){
    assert.ok(await page.locator('form input[type="email"]').count()>0,"Company application contact email field missing");
    assert.ok(await page.locator('a[href="/"]').count()>0,"Company application has no main-site navigation");
