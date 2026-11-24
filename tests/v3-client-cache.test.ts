@@ -18,9 +18,11 @@ test("concurrent V3 components share one request and reuse the short cache",asyn
   assert.deepEqual(b,c);
   await fetchV3Workspace();
   assert.equal(calls,1,"moving between tabs should not refetch immediately");
+  await fetchV3Workspace({force:true});
+  assert.equal(calls,2,"attendance opening must request fresh data");
   invalidateV3Workspace();
   await fetchV3Workspace();
-  assert.equal(calls,2,"a mutation or logout must discard cached data");
+  assert.equal(calls,3,"a mutation or logout must discard cached data");
  }finally{invalidateV3Workspace();globalThis.fetch=previous;}
 });
 test("failed V3 requests are never cached",async()=>{
