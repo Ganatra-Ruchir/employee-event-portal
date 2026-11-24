@@ -66,11 +66,15 @@ export async function snapshot(current:Person):Promise<PortalData>{
  const p=sqlPool(),admin=current.role==="platform_admin";
  const [companies,users,events,registrations,invitations,domains]=await Promise.all([
   p.query(admin?"SELECT * FROM organizations ORDER BY name":"SELECT * FROM organizations WHERE id=$1 ORDER BY name",admin?[]:[current.companyId]),
-  p.query(admin?"SELECT * FROM users ORDER BY full_name":"SELECT * FROM users WHERE organization_id=$1 ORDER BY full_name",admin?[]:[current.companyId]),
+  p.query(admin?"SELECT * FROM users ORDER BY full_name":
+   "SELECT u.* FROM users u WHERE u.organization_id=$1 AND ($2::bool=true OR $4::bool=false OR u.id=$3 OR EXISTS(SELECT 1 FROM v3_memberships me JOIN v3_memberships mu ON mu.organization_id=me.organization_id AND mu.state_id=me.state_id AND mu.state_id IS NOT NULL WHERE me.user_id=$3 AND mu.user_id=u.id)) ORDER BY u.full_name",
+   admin?[]:[current.companyId,current.role==="company_admin",current.id,process.env.PORTAL_V3_ENABLED==="true"]),
   p.query(admin?"SELECT payload FROM events ORDER BY starts_at":
-   "SELECT payload FROM events WHERE organization_id=$1 AND (status='published' OR $2=true OR EXISTS (SELECT 1 FROM v3_memberships m WHERE m.user_id=$3 AND m.organization_id=events.organization_id AND m.level='state_admin' AND m.state_id=events.payload->>'stateId')) ORDER BY starts_at",
-   admin?[]:[current.companyId,current.role==="company_admin",current.id]),
-  p.query(admin?"SELECT r.* FROM registrations r":"SELECT r.* FROM registrations r JOIN events e ON e.id=r.event_id WHERE e.organization_id=$1",admin?[]:[current.companyId]),
+   "SELECT payload FROM events WHERE organization_id=$1 AND ((status='published' AND ($4::bool=false OR $2::bool=true OR payload->>'stateId' IS NULL OR EXISTS(SELECT 1 FROM v3_memberships m WHERE m.user_id=$3 AND m.state_id=events.payload->>'stateId'))) OR $2::bool=true OR EXISTS (SELECT 1 FROM v3_memberships m WHERE m.user_id=$3 AND m.organization_id=events.organization_id AND m.level='state_admin' AND m.state_id=events.payload->>'stateId')) ORDER BY starts_at",
+   admin?[]:[current.companyId,current.role==="company_admin",current.id,process.env.PORTAL_V3_ENABLED==="true"]),
+  p.query(admin?"SELECT r.* FROM registrations r":
+   "SELECT r.* FROM registrations r JOIN events e ON e.id=r.event_id WHERE e.organization_id=$1 AND ($2::bool=true OR $4::bool=false OR e.payload->>'stateId' IS NULL OR EXISTS(SELECT 1 FROM v3_memberships m WHERE m.user_id=$3 AND m.state_id=e.payload->>'stateId'))",
+   admin?[]:[current.companyId,current.role==="company_admin",current.id,process.env.PORTAL_V3_ENABLED==="true"]),
   p.query(admin?"SELECT * FROM invitations":"SELECT * FROM invitations WHERE organization_id=$1",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM organization_domains":"SELECT * FROM organization_domains WHERE organization_id=$1",admin?[]:[current.companyId])
  ]);
