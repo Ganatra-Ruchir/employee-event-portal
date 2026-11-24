@@ -67,6 +67,8 @@ try{
  assert.equal(countryEventCreated.status,200,"Company admin must retain company-wide event creation");
  const gujaratEvent={...countryEvent,id:uuid(),title:"Gujarat State Event",stateId:state};
  assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:gujaratEvent}},tokenManager)).status,200,"Company admin must create a Gujarat state event");
+ assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gujaratEvent,stateId:biharState}}},tokenManager)).status,409,"State ownership is immutable even for country administrators");
+ assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gujaratEvent,id:uuid(),stateId:uuid()}}},tokenManager)).status,403,"Country admin cannot assign non-existing or foreign states");
  assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gujaratEvent,title:"Forbidden Bihar Edit"}}},biharToken)).status,403,"Bihar admin cannot edit Gujarat state event");
  assert.equal((await write("/api/portal",{action:"cancelEvent",args:{eventId:gujaratEvent.id,reason:"unauthorized"}},biharToken)).status,403,"Bihar admin cannot cancel Gujarat state event");
  const forbiddenEdit=await write("/api/portal",{action:"saveEvent",args:{event:{...countryEvent,title:"Bihar hijack of company event",stateId:biharState}}},biharToken);
@@ -129,6 +131,17 @@ try{
  console.log("PASS: database-backed provisioned state administrator signs in from a fresh browser without sharing browser storage");
  let response=await write("/api/v3",{action:"attendanceSubmit",organization_id:org,country_code:"IN",event_id:event,rows:[{user_id:employee,present:true}]},tokenManager);
  assert.equal(response.status,200,"Attendance submit: "+JSON.stringify(response.body));
+ const wrongStateAttendance=await write("/api/v3",{action:"attendanceSubmit",organization_id:org,country_code:"IN",state_id:biharState,event_id:event,rows:[]},biharToken);
+ assert.equal(wrongStateAttendance.status,403,"Bihar admin must not mark attendance of a company-wide event");
+ const markAbsent=await write("/api/v3",{action:"attendanceSubmit",organization_id:org,country_code:"IN",event_id:event,rows:[{user_id:employee,present:false}]},tokenManager);
+ assert.equal(markAbsent.status,200,"An existing attendance record can be corrected to absent");
+ const denyHours=await write("/api/v3",{action:"verify",organization_id:org,country_code:"IN",event_id:event,user_id:employee,volunteer_minutes:90,contribution:"Forbidden absent credit"},tokenManager);
+ assert.equal(denyHours.status,409,"Absentees cannot receive verified volunteering hours");
+ const markPresent=await write("/api/v3",{action:"attendanceSubmit",organization_id:org,country_code:"IN",event_id:event,rows:[{user_id:employee,present:true}]},tokenManager);
+ assert.equal(markPresent.status,200,"Admin can correct absent to present");
+ const credit=await write("/api/v3",{action:"verify",organization_id:org,country_code:"IN",event_id:event,user_id:employee,volunteer_minutes:90,contribution:"Valid volunteer attendance"},tokenManager);
+ assert.equal(credit.status,200,"A present employee can earn verified hours");
+ assert.equal((await db.query("SELECT volunteer_minutes FROM v3_contributions WHERE event_id=$1 AND user_id=$2",[event,employee])).rows[0].volunteer_minutes,90);
  response=await write("/api/v3",{action:"attendanceExtra",organization_id:org,country_code:"IN",event_id:event,employee_id:extra,phone:"+919876543210"},tokenManager);
  assert.equal(response.status,200,"Walk-in add: "+JSON.stringify(response.body));
  response=await api("/api/v3",{headers:{"Cookie":"elixir_session="+tokenManager}});
