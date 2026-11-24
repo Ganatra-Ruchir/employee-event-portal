@@ -36,7 +36,7 @@ export async function GET(req:NextRequest){
    db.query("SELECT * FROM v3_branches WHERE ($1::text IS NULL OR organization_id=$1) AND ($2::text IS NULL OR country_code=$2) AND ($3::text IS NULL OR state_id=$3) ORDER BY name",args),
    db.query("SELECT m.*,u.full_name,u.email,u.department,u.status,u.job_title,u.phone FROM v3_memberships m JOIN users u ON u.id=m.user_id AND u.organization_id=m.organization_id WHERE ($1::text IS NULL OR m.organization_id=$1) AND ($2::text IS NULL OR m.country_code=$2) AND ($3::text IS NULL OR m.state_id=$3) ORDER BY u.full_name",args),
    root?Promise.resolve({rows:[]}):db.query("SELECT r.event_id,r.user_id,e.title,u.full_name,c.volunteer_minutes,c.contribution FROM registrations r JOIN events e ON e.id=r.event_id JOIN users u ON u.id=r.user_id JOIN v3_memberships m ON m.user_id=u.id AND m.organization_id=e.organization_id AND u.organization_id=m.organization_id LEFT JOIN v3_contributions c ON c.event_id=r.event_id AND c.user_id=r.user_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3) AND m.level='employee' AND r.status='going' AND e.status='published' AND e.ends_at<=now() AND ($3::text IS NULL OR e.payload->>'stateId'=$3) ORDER BY e.ends_at DESC LIMIT 250",args),
-   root?Promise.resolve({rows:[]}):db.query("SELECT x.event_id,x.user_id,x.status FROM v3_attendance_marks x JOIN events e ON e.id=x.event_id JOIN v3_memberships m ON m.user_id=x.user_id AND m.organization_id=e.organization_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3)",args),
+   root?Promise.resolve({rows:[]}):db.query("SELECT x.event_id,x.user_id,x.status FROM v3_attendance_marks x JOIN events e ON e.id=x.event_id JOIN v3_memberships m ON m.user_id=x.user_id AND m.organization_id=e.organization_id WHERE m.organization_id=$1 AND m.country_code=$2 AND ($3::text IS NULL OR m.state_id=$3) AND ($3::text IS NULL OR e.payload->>'stateId'=$3)",args),
    root?Promise.resolve({rows:[]}):db.query("SELECT w.event_id,w.employee_id,w.phone FROM v3_attendance_walkins w JOIN events e ON e.id=w.event_id WHERE e.organization_id=$1 AND ($2::text IS NULL OR (w.state_id=$2 AND e.payload->>'stateId'=$2)) ORDER BY w.added_at", [args[0],actor.level==="state_admin"?s?.state_id:null]),
    root?Promise.resolve({rows:[]}):db.query("SELECT sub.event_id FROM v3_attendance_submissions sub JOIN events e ON e.id=sub.event_id WHERE e.organization_id=$1 AND EXISTS(SELECT 1 FROM v3_countries c WHERE c.organization_id=e.organization_id AND c.code=$2) AND ($3::text IS NULL OR e.payload->>'stateId'=$3)",args)
   ]);
@@ -53,6 +53,7 @@ export async function POST(req:NextRequest){
   const action=txt(a.action,40),org=txt(a.organization_id),country=txt(a.country_code,2).toUpperCase(),state=txt(a.state_id)||null,branch=txt(a.branch_id)||null;
   const scope:V3Scope={organization_id:org,country_code:country,state_id:state,branch_id:branch};
   if(!org||!/^[A-Z]{2}$/.test(country)||!canManageScope(actor,scope))return fail("Invalid or unauthorized scope",403);
+ if(Number(req.headers.get("content-length")||0)>120_000)return fail("Request too large",413);
   const name=txt(a.name);
   const client=await db.connect();
   try{
