@@ -47,6 +47,8 @@ try{
  assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gbEvent,title:"Forbidden cross-country edit"}}},tokenManager)).status,403,"IN admin cannot edit GB event");
  assert.equal((await write("/api/portal",{action:"cancelEvent",args:{eventId:gbEventId,reason:"Forbidden"}},tokenManager)).status,403,"IN admin cannot cancel GB event");
  assert.equal((await write("/api/portal",{action:"saveEvent",args:{event:{...gbEvent,id:uuid(),title:"Forged event"}}},tokenManager)).status,403,"IN admin cannot create GB state event");
+ const foreignCountryRSVP=await write("/api/portal",{action:"register",args:{eventId:gbEventId}},tokenManager);
+ assert.equal(foreignCountryRSVP.status,403,"IN Country Admin cannot register for GB state event");
  const gbSnapshot=await api("/api/portal",{headers:{Cookie:"elixir_session="+gbToken}});
  assert(gbSnapshot.body.data.events.some(e=>e.id===gbEventId),"GB admin sees GB event");
  assert(!gbSnapshot.body.data.users.some(u=>u.id===employee),"GB admin cannot read IN employee data");
