@@ -67,7 +67,9 @@ export async function snapshot(current:Person):Promise<PortalData>{
  const [companies,users,events,registrations,invitations,domains]=await Promise.all([
   p.query(admin?"SELECT * FROM organizations ORDER BY name":"SELECT * FROM organizations WHERE id=$1 ORDER BY name",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM users ORDER BY full_name":"SELECT * FROM users WHERE organization_id=$1 ORDER BY full_name",admin?[]:[current.companyId]),
-  p.query(admin?"SELECT payload FROM events ORDER BY starts_at":"SELECT payload FROM events WHERE organization_id=$1 AND (status='published' OR $2=true) ORDER BY starts_at",admin?[]:[current.companyId,current.role==="company_admin"]),
+  p.query(admin?"SELECT payload FROM events ORDER BY starts_at":
+   "SELECT payload FROM events WHERE organization_id=$1 AND (status='published' OR $2=true OR EXISTS (SELECT 1 FROM v3_memberships m WHERE m.user_id=$3 AND m.organization_id=events.organization_id AND m.level='state_admin' AND m.state_id=events.payload->>'stateId')) ORDER BY starts_at",
+   admin?[]:[current.companyId,current.role==="company_admin",current.id]),
   p.query(admin?"SELECT r.* FROM registrations r":"SELECT r.* FROM registrations r JOIN events e ON e.id=r.event_id WHERE e.organization_id=$1",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM invitations":"SELECT * FROM invitations WHERE organization_id=$1",admin?[]:[current.companyId]),
   p.query(admin?"SELECT * FROM organization_domains":"SELECT * FROM organization_domains WHERE organization_id=$1",admin?[]:[current.companyId])
