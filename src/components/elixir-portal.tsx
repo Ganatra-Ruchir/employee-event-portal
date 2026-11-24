@@ -292,6 +292,8 @@ export default function ElixirPortal(){
   const [inviteEmail,setInviteEmail]=useState("");
   const [inviteName,setInviteName]=useState("");
   const [inviteCompany,setInviteCompany]=useState("");
+  const [inviteCountry,setInviteCountry]=useState("");
+  const [inviteCountries,setInviteCountries]=useState<{organization_id:string;code:string;name:string}[]>([]);
   const [inviteError,setInviteError]=useState("");
   const [profileName,setProfileName]=useState<string|null>(null);
   const [profileDepartment,setProfileDepartment]=useState<string|null>(null);
@@ -418,6 +420,17 @@ export default function ElixirPortal(){
   const blocked=Boolean(current&&(current.status==="suspended"||(current.companyId&&(!company||company.status==="suspended"))));
   const events=current?.role==="platform_admin"?data.events:current?.companyId?data.events.filter(e=>e.companyId===current.companyId):[];
   const companyEvents=events;
+  useEffect(()=>{
+    if(!remote||current?.role!=="platform_admin"||view!=="invitations")return;
+    let active=true;
+    void fetch("/api/v3",{cache:"no-store"}).then(async response=>{
+      if(!response.ok)throw Error("Country list unavailable");
+      const payload=await response.json();
+      if(active)setInviteCountries(Array.isArray(payload.countries)?payload.countries:[]);
+    }).catch(()=>{if(active)setInviteCountries([]);});
+    return()=>{active=false;};
+  },[remote,current?.id,current?.role,view]);
+  const inviteCountryOptions=inviteCountries.filter(c=>c.organization_id===inviteCompany);
   const isStateAdmin=Boolean(current&&(remote?remoteRole==="state_admin":previewActor(current,data).level==="state_admin"));
   const isCountryAdmin=Boolean(current&&(remote?remoteRole==="country_admin":previewActor(current,data).level==="country_admin"));
   const effectiveLevel=current?(remote?remoteRole||"employee":previewActor(current,data).level):"employee";
@@ -592,7 +605,7 @@ export default function ElixirPortal(){
   function invite(e:React.FormEvent){
     e.preventDefault();setInviteError("");
     if(remote){void (async()=>{
-      const result=await remoteRequest("invite",{email:inviteEmail,name:inviteName,companyId:inviteCompany});
+      const result=await remoteRequest("invite",{email:inviteEmail,name:inviteName,companyId:inviteCompany,countryCode:inviteCountry});
       if(result.error){setInviteError(result.error);return;}
       if(result.data)setData(result.data);
       setInviteEmail("");setInviteName("");setNotice("Manager account created. Login email and temporary password sent to the manager.");
@@ -881,11 +894,12 @@ export default function ElixirPortal(){
           <div className="aw-two-col aw-invitation-layout">
             <WorkspaceSection title="Invite a manager" description="Choose an active company and enter the recipient's email.">
               <form className="ep-panel ep-invite-form aw-form-panel" onSubmit={invite}>
-                <FormRow label="Partner company"><select required value={inviteCompany} onChange={e=>setInviteCompany(e.target.value)}><option value="">Select company</option>{data.companies.filter(c=>c.status==="active").map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select></FormRow>
+                <FormRow label="Partner company"><select required value={inviteCompany} onChange={e=>{setInviteCompany(e.target.value);const choices=inviteCountries.filter(c=>c.organization_id===e.target.value);setInviteCountry(choices.length===1?choices[0].code:"");}}><option value="">Select company</option>{data.companies.filter(c=>c.status==="active").map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select></FormRow>
+                {remote&&<><FormRow label="Assigned country"><select required value={inviteCountry} onChange={e=>setInviteCountry(e.target.value)}><option value="">Select country</option>{inviteCountryOptions.map(c=><option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}</select></FormRow>{inviteCompany&&inviteCountryOptions.length===0&&<p className="ep-hint">Add a country for this company in Global hierarchy first.</p>}</>}
                 <FormRow label="Manager name"><input required minLength={2} value={inviteName} onChange={e=>setInviteName(e.target.value)} placeholder="Manager full name"/></FormRow>
                 <FormRow label="Manager email"><input required type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="manager@company.example"/></FormRow>
                 {inviteError&&<div className="ep-error" role="alert">{inviteError}</div>}
-                <Action type="submit">Create manager and email access <ArrowRight size={16}/></Action>
+                <Action type="submit" disabled={remote&&(!inviteCountry||!inviteCountryOptions.length)}>Create manager and email access <ArrowRight size={16}/></Action>
                 <p className="ep-hint">The manager receives a work-email invitation with a temporary password, valid for 24 hours. First login requires a password change. Demo mode creates an invitation without sending email.</p>
               </form>
             </WorkspaceSection>
