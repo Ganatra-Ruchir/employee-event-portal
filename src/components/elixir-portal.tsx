@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import PublicLanding from "@/components/public-landing";
-import V3Workspace from "@/components/v3-workspace";
+
 import {SDG_NAMES,eventGoal} from "@/lib/employee-impact";
 import {previewActor} from "@/lib/v3-preview";
 import {navigationForLevel} from "@/lib/v3-navigation";
@@ -11,6 +11,7 @@ import {invalidateV3Workspace} from "@/lib/v3-client-cache";
 import {createDemoData,DEMO_DATA_VERSION} from "@/lib/demo-data";
 import {DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
 import dynamic from "next/dynamic";
+const V3Workspace=dynamic(()=>import("@/components/v3-workspace"),{loading:()=> <section className="ep-panel" aria-busy="true"><p>Opening team workspace…</p></section>});
 const SpeakerGallery=dynamic(()=>import("@/components/speaker-gallery").then(m=>m.SpeakerGallery),{loading:()=> <div className="ep-hint">Loading speaker cards…</div>});
 import {PlatformOverview,CompanyOverview,WorkspaceHeading,WorkspaceSection} from "@/components/admin-workspace";
 import {CompanyDirectory,PeopleDirectory,AccountDirectory,InvitationDirectory} from "@/components/admin-directory";
