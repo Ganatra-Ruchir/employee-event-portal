@@ -81,6 +81,15 @@ try{
      assert.equal(await page.locator(".cc-action-composer").count(),0,label+": Add employee form open by default");
      if(viewport.width===1440){await page.getByRole("button",{name:/Add employee/i}).first().click();assert.equal(await page.locator(".cc-action-composer").count(),1,label+": Add employee failed");}
     }
+    if(route==="events"&&email.startsWith("state")&&viewport.width===1440){
+     const create=page.getByRole("button",{name:/Create event/i});
+     assert.equal(await create.count(),1,label+": State Admin missing Create event button");
+     await create.click();
+     await page.locator("form.ep-form").waitFor();
+     assert.equal(await page.getByRole("button",{name:/Add speaker/i}).count(),0,label+": legacy speaker control returned");
+     await page.locator(".ep-back").click();
+     await page.locator('.ep-sidebar button[data-view="events"][aria-current="page"]').waitFor();
+    }
     checked++;console.log("PASS",label);
    }
    if(viewport.width===1440&&email.startsWith("country")){
