@@ -6,6 +6,7 @@ import PublicLanding from "@/components/public-landing";
 import V3Workspace from "@/components/v3-workspace";
 import {SDG_NAMES,eventGoal} from "@/lib/employee-impact";
 import {previewActor} from "@/lib/v3-preview";
+import {navigationForLevel} from "@/lib/v3-navigation";
 import {createDemoData,DEMO_DATA_VERSION} from "@/lib/demo-data";
 import {DiscoverBrowse, EventTile, GoingFaces, EventCover} from "@/components/event-discovery";
 import dynamic from "next/dynamic";
@@ -420,8 +421,10 @@ export default function ElixirPortal(){
   const companyEvents=events;
   const isStateAdmin=Boolean(current&&(remote?remoteRole==="state_admin":previewActor(current,data).level==="state_admin"));
   const isCountryAdmin=Boolean(current&&(remote?remoteRole==="country_admin":previewActor(current,data).level==="country_admin"));
-  const dailyNav:View[]=current?.role==="platform_admin"?["home","events","users"]:isStateAdmin?["home","events","attendance","people"]:current?.role==="company_admin"?["home","events",...(isCountryAdmin?["attendance" as View]:[]),"people","registrations"]:["home","events","registrations"];
-  const settingsNav:View[]=current?.role==="platform_admin"?["companies","invitations","hierarchy","profile"]:isCountryAdmin?["hierarchy","profile"]:["profile"];
+  const effectiveLevel=current?(remote?remoteRole||"employee":previewActor(current,data).level):"employee";
+  const roleNavigation=navigationForLevel(effectiveLevel);
+  const dailyNav:View[]=roleNavigation.daily;
+  const settingsNav:View[]=roleNavigation.settings;
   const nav=[...dailyNav,...settingsNav];
   useEffect(()=>{
     if(!ready||!current)return;
