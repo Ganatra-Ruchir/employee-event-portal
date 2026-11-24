@@ -26,6 +26,14 @@ try{
  await db.query("INSERT INTO events(id,organization_id,created_by,title,status,starts_at,ends_at,capacity,payload) VALUES($1,$2,$3,'CI Completed Volunteer Event','published',now()-interval '2 hours',now()-interval '1 hour',50,'{}'::jsonb)",[event,org,manager]);
  await db.query("INSERT INTO registrations(id,event_id,user_id,status) VALUES($1,$2,$3,'going')",[uuid(),event,employee]);
  for(const [id,token] of [[root,tokenRoot],[manager,tokenManager]])await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '1 hour')",[createHash("sha256").update(token).digest("hex"),id]);
+ let provision=await write("/api/v3",{action:"provision",level:"state_admin",organization_id:org,country_code:"IN",state_id:state,name:"Second Browser CI Admin",email:"second-browser@ci-company.example",department:"Operations"},tokenManager);
+ assert.equal(provision.status,200,"Provision state administrator: "+JSON.stringify(provision.body));
+ assert(provision.body.temporaryPassword,"Provisioned account must have a temporary password");
+ let freshBrowserLogin=await write("/api/portal",{action:"login",args:{email:"second-browser@ci-company.example",password:provision.body.temporaryPassword}});
+ assert.equal(freshBrowserLogin.status,200,"Fresh browser login for database-backed new admin: "+JSON.stringify(freshBrowserLogin.body));
+ assert.equal(freshBrowserLogin.body.currentId,provision.body.employeeId);
+ assert.equal(freshBrowserLogin.body.data.users[0].mustChangePassword,true);
+ console.log("PASS: database-backed provisioned state administrator signs in from a fresh browser without sharing browser storage");
  let response=await write("/api/v3",{action:"attendanceSubmit",organization_id:org,country_code:"IN",event_id:event,rows:[{user_id:employee,present:true}]},tokenManager);
  assert.equal(response.status,200,"Attendance submit: "+JSON.stringify(response.body));
  response=await write("/api/v3",{action:"attendanceExtra",organization_id:org,country_code:"IN",event_id:event,employee_id:extra,phone:"+919876543210"},tokenManager);
