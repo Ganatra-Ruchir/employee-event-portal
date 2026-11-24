@@ -100,6 +100,7 @@ export async function previewAction(user:Person,input:PreviewData,a:Record<strin
  }else if(action==="verify"&&(actor.level==="country_admin"||actor.level==="state_admin")){
   const eventId=str(a.event_id),userId=str(a.user_id),minutes=Number(a.volunteer_minutes),e=d.events.find(x=>x.id===eventId&&x.companyId===org),m=v.members.find(x=>x.user_id===userId&&x.level==="employee");
   if(!e||e.status!=="published"||Date.parse(e.endsAt)>Date.now()||!m||!canManageScope(actor,m)||!d.registrations.some(r=>r.eventId===eventId&&r.userId===userId&&r.status==="going")||!Number.isInteger(minutes)||minutes<0||minutes>10080)throw Error("Invalid contribution or registration");
+  if(v.attendanceMarks?.find(mark=>mark.eventId===eventId&&mark.userId===userId)?.status!=="present")throw Error("Mark the employee present before verifying volunteer hours");
   v.contributions=v.contributions.filter(r=>r.event_id!==eventId||r.user_id!==userId);
   v.contributions.push({event_id:eventId,user_id:userId,volunteer_minutes:minutes,contribution:str(a.contribution).slice(0,1000),verified_at:new Date().toISOString()});
  }else throw Error("Not authorized");
