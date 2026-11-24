@@ -423,9 +423,20 @@ export async function POST(req:NextRequest){
     const event=locked.rows[0];
     if(!event||!requireOrg(user,event.organization_id)||!event.starts_at){await client.query("ROLLBACK");return denied();}
     const employeeId=action==="removeParticipant"?text(args.userId,120):user.id;
-    if(action==="removeParticipant"&&!requireCompanyAdmin(user,event.organization_id)){
-     const editorState=await eventEditorState(user,event.organization_id);
-     if(!editorState||event.payload?.stateId!==editorState){await client.query("ROLLBACK");return denied();}
+    if(action==="removeParticipant"){
+     const isCountryAdmin=requireCompanyAdmin(user,event.organization_id);
+     const editorCountry=await eventEditorCountry(user,event.organization_id);
+     if(process.env.PORTAL_V3_ENABLED==="true"&&!editorCountry){await client.query("ROLLBACK");return denied();}
+     if(isCountryAdmin&&editorCountry){
+      if(event.payload?.countryCode&&event.payload.countryCode!==editorCountry){await client.query("ROLLBACK");return denied();}
+      if(!event.payload?.countryCode&&event.payload?.stateId){
+       const assigned=await client.query("SELECT 1 FROM v3_states WHERE id=$1 AND organization_id=$2 AND country_code=$3",[event.payload.stateId,event.organization_id,editorCountry]);
+       if(!assigned.rowCount){await client.query("ROLLBACK");return denied();}
+      }else if(!event.payload?.countryCode&&!event.payload?.stateId&&event.created_by!==user.id){await client.query("ROLLBACK");return denied();}
+     }else if(!isCountryAdmin){
+      const editorState=await eventEditorState(user,event.organization_id);
+      if(!editorState||event.payload?.stateId!==editorState){await client.query("ROLLBACK");return denied();}
+     }
     }
     if(action==="removeParticipant"){
       const member=await client.query("SELECT 1 FROM users WHERE id=$1 AND organization_id=$2",[employeeId,event.organization_id]);
