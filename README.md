@@ -6,26 +6,24 @@ Next.js event management for Elixir Foundation and its partner organizations, wi
 
 | Environment | Storage | Status |
 | --- | --- | --- |
-| [Current production](https://employee-event-portal.vercel.app/) (\`main\`) | Browser-local fictional demo | Not ready for real employee or company data |\n| [Legacy, separate project](https://emplatfors.vercel.app/) | Older unrelated deployment | Do not use for this acceptance audit |\n| [V4 UI preview](https://employee-volunteer-v4.vercel.app/) | Railway PostgreSQL staging proxy | Separate feature branch; not current production |
-| \`feature/neon-postgres-backend\` on Vercel Preview | Neon PostgreSQL + private Neon Object Storage | Staging backend and health checks operational |
+| [Production](https://employee-event-portal.vercel.app/) (`main`) | Neon PostgreSQL shared demo database | Database health returns HTTP 200 (`postgresql / ready`); root onboarding and acceptance testing pending |
+| [V4 UI preview](https://employee-volunteer-v4.vercel.app/) | Separate Railway staging service | Different feature branch; not production |
+| [Legacy app](https://emplatfors.vercel.app/) | Old demo project | Not used for client acceptance |
 
-The current production demo still supports fictional companies and demo credentials. **Never use real credentials or employee data in demo mode.** The database-enabled staging branch has its own administrator setup flow and is not seeded with fictional accounts. For a five-reviewer UI audit, use [the client acceptance checklist](docs/CLIENT_ACCEPTANCE_5_REVIEWERS.md).
+Production now uses **server-side PostgreSQL**, HTTP-only sessions and scoped country/state memberships. Its three organizations, employees, events, and attendance are fictional test records; do not add actual employee information until privacy and security approval.
 
-## Staging PostgreSQL integration
+The original browser-local accounts (and their passwords) are not automatically imported into Neon. The **eight dedicated shared-demo role accounts** use unique temporary passwords distributed privately outside this repository, with mandatory first-login rotation. Other fictional directory records have no usable password until an administrator provisions one.
 
-- Server-only PostgreSQL queries, password hashes (scrypt), HTTP-only cookies and revocable sessions
-- Organization isolation and privileged actions enforced in Next.js API handlers
-- Organization and employee account management, approvals, role invitations, event management
-- Atomic registrations, waitlisting, cancellations and promotion when places become available
-- Private banner and speaker-image uploads to branch-isolated Neon Object Storage, delivered with short-lived signed URLs
-- Non-production migrations: \`db/migrations/001_init.sql\` and \`002_admin_setup.sql\`
-- Read-only health endpoints: \`/api/portal/health\` and \`/api/portal/media-health\`
+[Shared Neon activation and five-client test guide](docs/NEON_SHARED_DEMO_ACTIVATION.md) · [UX blueprint](docs/ROLE_BY_ROLE_UX_BLUEPRINT.md)
 
-**Database mode is activated only when \`PORTAL_BACKEND_MODE=database\` is configured for the preview Git branch.** Production remains in local-demo mode.
+### Backend and administrator setup
 
-The staging first administrator is activated via a single-use link sent to the owner’s verified work inbox. The link does not contain a password; the recipient chooses their password on the protected staging website.
-
-Read [Neon staging setup and operational checklist](docs/NEON_STAGING_SETUP.md) for branches, migrations, secrets and production readiness.
+- `DATABASE_URL`, `PORTAL_BACKEND_MODE=database`, `PORTAL_V3_ENABLED=true`, and `NEXT_PUBLIC_PORTAL_DATABASE_ENABLED=true` are configured in the production Vercel project.
+- The live `/api/portal/health` endpoint returned HTTP 200 with `{"mode":"postgresql","ready":true}` on 24 November 2026.
+- The first platform administrator still requires a private, one-time activation using `scripts/issue-first-admin-link.mjs` and the existing `/admin/activate` route. Never place connection strings or activation links in the repository.
+- A verified transactional-email sender is still needed for manager invitation emails. Without it, the email-dependent invitation flow is not ready.
+- Client testing must verify independently logged-in sessions, organization isolation, and persisted attendance.
+- The separately maintained Railway V4 preview may not include the latest `main` changes.
 
 ## Development
 
@@ -42,11 +40,9 @@ npm run build
 
 For database testing, configure \`DATABASE_URL\` for the appropriate non-production Neon branch and set \`PORTAL_BACKEND_MODE=database\`. **Never commit database URLs or service credentials.**
 
-## Current production readiness limits
+## Current client readiness limits
 
-- Work-email ownership verification and automated recovery emails are not implemented in the custom staging authentication flow. New accounts require manual administrator approval.
-- Event email notifications and reminders are not yet connected to a transactional email provider.
-- Independent cross-device RSVP and concurrent booking tests require activated accounts and staging acceptance testing.
-- A separate audited production migration and public access review are required before real employee data is processed.\n- Manager credential emails require a verified transactional-email sender and server configuration.\n- Production is not configured with persistent PostgreSQL; browser demo data is not shared across devices.\n- CI includes [PostgreSQL schema and HTTP endpoint smoke tests](.github/workflows/backend-schema.yml) and [UI navigation/layout checks](.github/workflows/ci.yml). These do not replace real-device and real-account acceptance tests.
-
-See [GitHub draft pull request](https://github.com/Ganatra-Ruchir/Corporate-Event-Management-Employee-Registration-Portal/pull/1) for the proposed database integration. Do not merge without approval and staged validation.
+- Root-admin activation, separate-browser authenticated acceptance tests, and production latency measurements remain open.
+- Email-provider verification and recovery/email notification flows remain open.
+- All demo data is fictional. Consent and privacy reviews are needed before actual employee information is used.
+- CI runs [PostgreSQL schema/API tests](.github/workflows/backend-schema.yml) and [browser/layout checks](.github/workflows/ci.yml). These do not replace real-client acceptance.
