@@ -103,3 +103,71 @@
 @media(prefers-reduced-motion:reduce){
  .ep-shell.ep-shell .ep-account-caret{transition:none!important}
 }
+
+/* Layout supplied in the notebook sketch — image and registration on left,
+   details on right, participants and organiser below. */
+.ep-shell.ep-shell .ep-event-sketch-layout{
+ display:grid!important;
+ grid-template-columns:minmax(0,1.08fr) minmax(0,1fr)!important;
+ gap:clamp(16px,2vw,28px)!important;
+ align-items:start!important;
+ margin-top:15px!important;
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ep-event-sketch-main{
+ display:flex!important;flex-direction:column!important;
+ gap:15px!important;min-width:0!important;max-width:100%!important
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ep-banner.ed-event-detail-preview{
+ width:100%!important;max-width:100%!important;
+ aspect-ratio:16/9!important;height:auto!important;min-height:0!important;
+ max-height:none!important;margin:0!important;
+ background:#f5eae9!important;overflow:hidden!important;
+ border-radius:16px!important;
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ed-cover,
+.ep-shell.ep-shell .ep-event-sketch-layout .ed-cover-wide{
+ width:100%!important;height:100%!important;
+ position:absolute!important;inset:0!important;aspect-ratio:auto!important
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ed-cover>img,
+.ep-shell.ep-shell .ep-event-sketch-layout .ed-speaker-slide>img{
+ display:block!important;width:100%!important;height:100%!important;
+ max-width:100%!important;object-fit:contain!important;object-position:center!important;
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ep-detail-right{
+ display:block!important;width:100%!important;min-width:0!important
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ep-detail-side{
+ position:static!important;margin:0!important;min-width:0!important
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ep-detail-copy{
+ min-width:0!important;margin:0!important;padding:clamp(17px,1.8vw,26px)!important;
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ep-detail-copy dl>div{
+ grid-template-columns:minmax(90px,.28fr) minmax(0,1fr)!important;
+ gap:12px!important;
+}
+.ep-shell.ep-shell .ep-event-bottom-grid{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:16px!important;align-items:start!important;margin:18px 0 24px!important;
+}
+.ep-shell.ep-shell .ep-event-bottom-grid .ep-participants,
+.ep-shell.ep-shell .ep-event-bottom-grid .ed-event-bottom-info{
+ min-width:0!important;margin:0!important;
+ background:#fff!important;border:1px solid #eadde1!important;border-radius:15px!important;
+ padding:18px!important;box-shadow:0 5px 17px #76576812!important
+}
+.ep-shell.ep-shell .ep-event-bottom-grid .ed-event-bottom-info{
+ align-items:flex-start!important;display:flex!important;flex-direction:column!important;
+ gap:12px!important
+}
+.ep-shell.ep-shell .ep-event-bottom-grid .ep-participants:only-child,
+.ep-shell.ep-shell .ep-event-bottom-grid .ed-event-bottom-info:only-child{
+ grid-column:1/-1
+}
+.ep-shell.ep-shell .ep-event-bottom-grid .ed-bottom-attendee-list{width:100%!important}
+@media(max-width:950px){
+ .ep-shell.ep-shell .ep-event-sketch-layout{grid-template-columns:minmax(0,1fr)!important}
+ .ep-shell.ep-shell .ep-event-bottom-grid{grid-template-columns:minmax(0,1fr)!important}
+ .ep-shell.ep-shell .ep-event-sketch-layout .ep-banner.ed-event-detail-preview{max-height:none!important}
+}
