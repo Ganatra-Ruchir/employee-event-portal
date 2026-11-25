@@ -748,14 +748,15 @@ export default function ElixirPortal(){
     <a className="ep-skip" href="#main-content">Skip to main content</a>
     <header className="ep-topbar">
       <div className="ep-top-left"><button className="ep-menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Employee Volunteer System</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
-      <div className="ep-top-right">{current.role==="employee"&&!isStateAdmin&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
-    </header>
-    <div className="ep-layout">
-      <nav className={"ep-sidebar "+(menu?"expanded":"")} aria-label="Main navigation">
+      <nav className="ep-top-navigation" aria-label="Main navigation">
         <div className="ep-nav-title">{isStateAdmin?"State admin":roleName(current.role)}</div>
         {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} data-view={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
       </nav>
-      <main className="ep-main" id="main-content" tabIndex={-1}>
+ 
+      <div className="ep-top-right">{current.role==="employee"&&!isStateAdmin&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
+    </header>
+    <div className="ep-layout">
+     <main className="ep-main" id="main-content" tabIndex={-1}>
                 {!remote&&<div className="ep-demobar"><strong>Preview mode.</strong> Fictional sample data stays in this browser. It is not shared between devices.</div>}
         {notice&&<div className="ep-info ep-notice" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={()=>setNotice("")}><X size={17}/></button></div>}
         {resetResult&&<div className="ep-reset-result" role="status">
