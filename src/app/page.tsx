@@ -19,6 +19,7 @@ import "./premium-2026.css";
 import "./motion-glass.css";
 import "./header-navigation.css";
 import "./contrast-layout-repair.css";
+import "./light-editorial.css";
 
 export default function Home() {
   return <ElixirPortal />;
