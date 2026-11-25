@@ -286,3 +286,22 @@
   align-items:flex-start!important;
  }
 }
+
+/* Keep KPI content vertically balanced without forcing empty height. */
+.ep-shell.ep-shell .aw-metric{
+ min-height:112px!important;padding:11px 15px!important;gap:3px!important;
+ justify-content:center!important;
+}
+.ep-shell.ep-shell .aw-metric .aw-metric-icon{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;
+ padding:4px!important;margin:0!important;flex:none!important;
+}
+.ep-shell.ep-shell .aw-metric .aw-metric-icon svg{width:18px!important;height:18px!important}
+.ep-shell.ep-shell .aw-metric .aw-metric-label{line-height:1.2!important;font-size:12px!important}
+.ep-shell.ep-shell .aw-metric strong{font-size:27px!important;line-height:1.05!important}
+.ep-shell.ep-shell .aw-metric small{font-size:11px!important;line-height:1.25!important}
+@media(max-width:640px){
+ .ep-shell.ep-shell .aw-metric{min-height:106px!important;padding:11px 12px!important}
+ .ep-shell.ep-shell .aw-metric strong{font-size:25px!important}
+}
