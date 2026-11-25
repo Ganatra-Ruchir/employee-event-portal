@@ -9,6 +9,7 @@ import "./motion-glass.css";
 import "./header-navigation.css";
 import "./contrast-layout-repair.css";
 import "./light-editorial.css";
+import "./event-layout-polish.css";
 export const metadata:Metadata={
   title:"Employee Volunteer System",
   description:"Secure organization events, team experiences and employee registration."
