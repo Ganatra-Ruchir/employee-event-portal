@@ -24,7 +24,7 @@ import {FirstLoginPasswordChange} from "@/components/first-login-password-change
 import {EmployeeEventNotifications} from "@/components/employee-event-notifications";
 import {
   ArrowLeft, ArrowRight, CalendarDays, MapPin, ChevronRight,
-  Download, LogOut, Menu, Plus, Search, X, LayoutDashboard, Building2, Users, ClipboardList, Mail, UserRound, Network, UserRoundCheck
+  Download, LogOut, Menu, Plus, Search, X, LayoutDashboard, Building2, Users, Mail, UserRound, Network, UserRoundCheck
 } from "lucide-react";
 import {
   activeRegistrations, canCancel, canRegister, cancelLocally, CATEGORIES, dateText, DEMO_PASSWORD,
@@ -748,7 +748,7 @@ export default function ElixirPortal(){
       <div className="ep-top-left"><button className="ep-menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}><Menu size={20}/></button><span className="ep-brand"><span className="cc-brand-mark" aria-hidden="true">E</span>Employee Volunteer System</span><span className="ep-divider-line"/><span className="ep-context">{current.role==="platform_admin"?"Platform management":company?.name||"Company events"}</span></div>
       <nav className="ep-top-navigation" aria-label="Main navigation">
         <div className="ep-nav-title">{isStateAdmin?"State admin":roleName(current.role)}</div>
-        {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} data-view={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
+        {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} data-view={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
       </nav>
  
       <div className="ep-top-right">
