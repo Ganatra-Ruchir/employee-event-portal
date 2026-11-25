@@ -8,11 +8,11 @@ test("event image stays inside a positioned 16:9 frame, rather than overlaying t
  const component=source("src/components/elixir-portal.tsx");
  assert.match(component,/ep-detail-layout ep-event-sketch-layout/);
  assert.match(component,/ep-event-sketch-main/);
- assert.match(css,/\.ep-event-sketch-layout \.ep-banner\.ed-event-detail-preview\s*\{[^}]*position:relative!important/s);
- assert.match(css,/\.ep-event-sketch-layout \.ed-cover,\s*\.ep-shell\.ep-shell \.ep-event-sketch-layout \.ed-cover-wide\s*\{[^}]*position:relative!important/s);
- assert.doesNotMatch(css,/\.ep-event-sketch-layout \.ed-cover-wide\s*\{[^}]*position:absolute!important/s);
- assert.match(css,/\.ep-event-sketch-layout \.ed-cover>img\s*\{[^}]*object-fit:cover!important/s);
- assert.match(css,/\.ep-event-sketch-layout \.ep-banner\.ed-event-detail-preview\s*\{[^}]*aspect-ratio:16\/9!important/s);
+ assert.match(css,/\.ep-event-sketch-layout \.ep-banner\.ed-event-detail-preview\s*\{[^}]*position:relative!important/);
+ assert.match(css,/\.ep-event-sketch-layout \.ed-cover,\s*\.ep-shell\.ep-shell \.ep-event-sketch-layout \.ed-cover-wide\s*\{[^}]*position:relative!important/);
+ assert.doesNotMatch(css,/\.ep-event-sketch-layout \.ed-cover-wide\s*\{[^}]*position:absolute!important/);
+ assert.match(css,/\.ep-event-sketch-layout \.ed-cover>img\s*\{[^}]*object-fit:cover!important/);
+ assert.match(css,/\.ep-event-sketch-layout \.ep-banner\.ed-event-detail-preview\s*\{[^}]*aspect-ratio:16\/9!important/);
 });
 
 test("participants list is initially collapsed and requires explicit expansion",()=>{
