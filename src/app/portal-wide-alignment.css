@@ -119,3 +119,35 @@
 @media(max-width:640px){
  .ep-shell.ep-shell.ep-shell .aw-metric{padding:10px 12px!important;min-height:108px!important}
 }
+
+/* Center content at desktop sizes — legacy layout-density forced margin:0!important. */
+.ep-shell.ep-shell .ep-layout{
+ width:100%!important;max-width:none!important;
+}
+.ep-shell.ep-shell .ep-main{
+ box-sizing:border-box!important;
+ width:100%!important;
+ max-width:1360px!important;
+ margin-left:auto!important;
+ margin-right:auto!important;
+ padding-inline:clamp(14px,2vw,28px)!important;
+}
+.ep-shell.ep-shell .ep-main>:is(.aw-root,.v3-workspace,.md-root,.ed-discover,.cc-attendance,.cc-hierarchy-setup,.v3-scoped-people),
+.ep-shell.ep-shell .ep-main>.ep-panel{
+ width:100%!important;
+ min-width:0!important;
+ max-width:100%!important;
+ margin-inline:auto!important;
+}
+.ep-shell.ep-shell :is(.aw-metric-grid,.aw-organizer-columns,.aw-two-col,.cc-insight-charts,.cc-kpi-grid,.ed-tile-grid){
+ width:100%!important;max-width:100%!important;min-width:0!important;
+}
+@media(max-width:900px){
+ .ep-shell.ep-shell .ep-main{
+  max-width:100%!important;
+  padding-inline:14px!important;
+ }
+}
+@media(max-width:640px){
+ .ep-shell.ep-shell .ep-main{padding-inline:12px!important}
+}
