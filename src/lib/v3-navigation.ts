@@ -6,9 +6,9 @@ export type PortalNavView="home"|"events"|"users"|"attendance"|"people"|"compani
 export function navigationForLevel(level:PortalAccessLevel):{daily:PortalNavView[];settings:PortalNavView[]}{
  switch(level){
   case "root":return {daily:["home","events","users"],settings:["companies","invitations","hierarchy"]};
-  case "country_admin":return {daily:["home","events","attendance","people"],settings:["hierarchy", ]};
-  case "state_admin":return {daily:["home","events","attendance","people"],settings:["profile"]};
-  default:return {daily:["home","events","registrations"],settings:["profile"]};
+  case "country_admin":return {daily:["home","events","attendance","people"],settings:["hierarchy"]};
+  case "state_admin":return {daily:["home","events","attendance","people"],settings:[]};
+  default:return {daily:["home","events"],settings:["profile"]};
  }
 }
 export function mayProvisionEmployees(level:PortalAccessLevel):boolean{
