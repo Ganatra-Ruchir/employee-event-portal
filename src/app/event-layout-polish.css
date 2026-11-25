@@ -305,3 +305,8 @@
  .ep-shell.ep-shell .aw-metric{min-height:106px!important;padding:11px 12px!important}
  .ep-shell.ep-shell .aw-metric strong{font-size:25px!important}
 }
+
+/* GoingFaces includes a count for event tiles; the About card shows that count in its heading. */
+.ep-shell.ep-shell .ep-event-about-community .ep-event-attendee-actions .ed-going>span{
+ display:none!important;
+}
