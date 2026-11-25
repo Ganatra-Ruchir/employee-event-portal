@@ -357,3 +357,80 @@ html,body{color-scheme:light!important;background:var(--evs-bg)!important;color:
  .ep-shell .cc-attendance .cc-att-event{flex-wrap:wrap}
  .ep-shell .cc-attendance .cc-att-event .cc-att-open{margin-left:0!important}
 }
+
+/* Public landing: override the previous charcoal-only public theme by equal/higher specificity. */
+.landing-public-theme.landing-editorial{
+ --public-green:#597f27;--public-green-dark:#476b1d;--public-pink:#c63378;
+ --public-charcoal:#faf7f3;--public-paper:#302830;
+ background:#faf7f3!important;color:#302830!important
+}
+.landing-public-theme.landing-editorial .landing-header{
+ background:rgba(255,252,251,.96)!important;border-bottom:1px solid #eadde1!important;
+ box-shadow:0 5px 21px #a9879519!important
+}
+.landing-public-theme.landing-editorial .landing-brand,
+.landing-public-theme.landing-editorial .landing-login{color:#302830!important}
+.landing-public-theme.landing-editorial .landing-brand-light{color:#a32c64!important}
+.landing-public-theme.landing-editorial .landing-mark{
+ background:linear-gradient(135deg,#638d34,#d05b92)!important;color:#fff!important;
+ box-shadow:0 3px 0 #e3afc4!important
+}
+.landing-public-theme.landing-editorial .landing-signup,
+.landing-public-theme.landing-editorial .landing-cta{
+ background:#597f27!important;border-color:#597f27!important;color:#fff!important;
+ border-radius:12px!important;box-shadow:0 8px 24px #64862c29!important
+}
+.landing-public-theme.landing-editorial .landing-photo-hero{
+ background:linear-gradient(110deg,#fcf1f5,#f8efe7 55%,#f0ebdf)!important;
+ border-bottom:1px solid #ead6df!important;isolation:isolate
+}
+.landing-public-theme.landing-editorial .landing-hero-image{
+ opacity:.19!important;filter:saturate(.7) sepia(.14) brightness(1.28)!important;
+ mix-blend-mode:multiply!important
+}
+.landing-public-theme.landing-editorial .landing-hero-sheen{
+ background:linear-gradient(95deg,#fff8f9eb,#fff4f4a6 55%,#faf0e774)!important
+}
+.landing-public-theme.landing-editorial .landing-hero-main h1{
+ color:#302830!important;text-shadow:none!important
+}
+.landing-public-theme.landing-editorial .landing-hero-main h1 span{
+ color:#b23a73!important
+}
+.landing-public-theme.landing-editorial .landing-hero-main>p{
+ color:#5c5056!important
+}
+.landing-public-theme.landing-editorial .landing-hero-index{color:#766971!important}
+.landing-public-theme.landing-editorial .landing-overline,
+.landing-public-theme.landing-editorial .landing-section-intro .landing-eyebrow,
+.landing-public-theme.landing-editorial .landing-eyebrow{color:#b23a73!important}
+.landing-public-theme.landing-editorial .landing-overline-dot{background:#c63378!important;box-shadow:0 0 0 5px #c6337824!important}
+.landing-public-theme.landing-editorial .landing-glass-stamp{
+ background:rgba(255,255,255,.82)!important;border:1px solid #ebd7df!important;
+ color:#302830!important;box-shadow:0 10px 34px #8b64751e!important;
+ backdrop-filter:blur(14px)!important
+}
+.landing-public-theme.landing-editorial .landing-glass-stamp strong{color:#302830!important}
+.landing-public-theme.landing-editorial .landing-glass-stamp span{color:#6c5d63!important}
+.landing-public-theme.landing-editorial .landing-glass-icon{background:#fae4ef!important;color:#b73275!important}
+.landing-public-theme.landing-editorial .landing-curations,
+.landing-public-theme.landing-editorial .landing-footer-new{background:#faf7f3!important}
+.landing-public-theme.landing-editorial .landing-section-intro h2{color:#302830!important}
+.landing-public-theme.landing-editorial .landing-section-intro p,
+.landing-public-theme.landing-editorial .landing-featured-sub{color:#685c62!important}
+.landing-public-theme.landing-editorial .landing-curation{
+ background:#fff!important;border:1px solid #eadce1!important;
+ border-radius:16px!important;box-shadow:0 6px 19px #74556615!important
+}
+.landing-public-theme.landing-editorial .landing-curation strong{color:#302830!important}
+.landing-public-theme.landing-editorial .landing-curation-bottom{color:#655960!important}
+.landing-public-theme.landing-editorial .landing-curation-icon{
+ color:#b23272!important;background:#fae6ee!important
+}
+.landing-public-theme.landing-editorial .landing-private-wrap{background:#faf7f3!important}
+.landing-public-theme.landing-editorial .landing-private-note{
+ background:#fff!important;color:#302830!important;border:1px solid #eadde1!important
+}
+.landing-public-theme.landing-editorial .landing-private-note strong{color:#302830!important}
+.landing-public-theme.landing-editorial .landing-private-note div span{color:#6a5d65!important}
+.landing-public-theme.landing-editorial .landing-footer-bottom{color:#71656b!important}
