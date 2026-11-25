@@ -261,3 +261,99 @@ html,body{color-scheme:light!important;background:var(--evs-bg)!important;color:
   animation-duration:.01ms!important;transition-duration:.01ms!important
  }
 }
+
+/* Dedicated V3 pages: attendance, people, hierarchy, employee impact and analytics. */
+.ep-shell .cc-attendance,.ep-shell .v3-scoped-people,
+.ep-shell .cc-insights,.ep-shell .cc-hierarchy-setup{color:#302a2d!important}
+.ep-shell .cc-attendance .cc-att-event,
+.ep-shell .cc-attendance .v3-list>button.cc-att-event{
+ display:flex!important;align-items:center!important;gap:15px!important;min-height:76px!important;
+ padding:15px 18px!important;margin-bottom:10px!important;width:100%!important;
+ background:#fff!important;color:#312b2f!important;border:1px solid #e8dadf!important;
+ border-left:4px solid #a7be81!important;border-radius:13px!important;
+ box-shadow:0 4px 13px #5c455210!important;text-align:left!important
+}
+.ep-shell .cc-attendance .cc-att-event>svg{color:#c63378!important;flex-shrink:0}
+.ep-shell .cc-attendance .cc-att-event strong,
+.ep-shell .cc-attendance .cc-att-event span{color:#302a2d!important;opacity:1!important}
+.ep-shell .cc-attendance .cc-att-event small{color:#71656d!important;opacity:1!important}
+.ep-shell .cc-attendance .cc-att-event .cc-att-open{
+ margin-left:auto!important;white-space:nowrap!important;background:#e9f2de!important;
+ color:#45651d!important;border:1px solid #d5e5c0!important;border-radius:10px!important;
+ padding:8px 12px!important;min-width:max-content!important;font-weight:700!important
+}
+.ep-shell .cc-attendance .cc-att-search{
+ background:#fff!important;color:#463b42!important;border:1px solid #dfd4d8!important;
+ border-radius:11px!important;display:flex;align-items:center;gap:8px;padding:4px 11px
+}
+.ep-shell .cc-attendance .cc-att-search>svg{color:#b93977!important}
+.ep-shell .cc-attendance .cc-att-search input{background:#fff!important;color:#302a2e!important;border:none!important}
+.ep-shell .v3-scoped-people .v3-list{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))!important;gap:14px!important}
+.ep-shell .v3-scoped-people .v3-list>div{
+ display:flex!important;flex-direction:column!important;gap:10px!important;
+ background:#fff!important;color:#302a2f!important;border:1px solid #e8dce1!important;
+ border-radius:14px!important;padding:18px!important;margin:0!important;
+ box-shadow:0 5px 18px #77657512!important;min-width:0!important
+}
+.ep-shell .v3-scoped-people .v3-list>div>strong{
+ color:#2e282b!important;font-weight:800!important;font-size:15px!important
+}
+.ep-shell .v3-scoped-people .v3-list>div>span{
+ color:#6b5f66!important;opacity:1!important;font-size:12.5px!important;
+ overflow-wrap:anywhere!important;line-height:1.45
+}
+.ep-shell .v3-scoped-people .v3-list>div>.ep-button.secondary{
+ align-self:flex-start!important;margin-top:auto!important;min-height:40px!important;
+ width:auto!important;padding:9px 15px!important;background:#fae9f0!important;
+ color:#9e2d62!important;border-color:#e9c4d3!important
+}
+.ep-shell .v3-scoped-people .cc-employee-actions{
+ display:flex!important;gap:8px!important;flex-wrap:wrap!important
+}
+.ep-shell .v3-scoped-people .cc-employee-actions button{flex:1 1 auto!important}
+.ep-shell .v3-daily-actions{gap:12px!important;align-items:center!important;flex-wrap:wrap!important}
+.ep-shell .v3-daily-actions input{min-height:42px!important;min-width:200px}
+.ep-shell .cc-kpi-grid{
+ display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))!important;
+ gap:14px!important;margin:12px 0 18px!important
+}
+.ep-shell .cc-kpi{
+ display:flex!important;flex-direction:column!important;gap:6px!important;
+ padding:18px 20px!important;background:#fff!important;color:#302a2d!important;
+ border:1px solid #e9dfe1!important;border-radius:15px!important;
+ box-shadow:0 5px 20px #886e7810!important;min-height:120px!important
+}
+.ep-shell .cc-kpi span{color:#5e6b4d!important;font-size:13px!important;font-weight:650!important}
+.ep-shell .cc-kpi strong{color:#3d5e22!important;font-size:30px!important;line-height:1.1!important}
+.ep-shell .cc-kpi small{color:#76696e!important;font-size:12px!important}
+.ep-shell .cc-insight-charts{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important
+}
+.ep-shell .cc-insight-card{
+ min-width:0!important;background:#fff!important;color:#302a2f!important;
+ border:1px solid #e8dfe1!important;border-radius:16px!important;
+ padding:20px!important;box-shadow:0 5px 16px #77636b0e!important
+}
+.ep-shell .cc-insight-card .cc-card-heading h3{color:#302a2d!important}
+.ep-shell .cc-insight-card .cc-card-heading>span{color:#72656d!important}
+.ep-shell .cc-mini-bar span{color:#594e55!important}
+.ep-shell .cc-mini-bar strong{color:#36571d!important}
+.ep-shell .cc-mini-track{background:#f6e7ed!important}
+.ep-shell .cc-mini-track>div{background:#638b2a!important}
+.ep-shell .cc-participation-donut>div{background:#fff!important}
+.ep-shell .cc-participation-donut strong{color:#33541b!important}
+.ep-shell .cc-participation-donut small{color:#70636b!important}
+.ep-shell .cc-participation-legend,.ep-shell .cc-participation-legend span{color:#554b52!important}
+.ep-shell .cc-att-table table{background:#fff!important;color:#302a2d!important}
+.ep-shell .cc-att-table th{background:#f8edf1!important}
+.ep-shell .cc-att-table td{color:#302a2d!important}
+.ep-shell .cc-att-submit{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+.ep-shell .cc-employee-results{background:#fff!important;color:#302a2d!important;border-color:#e8dce1!important}
+.ep-shell .cc-employee-results button{background:#fff!important;color:#302a2d!important}
+.ep-shell .cc-employee-results button:hover{background:#faeff4!important}
+@media(max-width:800px){
+ .ep-shell .cc-insight-charts{grid-template-columns:1fr!important}
+ .ep-shell .v3-scoped-people .v3-list{grid-template-columns:1fr!important}
+ .ep-shell .cc-attendance .cc-att-event{flex-wrap:wrap}
+ .ep-shell .cc-attendance .cc-att-event .cc-att-open{margin-left:0!important}
+}
