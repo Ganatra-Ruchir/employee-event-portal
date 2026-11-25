@@ -21,6 +21,7 @@ import "./header-navigation.css";
 import "./contrast-layout-repair.css";
 import "./light-editorial.css";
 import "./event-layout-polish.css";
+import "./portal-wide-alignment.css";
 
 export default function Home() {
   return <ElixirPortal />;

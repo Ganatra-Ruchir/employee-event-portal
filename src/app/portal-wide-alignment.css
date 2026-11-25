@@ -1,0 +1,121 @@
+/* Global UI density and alignment standard — keep page functionality unchanged.
+   Applied after legacy theme files. Avoid overriding the event-registration sketch. */
+.ep-shell.ep-shell{
+ --ui-page-gap:18px;--ui-card-pad:16px;--ui-control-height:40px;
+ --ui-line:#e7dee0;--ui-surface:#fff;--ui-ink:#302930;--ui-muted:#71666b;
+}
+.ep-shell.ep-shell .ep-main{width:100%!important;max-width:1560px!important;min-width:0!important;padding:clamp(14px,2vw,28px)!important}
+.ep-shell.ep-shell .ep-main>*{min-width:0!important;box-sizing:border-box}
+.ep-shell.ep-shell :is(.aw-root,.v3-workspace,.md-root,.cc-attendance,.v3-scoped-people,.cc-hierarchy-setup,.cc-insights){
+ width:100%;min-width:0;max-width:100%;box-sizing:border-box
+}
+.ep-shell.ep-shell :is(.aw-heading,.ep-page-head,.cc-page-heading,.aw-section-heading,.cc-card-heading,.ed-browse-title){
+ margin-block:0 12px!important;min-width:0;align-items:center;gap:10px
+}
+.ep-shell.ep-shell :is(.aw-heading,.ep-page-head,.cc-page-heading) h1{margin:0!important;line-height:1.18!important}
+.ep-shell.ep-shell :is(.aw-heading,.ep-page-head,.cc-page-heading) p{margin:4px 0 0!important;line-height:1.45!important}
+.ep-shell.ep-shell :is(.aw-metric-grid,.ep-stats,.v3-metrics,.cc-kpi-grid){
+ gap:12px!important;align-items:stretch!important;margin:10px 0 16px!important;
+}
+.ep-shell.ep-shell :is(.aw-metric,.ep-stats>div,.v3-metrics>div,.cc-kpi){
+ box-sizing:border-box!important;min-width:0!important;min-height:105px!important;
+ padding:12px 15px!important;gap:4px!important;height:100%!important;
+ justify-content:center!important;border-radius:14px!important;
+}
+.ep-shell.ep-shell :is(.aw-metric,.ep-stats>div,.v3-metrics>div,.cc-kpi) :is(strong,b){
+ margin:0!important;font-size:clamp(23px,2vw,30px)!important;line-height:1.12!important
+}
+.ep-shell.ep-shell :is(.aw-metric,.ep-stats>div,.v3-metrics>div,.cc-kpi) :is(small,.aw-metric-label){
+ line-height:1.35!important;margin:0!important;overflow-wrap:anywhere
+}
+.ep-shell.ep-shell :is(.aw-metric,.ep-stats>div,.v3-metrics>div,.cc-kpi) .aw-metric-icon{
+ width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;
+ margin:0!important;padding:4px!important
+}
+.ep-shell.ep-shell .aw-metric .aw-metric-icon svg{width:18px!important;height:18px!important}
+.ep-shell.ep-shell :is(.aw-two-col,.aw-organizer-columns,.cc-insight-charts,.cc-state-grid,.md-company-grid,.md-person-grid,.ed-tile-grid,.ed-event-grid){
+ gap:14px!important;align-items:start!important;min-width:0!important
+}
+.ep-shell.ep-shell :is(.aw-section,.ep-panel,.cc-insight-card,.cc-state-card,.cc-form-step,.cc-location-directory,.cc-impact-chart,.md-details,.md-company,.md-person,.md-account,.v3-list>div,.v3-list>button){
+ box-sizing:border-box!important;min-width:0!important;max-width:100%;
+}
+.ep-shell.ep-shell .ep-main :is(.ep-panel,.aw-section,.cc-insight-card,.cc-state-card,.cc-form-step,.cc-location-directory,.cc-impact-chart){
+ padding:var(--ui-card-pad)!important;margin-bottom:14px!important;border-radius:14px!important
+}
+/* Preserve specialized event composition and chart canvases. */
+.ep-shell.ep-shell .ep-main .ep-event-sketch-layout :is(.ep-detail-copy,.ep-detail-side){margin:0!important}
+.ep-shell.ep-shell .ep-main .ep-compact-registration{
+ padding:14px 17px!important;margin:0!important
+}
+.ep-shell.ep-shell .ep-main .ed-tile{padding:0!important}
+.ep-shell.ep-shell :is(.v3-list,.aw-list-panel,.md-account-list){
+ gap:10px!important;min-width:0!important
+}
+.ep-shell.ep-shell :is(.v3-list>div,.v3-list>button,.aw-item,.cc-att-event,.md-person,.md-company){
+ padding:14px 16px!important;border-radius:13px!important;min-width:0!important;
+ margin-bottom:0!important;overflow-wrap:anywhere
+}
+.ep-shell.ep-shell .v3-list>div,
+.ep-shell.ep-shell .v3-list>button{background:#fff!important;color:var(--ui-ink)!important;border:1px solid var(--ui-line)!important}
+.ep-shell.ep-shell :is(.v3-list,.aw-list-panel,.md-person-grid,.md-company-grid) :is(strong,small,span){overflow-wrap:anywhere}
+.ep-shell.ep-shell .cc-attendance .cc-att-event{
+ min-height:65px!important;display:flex!important;align-items:center!important;
+ gap:12px!important;background:#fff!important;color:#302930!important;
+ border:1px solid var(--ui-line)!important;border-left:3px solid #a7c584!important;
+}
+.ep-shell.ep-shell .cc-attendance .cc-att-event strong{color:#302930!important}
+.ep-shell.ep-shell .cc-attendance .cc-att-event small{color:#71666b!important}
+.ep-shell.ep-shell .cc-attendance .cc-att-open{margin-left:auto!important;white-space:nowrap!important}
+.ep-shell.ep-shell :is(.cc-page-actions,.v3-daily-actions,.ep-actions,.md-toolbar,.employee-list-actions,.cc-employee-actions){
+ display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:9px!important;min-width:0!important
+}
+.ep-shell.ep-shell :is(.cc-page-actions,.v3-daily-actions,.ep-actions,.md-toolbar) button{
+ min-height:var(--ui-control-height)!important;max-width:100%!important;
+}
+.ep-shell.ep-shell :is(.ep-filters,.ed-browse-controls,.cc-att-search,.md-search){
+ min-width:0!important;max-width:100%!important
+}
+.ep-shell.ep-shell :is(input,select,textarea){box-sizing:border-box;max-width:100%}
+.ep-shell.ep-shell :is(.ep-field,.v3-form label,.se-fields-grid>label){min-width:0!important}
+.ep-shell.ep-shell :is(.ep-table-scroll,.cc-att-table){max-width:100%!important;overflow-x:auto!important}
+.ep-shell.ep-shell :is(.ep-table-scroll,.cc-att-table) table{width:100%;border-collapse:collapse}
+.ep-shell.ep-shell :is(.ep-table-scroll,.cc-att-table) th,
+.ep-shell.ep-shell :is(.ep-table-scroll,.cc-att-table) td{
+ padding:10px 12px!important;vertical-align:middle!important;line-height:1.45!important
+}
+.ep-shell.ep-shell :is(.cc-mini-bar,.cc-participation-legend,.cc-card-meta,.cc-state-numbers){min-width:0!important}
+.ep-shell.ep-shell :is(.cc-insight-card,.cc-impact-chart) :is(svg,canvas){max-width:100%}
+.ep-shell.ep-shell :is(.cc-insight-card,.cc-impact-chart) h3{margin:0 0 9px!important}
+.ep-shell.ep-shell .ep-footer{padding:13px 0!important;margin-top:16px!important}
+@media(max-width:900px){
+ .ep-shell.ep-shell :is(.aw-two-col,.aw-organizer-columns,.cc-insight-charts){grid-template-columns:minmax(0,1fr)!important}
+ .ep-shell.ep-shell .ep-main{padding:14px!important}
+}
+@media(max-width:640px){
+ .ep-shell.ep-shell{--ui-card-pad:13px}
+ .ep-shell.ep-shell :is(.aw-metric-grid,.ep-stats,.v3-metrics,.cc-kpi-grid){gap:9px!important}
+ .ep-shell.ep-shell :is(.aw-metric,.ep-stats>div,.v3-metrics>div,.cc-kpi){min-height:98px!important;padding:11px 12px!important}
+ .ep-shell.ep-shell :is(.aw-two-col,.cc-insight-charts,.cc-state-grid){grid-template-columns:minmax(0,1fr)!important}
+ .ep-shell.ep-shell :is(.v3-list>div,.v3-list>button,.aw-item,.cc-att-event){padding:12px!important}
+ .ep-shell.ep-shell :is(.cc-page-actions,.v3-daily-actions,.ep-actions,.md-toolbar) button{min-height:40px!important}
+ .ep-shell.ep-shell .cc-attendance .cc-att-event{flex-wrap:wrap!important}
+ .ep-shell.ep-shell .cc-attendance .cc-att-open{margin-left:0!important}
+ .ep-shell.ep-shell :is(.ep-table-scroll,.cc-att-table) table{min-width:550px}
+}
+/* Focus and reduce-motion rules are shared with the existing accessibility layer. */
+
+/* Dashboard icon+label+value cards need a smaller inner stack than numeric-only KPIs. */
+.ep-shell.ep-shell.ep-shell .aw-metric{
+ min-height:110px!important;padding:10px 14px!important;gap:2px!important;
+}
+.ep-shell.ep-shell.ep-shell .aw-metric .aw-metric-icon{
+ width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;
+ margin:0!important;padding:3px!important
+}
+.ep-shell.ep-shell.ep-shell .aw-metric .aw-metric-icon svg{width:17px!important;height:17px!important}
+.ep-shell.ep-shell.ep-shell .aw-metric strong{font-size:26px!important;line-height:1.05!important}
+.ep-shell.ep-shell.ep-shell .aw-metric .aw-metric-label{line-height:1.25!important;font-size:12px!important}
+.ep-shell.ep-shell.ep-shell .aw-metric small{font-size:11px!important;line-height:1.25!important}
+@media(max-width:640px){
+ .ep-shell.ep-shell.ep-shell .aw-metric{padding:10px 12px!important;min-height:108px!important}
+}
