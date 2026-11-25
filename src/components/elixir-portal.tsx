@@ -288,6 +288,15 @@ export default function ElixirPortal(){
   const [showAttendees,setShowAttendees]=useState(false);
   const [showParticipants,setShowParticipants]=useState(false);
   const [accountMenuOpen,setAccountMenuOpen]=useState(false);
+  const accountMenuRef=useRef<HTMLDivElement>(null);
+  useEffect(()=>{
+    if(!accountMenuOpen)return;
+    const onPointer=(event:PointerEvent)=>{if(!accountMenuRef.current?.contains(event.target as Node))setAccountMenuOpen(false);};
+    const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setAccountMenuOpen(false);};
+    document.addEventListener("pointerdown",onPointer);
+    document.addEventListener("keydown",onKey);
+    return ()=>{document.removeEventListener("pointerdown",onPointer);document.removeEventListener("keydown",onKey);};
+  },[accountMenuOpen]);
 
   const [category,setCategory]=useState("All");
   const [timeFilter,setTimeFilter]=useState("Upcoming");
@@ -443,6 +452,7 @@ export default function ElixirPortal(){
     if(!ready||!current)return;
     const restore=()=>{
       const slug=window.location.pathname.split("/").filter(Boolean)[0]||"";
+      if(slug==="registrations"){window.history.replaceState(null,"","/overview");setView("home");return;}
       const eventId=new URLSearchParams(window.location.search).get("event");
       if(eventId){const target=data.events.find(e=>e.id===eventId);if(target&&eventAccess(current,target,data)){setSelectedEvent(eventId);setView("event");return;}}
       const routes:Record<string,View>={overview:"home",events:"events",people:"people",companies:"companies",invitations:"invitations",accounts:"users",profile:"profile",attendance:"attendance",hierarchy:"hierarchy"};
@@ -753,7 +763,7 @@ export default function ElixirPortal(){
  
       <div className="ep-top-right">
         {current.role==="employee"&&!isStateAdmin&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}
-        <div className="ep-account-menu">
+        <div className="ep-account-menu" ref={accountMenuRef}>
           <button className="ep-account cc-account-label" type="button" aria-label="Open profile and settings" aria-expanded={accountMenuOpen} aria-haspopup="menu" onClick={()=>setAccountMenuOpen(open=>!open)}>
             <PersonAvatar person={current} size={27}/><span>{current.fullName}</span><ChevronRight size={15} className={accountMenuOpen?"ep-account-caret open":"ep-account-caret"}/>
           </button>
