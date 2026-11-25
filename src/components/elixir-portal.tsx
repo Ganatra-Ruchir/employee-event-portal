@@ -829,17 +829,25 @@ export default function ElixirPortal(){
           <div className="ep-detail-layout ep-event-sketch-layout">
             <div className="ep-event-sketch-main">
               <div className="ep-banner ed-event-detail-preview"><EventCover event={selected} wide/></div>
-              <aside className="ep-detail-right"><section className="ep-panel ep-detail-side ed-linktree-registration cc-priority-registration"><div className="ed-rsvp-pill">JOIN THE EVENT</div><h2>Registration</h2><p className="ed-rsvp-invite">Be part of something meaningful.</p>
-              <div className="ed-rsvp-count"><strong>{remainingPlaces(selected,data)}</strong><span>spots left of {selected.capacity}</span></div>
-              <div className="ed-rsvp-progress" role="progressbar" aria-label="Reserved places" aria-valuenow={activeRegistrations(selected.id,data).length} aria-valuemax={selected.capacity} aria-valuemin={0}><span style={{width:(100*activeRegistrations(selected.id,data).length/selected.capacity)+"%"}}/></div>
-              <p>{activeRegistrations(selected.id,data).length} going</p>
-              {waitlistedRegistrations(selected.id,data).length>0&&<p>{waitlistedRegistrations(selected.id,data).length} on the waitlist</p>}
-              {current.role==="platform_admin"?<div className="ep-hint">Registration monitoring only</div>:data.registrations.some(r=>r.eventId===selected.id&&r.userId===current.id&&(r.status==="going"||r.status==="waitlisted"))?
-                <><div className="ep-success">{waitlistPosition(selected.id,current.id,data)>0?"You're #"+waitlistPosition(selected.id,current.id,data)+" on the waitlist":"You're going"}</div><Action kind="secondary" onClick={()=>modifyRegistration(selected,true)} disabled={!!canCancel(current,selected,data)}>Cancel RSVP</Action></>:
-                ["closed","started","cancelled","draft"].includes(registrationState(selected,data,now))?
-                <div className="ep-registration-closed" role="status"><strong>{registrationLabel(selected,data,now)}</strong><span>{canRegister(current,selected,data)||"Registration is not open."}</span></div>:
-                <><Action disabled={!!canRegister(current,selected,data)} onClick={()=>modifyRegistration(selected,false)}>{remainingPlaces(selected,data)===0?"Join waitlist":"Attend"}</Action>{canRegister(current,selected,data)&&<p className="ep-hint">{canRegister(current,selected,data)}</p>}</>}
-              {canManageEvent(selected)&&<div className="ep-admin-actions"><h3>Manage event</h3><Action kind="secondary" onClick={()=>{setEditingEvent(selected);goto("eventForm");}}>Edit event</Action>{selected.status!=="cancelled"&&<Action kind="danger" onClick={()=>cancelEvent(selected)}>Cancel event</Action>}</div>}
+              <aside className="ep-detail-right"><section className="ep-panel ep-detail-side ed-linktree-registration cc-priority-registration ep-compact-registration" aria-label="Event registration">
+              <div className="ep-compact-registration-stats">
+                <strong>{remainingPlaces(selected,data)}</strong>
+                <span>spots left</span>
+                <small>of {selected.capacity} total</small>
+                <small>{activeRegistrations(selected.id,data).length} going</small>
+              </div>
+              <div className="ep-compact-registration-action">
+                {current.role==="platform_admin"?<div className="ep-hint">Monitoring only</div>:data.registrations.some(r=>r.eventId===selected.id&&r.userId===current.id&&(r.status==="going"||r.status==="waitlisted"))?
+                  <><div className="ep-success">{waitlistPosition(selected.id,current.id,data)>0?"Waitlist #"+waitlistPosition(selected.id,current.id,data):"You're going"}</div><Action kind="secondary" onClick={()=>modifyRegistration(selected,true)} disabled={!!canCancel(current,selected,data)}>Cancel RSVP</Action></>:
+                  ["closed","started","cancelled","draft"].includes(registrationState(selected,data,now))?
+                  <div className="ep-registration-closed" role="status"><strong>{registrationLabel(selected,data,now)}</strong><span>{canRegister(current,selected,data)||"Registration is not open."}</span></div>:
+                  <><Action disabled={!!canRegister(current,selected,data)} onClick={()=>modifyRegistration(selected,false)}>{remainingPlaces(selected,data)===0?"Join waitlist":"Attend"}</Action>{canRegister(current,selected,data)&&<p className="ep-hint">{canRegister(current,selected,data)}</p>}</>}
+              </div>
+              {canManageEvent(selected)&&<div className="ep-compact-registration-manage">
+                <button type="button" className="ep-compact-edit" onClick={()=>{setEditingEvent(selected);goto("eventForm");}}>Edit event</button>
+                {selected.status!=="cancelled"&&<button type="button" className="ep-compact-cancel" onClick={()=>cancelEvent(selected)}>Cancel event</button>}
+              </div>}
+              {waitlistedRegistrations(selected.id,data).length>0&&<small className="ep-compact-waitlist">{waitlistedRegistrations(selected.id,data).length} waitlisted</small>}
             </section></aside>
             </div>
             <article className="ep-panel ep-detail-copy">
