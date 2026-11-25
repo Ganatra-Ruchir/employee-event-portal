@@ -284,9 +284,7 @@ export default function ElixirPortal(){
   const [,setSignedOut]=useState(false);
   const [showAuth,setShowAuth]=useState(false);
   useEffect(()=>{void Promise.resolve().then(()=>{if(new URLSearchParams(window.location.search).get("auth")==="login")setShowAuth(true);});},[]);
-  const [participantSearch,setParticipantSearch]=useState("");
   const [showAttendees,setShowAttendees]=useState(false);
-  const [showParticipants,setShowParticipants]=useState(false);
   const [accountMenuOpen,setAccountMenuOpen]=useState(false);
   const accountMenuRef=useRef<HTMLDivElement>(null);
   useEffect(()=>{
@@ -464,7 +462,7 @@ export default function ElixirPortal(){
   },[ready,current?.id,nav.join(",")]);
   const goto=(v:View)=>{
     if(v==="profile")setProfileMode("view");
-    setView(v);setNotice("");setParticipantSearch("");setSearch("");setAccountMenuOpen(false);setShowParticipants(false);setShowAttendees(false);
+    setView(v);setNotice("");setSearch("");setAccountMenuOpen(false);setShowAttendees(false);
     if(typeof window!=="undefined"&&v!=="event"&&v!=="eventForm"&&v!=="companyForm"){
       const slug=v==="home"?"overview":v==="users"?"accounts":v;
       if(window.location.pathname!=="/"+slug)window.history.pushState(null,"","/"+slug);
@@ -477,7 +475,7 @@ export default function ElixirPortal(){
     if(typeof window!=="undefined")window.scrollTo({top:0});
   };
   const openEvent=(id:string)=>{
-    setSelectedEvent(id);goto("event");setShowParticipants(false);setShowAttendees(false);
+    setSelectedEvent(id);goto("event");setShowAttendees(false);
     window.history.pushState(null,"","/events?event="+encodeURIComponent(id));
   };
 
@@ -854,30 +852,20 @@ export default function ElixirPortal(){
                 <div><dt>Available places</dt><dd>{remainingPlaces(selected,data)} of {selected.capacity}</dd></div>
                 {selected.deadline&&<div><dt>Registration closes</dt><dd>{dateText(selected.deadline)}</dd></div>}
               </dl>
-
-
+              <section className="ep-event-about-community" aria-label="Event host and attendees">
+                <div className="ep-event-host"><span>Hosted by</span><strong>{data.companies.find(company=>company.id===selected.companyId)?.name||"Event organization"}</strong></div>
+                <div className="ep-event-attendees">
+                  <div className="ep-event-attendee-heading"><strong>Who&apos;s going</strong><span>{activeRegistrations(selected.id,data).length} going</span></div>
+                  <div className="ep-event-attendee-actions">
+                    <GoingFaces event={selected} data={data} limit={5}/>
+                    <button type="button" className="ep-button secondary" onClick={()=>setShowAttendees(open=>!open)} aria-expanded={showAttendees}>{showAttendees?"Hide attendees":"See attendees"}</button>
+                  </div>
+                  {showAttendees&&<div className="ed-bottom-attendee-list">{permittedAttendees.length?permittedAttendees.map(person=><span key={person.id}>{person.fullName}</span>):<span>No attendee names available.</span>}</div>}
+                </div>
+              </section>
             </article>
           </div>
-          <div className="ep-event-bottom-grid">
-            
-          {canManageEvent(selected)&&<section className="ep-panel ep-participants"><div className="ep-section-head"><h2>Participants ({activeRegistrations(selected.id,data).length})</h2><button type="button" className="ep-button secondary" aria-expanded={showParticipants} onClick={()=>setShowParticipants(v=>!v)}>{showParticipants?"Hide participants":"Show all participants"}</button>{showParticipants&&<Action kind="secondary" onClick={()=>exportCsv("participants-"+selected.id+".csv",["Name","Email","Department","Registered"],activeRegistrations(selected.id,data).map(r=>{const p=data.users.find(u=>u.id===r.userId);return[p?.fullName||"",p?.email||"",p?.department||"",dateText(r.createdAt)];}))}><Download size={16}/> Export CSV</Action>}</div>
-            {showParticipants&&<><div className="ep-participant-search"><FormRow label="Search participants"><input value={participantSearch} onChange={e=>setParticipantSearch(e.target.value)} placeholder="Name, email or department"/></FormRow></div>
-          {waitlistedRegistrations(selected.id,data).length>0&&<div className="ep-info">{waitlistedRegistrations(selected.id,data).length} employees are waitlisted and will be promoted in order when places open.</div>}
-          {activeRegistrations(selected.id,data).length?<div className="ep-table-scroll"><table><thead><tr><th>Employee</th><th>Department</th><th>Registered</th><th>Action</th></tr></thead><tbody>{activeRegistrations(selected.id,data).filter(r=>{const p=data.users.find(u=>u.id===r.userId);return [p?.fullName,p?.email,p?.department].join(" ").toLowerCase().includes(participantSearch.toLowerCase());}).map(r=>{const p=data.users.find(u=>u.id===r.userId);return <tr key={r.id}><td><b>{p?.fullName}</b><small>{p?.email}</small></td><td>{p?.department}</td><td>{shortDate(r.createdAt)}</td><td><button onClick={()=>removeParticipant(selected,r.userId)}>Remove</button></td></tr>;})}</tbody></table></div>:<EmptyState title="No participants" description="Employee registrations will appear here."/>}
-          </>}
-          </section>}
-                      <footer className="ed-event-bottom-info">
-            <div className="ed-bottom-host"><span>Hosted by:</span> <strong>{data.companies.find(c=>c.id===selected.companyId)?.name||"Event organization"}</strong></div>
-            <div className="ed-bottom-going">
-              <span>Who&apos;s going:</span>
-              <GoingFaces event={selected} data={data} limit={5}/>
-              <button type="button" onClick={()=>setShowAttendees(v=>!v)} aria-expanded={showAttendees}>{showAttendees?"Hide names":"See attendees"}</button>
-            </div>
-            {showAttendees&&<div className="ed-bottom-attendee-list">
-              {permittedAttendees.length?permittedAttendees.map(person=><span key={person.id}>{person.fullName}</span>):<span>No public attendee names yet.</span>}
-            </div>}
-          </footer>
-          </div>
+
         </>}
         {view==="event"&&selected&&eventAccess(current,selected,data)&&(selected.speakers||[]).length>0&&<div className="ed-detail-speakers cc-speakers-secondary"><SpeakerGallery speakers={selected.speakers||[]}/></div>}
         {view==="event"&&(!selected||!eventAccess(current,selected,data))&&<EmptyState title="Event not available" description="The event was not found or you do not have access."/>}
