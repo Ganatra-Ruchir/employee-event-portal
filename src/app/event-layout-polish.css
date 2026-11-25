@@ -118,21 +118,33 @@
  gap:15px!important;min-width:0!important;max-width:100%!important
 }
 .ep-shell.ep-shell .ep-event-sketch-layout .ep-banner.ed-event-detail-preview{
+ position:relative!important;display:block!important;flex:0 0 auto!important;
  width:100%!important;max-width:100%!important;
  aspect-ratio:16/9!important;height:auto!important;min-height:0!important;
- max-height:none!important;margin:0!important;
+ max-height:none!important;margin:0!important;padding:0!important;
  background:#f5eae9!important;overflow:hidden!important;
  border-radius:16px!important;
 }
 .ep-shell.ep-shell .ep-event-sketch-layout .ed-cover,
 .ep-shell.ep-shell .ep-event-sketch-layout .ed-cover-wide{
- width:100%!important;height:100%!important;
- position:absolute!important;inset:0!important;aspect-ratio:auto!important
+ position:relative!important;inset:auto!important;display:block!important;
+ width:100%!important;height:auto!important;min-height:0!important;
+ aspect-ratio:16/9!important;overflow:hidden!important
 }
-.ep-shell.ep-shell .ep-event-sketch-layout .ed-cover>img,
+.ep-shell.ep-shell .ep-event-sketch-layout .ed-cover>img{
+ position:absolute!important;inset:0!important;display:block!important;
+ width:100%!important;height:100%!important;max-width:100%!important;
+ object-fit:cover!important;object-position:center!important;
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ed-speaker-slide{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+}
 .ep-shell.ep-shell .ep-event-sketch-layout .ed-speaker-slide>img{
  display:block!important;width:100%!important;height:100%!important;
  max-width:100%!important;object-fit:contain!important;object-position:center!important;
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ed-cover-inner{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
 }
 .ep-shell.ep-shell .ep-event-sketch-layout .ep-detail-right{
  display:block!important;width:100%!important;min-width:0!important
@@ -170,4 +182,23 @@
  .ep-shell.ep-shell .ep-event-sketch-layout{grid-template-columns:minmax(0,1fr)!important}
  .ep-shell.ep-shell .ep-event-bottom-grid{grid-template-columns:minmax(0,1fr)!important}
  .ep-shell.ep-shell .ep-event-sketch-layout .ep-banner.ed-event-detail-preview{max-height:none!important}
+}
+
+/* Restore header contrast: older density stylesheet painted the header dark while newer brand text is dark. */
+.ep-shell.ep-shell .ep-topbar{
+ background:rgba(255,252,251,.97)!important;color:#2f2830!important;
+ border-bottom:1px solid #e8d9df!important;
+ box-shadow:0 6px 18px rgba(94,69,84,.10)!important;
+}
+.ep-shell.ep-shell .ep-topbar .ep-brand,
+.ep-shell.ep-shell .ep-topbar .ep-brand *{
+ color:#30252c!important;opacity:1!important;
+}
+.ep-shell.ep-shell .ep-topbar .ep-top-navigation .ep-nav-link{
+ background:#fbebf1!important;color:#312930!important;
+ border:1px solid #eed5df!important;
+}
+.ep-shell.ep-shell .ep-topbar .ep-top-navigation .ep-nav-link.active{
+ background:#eaf2e0!important;color:#385c18!important;
+ border-color:#cbdcb4!important;
 }

@@ -14,7 +14,8 @@ test("Create event has one entry point, on the event management page",()=>{
 
 test("authenticated shell has one sign-out action and one responsive RSVP section",()=>{
  const portal=source("src/components/elixir-portal.tsx");
- assert.equal((portal.match(/className="ep-header-signout"/g)||[]).length,1);
+ assert.equal((portal.match(/role="menuitem" onClick=\{\(\)=>\{setAccountMenuOpen\(false\);logout\(\);\}\}/g)||[]).length,1);
+ assert.match(portal,/aria-label="Open profile and settings"/);
  assert.doesNotMatch(portal,/className="ep-side-bottom"|className="ed-mobile-rsvp"/);
  assert.equal((portal.match(/cc-priority-registration/g)||[]).length,1);
 });
