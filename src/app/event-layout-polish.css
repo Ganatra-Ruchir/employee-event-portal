@@ -202,3 +202,111 @@
  background:#eaf2e0!important;color:#385c18!important;
  border-color:#cbdcb4!important;
 }
+
+/* Compact and aligned metric cards. Keep content readable at every breakpoint. */
+.ep-shell.ep-shell .aw-metric-grid,
+.ep-shell.ep-shell .ep-stats,
+.ep-shell.ep-shell .v3-metrics,
+.ep-shell.ep-shell .cc-kpi-grid{
+ gap:12px!important;align-items:stretch!important;
+ margin-bottom:14px!important;
+}
+.ep-shell.ep-shell .aw-metric,
+.ep-shell.ep-shell .ep-stats>div,
+.ep-shell.ep-shell .v3-metrics>div,
+.ep-shell.ep-shell .cc-kpi{
+ box-sizing:border-box!important;min-width:0!important;min-height:104px!important;
+ height:100%!important;padding:14px 16px!important;
+ display:flex!important;flex-direction:column!important;
+ justify-content:center!important;gap:5px!important;
+}
+.ep-shell.ep-shell .aw-metric strong,
+.ep-shell.ep-shell .ep-stats b,
+.ep-shell.ep-shell .v3-metrics strong,
+.ep-shell.ep-shell .cc-kpi strong{
+ font-size:clamp(24px,2vw,32px)!important;line-height:1.15!important;
+ margin:0!important;
+}
+.ep-shell.ep-shell .aw-metric small,
+.ep-shell.ep-shell .cc-kpi small{
+ margin:0!important;line-height:1.35!important;
+}
+.ep-shell.ep-shell .ep-event-sketch-layout .ep-event-about-community{
+ margin-top:18px!important;padding-top:16px!important;
+ border-top:1px solid #ebdfe2!important;
+ display:grid!important;gap:16px!important;
+}
+.ep-shell.ep-shell .ep-event-about-community .ep-event-host{
+ display:flex!important;align-items:baseline!important;justify-content:space-between!important;
+ gap:8px 18px!important;flex-wrap:wrap!important;
+}
+.ep-shell.ep-shell .ep-event-about-community .ep-event-host>span{
+ font-size:13px!important;color:#72646b!important;
+}
+.ep-shell.ep-shell .ep-event-about-community .ep-event-host>strong{
+ color:#30252b!important;font-size:15px!important;
+ overflow-wrap:anywhere!important;
+}
+.ep-shell.ep-shell .ep-event-about-community .ep-event-attendees{
+ display:grid!important;gap:12px!important;
+}
+.ep-shell.ep-shell .ep-event-about-community .ep-event-attendee-heading{
+ display:flex!important;justify-content:space-between!important;
+ align-items:center!important;gap:10px!important;flex-wrap:wrap!important;
+}
+.ep-shell.ep-shell .ep-event-attendee-heading strong{color:#30252b!important;font-size:14px!important}
+.ep-shell.ep-shell .ep-event-attendee-heading span{
+ background:#eaf2e0!important;color:#385c18!important;
+ border:1px solid #cfdcb9!important;border-radius:99px!important;
+ padding:5px 10px!important;font-size:12px!important;font-weight:700!important;
+}
+.ep-shell.ep-shell .ep-event-attendee-actions{
+ display:flex!important;gap:12px!important;align-items:center!important;flex-wrap:wrap!important;
+}
+.ep-shell.ep-shell .ep-event-attendee-actions .ep-button.secondary{
+ width:auto!important;min-height:36px!important;padding:8px 12px!important;
+ white-space:nowrap!important;
+}
+.ep-shell.ep-shell .ep-event-about-community .ed-bottom-attendee-list{
+ display:flex!important;flex-wrap:wrap!important;gap:7px!important;
+ background:#faf7f4!important;border:1px solid #ebdfe2!important;
+ border-radius:11px!important;padding:12px!important;margin:0!important;
+}
+.ep-shell.ep-shell .ep-event-about-community .ed-bottom-attendee-list>span{
+ color:#3f353b!important;overflow-wrap:anywhere!important;
+}
+@media(max-width:640px){
+ .ep-shell.ep-shell .aw-metric,
+ .ep-shell.ep-shell .ep-stats>div,
+ .ep-shell.ep-shell .v3-metrics>div,
+ .ep-shell.ep-shell .cc-kpi{
+  min-height:96px!important;padding:12px 13px!important;
+ }
+ .ep-shell.ep-shell .ep-event-about-community .ep-event-host{
+  align-items:flex-start!important;
+ }
+}
+
+/* Keep KPI content vertically balanced without forcing empty height. */
+.ep-shell.ep-shell .aw-metric{
+ min-height:112px!important;padding:11px 15px!important;gap:3px!important;
+ justify-content:center!important;
+}
+.ep-shell.ep-shell .aw-metric .aw-metric-icon{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;
+ padding:4px!important;margin:0!important;flex:none!important;
+}
+.ep-shell.ep-shell .aw-metric .aw-metric-icon svg{width:18px!important;height:18px!important}
+.ep-shell.ep-shell .aw-metric .aw-metric-label{line-height:1.2!important;font-size:12px!important}
+.ep-shell.ep-shell .aw-metric strong{font-size:27px!important;line-height:1.05!important}
+.ep-shell.ep-shell .aw-metric small{font-size:11px!important;line-height:1.25!important}
+@media(max-width:640px){
+ .ep-shell.ep-shell .aw-metric{min-height:106px!important;padding:11px 12px!important}
+ .ep-shell.ep-shell .aw-metric strong{font-size:25px!important}
+}
+
+/* GoingFaces includes a count for event tiles; the About card shows that count in its heading. */
+.ep-shell.ep-shell .ep-event-about-community .ep-event-attendee-actions .ed-going>span{
+ display:none!important;
+}

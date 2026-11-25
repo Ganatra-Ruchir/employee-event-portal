@@ -15,16 +15,19 @@ test("event image stays inside a positioned 16:9 frame, rather than overlaying t
  assert.match(css,/\.ep-event-sketch-layout \.ep-banner\.ed-event-detail-preview\s*\{[^}]*aspect-ratio:16\/9!important/);
 });
 
-test("participants list is initially collapsed and requires explicit expansion",()=>{
+test("event About card shows host and attendee summary without Participants panel",()=>{
  const component=source("src/components/elixir-portal.tsx");
- assert.match(component,/const \[showParticipants,setShowParticipants\]=useState\(false\)/);
- assert.match(component,/Show all participants/);
- assert.match(component,/\{showParticipants&&<>\s*<div className="ep-participant-search"/);
+ assert.match(component,/ep-event-about-community/);
+ assert.match(component,/ep-event-host/);
+ assert.match(component,/ep-event-attendee-heading/);
+ assert.match(component,/See attendees/);
+ assert.doesNotMatch(component,/className="ep-panel ep-participants"/);
+ assert.doesNotMatch(component,/Show all participants/);
 });
 
 test("account menu and event layout have no separate My events page",()=>{
  const component=source("src/components/elixir-portal.tsx");
  assert.doesNotMatch(component,/view==="registrations"/);
  assert.match(component,/ep-account-dropdown/);
- assert.match(component,/ep-event-bottom-grid/);
+ assert.match(component,/ep-event-about-community/);
 });
