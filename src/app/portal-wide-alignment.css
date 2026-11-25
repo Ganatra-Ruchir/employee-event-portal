@@ -105,17 +105,17 @@
 /* Focus and reduce-motion rules are shared with the existing accessibility layer. */
 
 /* Dashboard icon+label+value cards need a smaller inner stack than numeric-only KPIs. */
-.ep-shell.ep-shell .aw-metric{
+.ep-shell.ep-shell.ep-shell .aw-metric{
  min-height:110px!important;padding:10px 14px!important;gap:2px!important;
 }
-.ep-shell.ep-shell .aw-metric .aw-metric-icon{
+.ep-shell.ep-shell.ep-shell .aw-metric .aw-metric-icon{
  width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;
  margin:0!important;padding:3px!important
 }
-.ep-shell.ep-shell .aw-metric .aw-metric-icon svg{width:17px!important;height:17px!important}
-.ep-shell.ep-shell .aw-metric strong{font-size:26px!important;line-height:1.05!important}
-.ep-shell.ep-shell .aw-metric .aw-metric-label{line-height:1.25!important;font-size:12px!important}
-.ep-shell.ep-shell .aw-metric small{font-size:11px!important;line-height:1.25!important}
+.ep-shell.ep-shell.ep-shell .aw-metric .aw-metric-icon svg{width:17px!important;height:17px!important}
+.ep-shell.ep-shell.ep-shell .aw-metric strong{font-size:26px!important;line-height:1.05!important}
+.ep-shell.ep-shell.ep-shell .aw-metric .aw-metric-label{line-height:1.25!important;font-size:12px!important}
+.ep-shell.ep-shell.ep-shell .aw-metric small{font-size:11px!important;line-height:1.25!important}
 @media(max-width:640px){
- .ep-shell.ep-shell .aw-metric{padding:10px 12px!important;min-height:108px!important}
+ .ep-shell.ep-shell.ep-shell .aw-metric{padding:10px 12px!important;min-height:108px!important}
 }
