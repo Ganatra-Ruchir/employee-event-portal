@@ -22,7 +22,19 @@ function EventCoverImpl({event,wide=false}:{event:PortalEvent;wide?:boolean}) {
   const [broken,setBroken]=useState<string[]>([]);
   const markBroken=(src?:string)=>{if(src)setBroken(list=>list.includes(src)?list:[...list,src]);};
   const photos=(event.speakers||[]).filter(person=>Boolean(person.photoDataUrl)&&!broken.includes(person.photoDataUrl!));
-  const banner=event.bannerDataUrl&&!broken.includes(event.bannerDataUrl)?event.bannerDataUrl:undefined;
+  // Curated illustrative photos are shown only for fictional demo events, never for real events.
+  // User-provided event banners always take priority. No database rows are altered.
+  const isDemoEvent=/\bdemo\b/i.test(event.title);
+  const demoPhoto=isDemoEvent
+    ? /read|book|literacy|school|education|kit/i.test(event.title)
+      ? "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=85"
+      : /plant|tree|environment|green/i.test(event.title)
+        ? "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1200&q=85"
+        : "https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=85"
+    : undefined;
+  const banner=event.bannerDataUrl&&!broken.includes(event.bannerDataUrl)
+    ? event.bannerDataUrl
+    : demoPhoto&&!broken.includes(demoPhoto)?demoPhoto:undefined;
   const [slide,setSlide]=useState(0);
   const coverRef=useRef<HTMLDivElement>(null);
   const [visible,setVisible]=useState(false);
