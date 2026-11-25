@@ -16,3 +16,11 @@ test("shared layout preserves compact event registration and responsive KPI grid
  assert.match(css,/\.cc-attendance \.cc-att-event/);
  assert.match(css,/@media\(max-width:640px\)/);
 });
+
+test("main portal content is horizontally centered rather than forced left",()=>{
+ const css=file("src/app/portal-wide-alignment.css");
+ assert.match(css,/\.ep-shell\.ep-shell \.ep-main\s*\{[^}]*max-width:1360px!important/s);
+ assert.match(css,/margin-left:auto!important/);
+ assert.match(css,/margin-right:auto!important/);
+ assert.match(css,/@media\(max-width:900px\)/);
+});
