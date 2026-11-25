@@ -15,6 +15,7 @@ import "./qa-fixes.css";
 import "./ux-fixes.css";
 import "./impact-workspace.css";
 import "./layout-density.css";
+import "./premium-2026.css";
 
 export default function Home() {
   return <ElixirPortal />;
