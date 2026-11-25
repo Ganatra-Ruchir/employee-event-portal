@@ -7,6 +7,7 @@ import "./landing-public-theme.css";
 import "./premium-2026.css";
 import "./motion-glass.css";
 import "./header-navigation.css";
+import "./contrast-layout-repair.css";
 export const metadata:Metadata={
   title:"Employee Volunteer System",
   description:"Secure organization events, team experiences and employee registration."
