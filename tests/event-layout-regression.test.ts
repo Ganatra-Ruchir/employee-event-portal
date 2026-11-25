@@ -31,3 +31,16 @@ test("account menu and event layout have no separate My events page",()=>{
  assert.match(component,/ep-account-dropdown/);
  assert.match(component,/ep-event-about-community/);
 });
+
+test("event registration uses a compact count-action-management row",()=>{
+ const component=source("src/components/elixir-portal.tsx");
+ const css=source("src/app/event-layout-polish.css");
+ assert.match(component,/className="ep-panel ep-detail-side ed-linktree-registration cc-priority-registration ep-compact-registration"/);
+ assert.match(component,/ep-compact-registration-stats/);
+ assert.match(component,/ep-compact-registration-action/);
+ assert.match(component,/ep-compact-registration-manage/);
+ assert.doesNotMatch(component,/className="ed-rsvp-count"/);
+ assert.doesNotMatch(component,/className="ed-rsvp-progress"/);
+ assert.match(css,/\.ep-detail-side\.ep-compact-registration\{/);
+ assert.match(css,/grid-template-columns:minmax\(88px,.22fr\)/);
+});
