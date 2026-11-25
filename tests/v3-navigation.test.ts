@@ -16,12 +16,12 @@ test("country/company admin has hierarchy, people and attendance",()=>{
 test("new Bihar state admin has People and Attendance but cannot manage hierarchy",()=>{
  const nav=navigationForLevel("state_admin");
  assert.deepEqual(nav.daily,["home","events","attendance","people"]);
- assert.deepEqual(nav.settings,["profile"]);
+ assert.deepEqual(nav.settings,[]);
  assert.equal(mayProvisionEmployees("state_admin"),true);
 });
 test("regular employee cannot see admin controls or provision accounts",()=>{
  const nav=navigationForLevel("employee");
- assert.deepEqual(nav.daily,["home","events","registrations"]);
+ assert.deepEqual(nav.daily,["home","events"]);
  assert.deepEqual(nav.settings,["profile"]);
  assert.equal(mayProvisionEmployees("employee"),false);
 });
