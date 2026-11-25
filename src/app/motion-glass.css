@@ -1,0 +1,126 @@
+/* Motion and glass polish. No JS, third-party animation package or layout dependencies. */
+@keyframes ev-rise{from{opacity:0;transform:translate3d(0,15px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes ev-halo{0%,100%{transform:translate3d(-3%,0,0);opacity:.34}50%{transform:translate3d(3%,-2%,0);opacity:.62}}
+@keyframes ev-sheen{from{transform:translateX(-165%) skewX(-20deg)}to{transform:translateX(270%) skewX(-20deg)}}
+@keyframes ev-border-light{0%,100%{opacity:.35}50%{opacity:.8}}
+@keyframes ev-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes ev-soft-pulse{0%,100%{box-shadow:0 0 0 0 #84dfaf00}50%{box-shadow:0 0 0 7px #84dfaf13}}
+:where(.ep-shell,.ep-auth-layout,.landing-editorial){--ev-glass:rgba(25,46,37,.76);--ev-glass-edge:rgba(168,236,190,.25);--ev-ease:cubic-bezier(.2,.75,.25,1)}
+/* Functional layouts are untouched; glass is applied to their existing surfaces. */
+.ep-shell .ep-topbar,.ep-shell .ep-sidebar{
+ background:rgba(14,32,24,.79)!important;
+ backdrop-filter:blur(22px) saturate(140%)!important;
+ -webkit-backdrop-filter:blur(22px) saturate(140%)!important;
+}
+.ep-shell .ep-panel,.ep-shell .aw-metric,.ep-shell .ep-stats>div,
+.ep-shell .aw-company-card,.ep-shell .aw-action-grid>button,.ep-shell .ed-tile,
+.ep-shell .md-company,.ep-shell .md-person,.ep-shell .md-account,
+.ep-shell .cc-impact-chart,.ep-shell .v3-metrics>div,.ep-shell .ep-detail-copy,
+.ep-shell .ep-detail-side,.ep-shell .sp-card,.ep-shell .aw-list-panel,
+.ep-shell .ed-browse-controls{
+ background:linear-gradient(137deg,rgba(44,76,59,.84),rgba(20,38,30,.89) 56%,rgba(36,43,39,.84))!important;
+ border-color:var(--ev-glass-edge)!important;
+ backdrop-filter:blur(14px) saturate(125%);
+ -webkit-backdrop-filter:blur(14px) saturate(125%);
+ box-shadow:inset 0 1px 0 #ffffff13,0 15px 38px #030f0a38!important;
+ transition:transform .28s var(--ev-ease),border-color .25s ease,box-shadow .28s ease,background .28s ease!important;
+}
+.ep-shell .aw-metric,.ep-shell .ep-stats>div,.ep-shell .aw-company-card,
+.ep-shell .aw-action-grid>button,.ep-shell .ed-tile,.ep-shell .md-person,
+.ep-shell .md-company,.ep-shell .cc-impact-chart{position:relative;isolation:isolate;overflow:hidden}
+.ep-shell .aw-metric::after,.ep-shell .ep-stats>div::after,
+.ep-shell .aw-action-grid>button::after,.ep-shell .md-company::after{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:radial-gradient(circle at 105% -5%,#a4ffc019,transparent 42%);
+}
+@media(hover:hover) and (pointer:fine){
+ .ep-shell .aw-metric:hover,.ep-shell .ep-stats>div:hover,.ep-shell .aw-company-card:hover,
+ .ep-shell .aw-action-grid>button:hover,.ep-shell .ed-tile:hover,.ep-shell .md-person:hover,
+ .ep-shell .md-company:hover,.ep-shell .cc-impact-chart:hover{
+  transform:translate3d(0,-4px,0);
+  border-color:#8be5b078!important;
+  box-shadow:inset 0 1px 0 #ffffff27,0 24px 44px #0007,0 0 28px #69dba612!important;
+ }
+}
+.ep-shell .ep-button.primary,.ep-shell .aw-primary,.ep-shell .ed-meetup-cta,
+.ep-shell .ed-search-toggle,.ep-auth-layout .ep-auth-submit,
+.landing-editorial .landing-cta,.landing-editorial .landing-signup{
+ position:relative;isolation:isolate;overflow:hidden;
+ transition:transform .22s var(--ev-ease),box-shadow .22s ease,filter .22s ease!important;
+}
+.ep-shell .ep-button.primary::before,.ep-shell .aw-primary::before,.ep-shell .ed-meetup-cta::before,
+.ep-shell .ed-search-toggle::before,.ep-auth-layout .ep-auth-submit::before,
+.landing-editorial .landing-cta::before,.landing-editorial .landing-signup::before{
+ content:"";position:absolute;inset:-35% auto -35% -90%;width:44%;pointer-events:none;z-index:0;
+ background:linear-gradient(90deg,transparent,#ffffff75,transparent);
+ transform:translateX(-165%) skewX(-20deg);opacity:0;
+}
+@media(hover:hover) and (pointer:fine){
+ .ep-shell .ep-button.primary:hover,.ep-shell .aw-primary:hover,.ep-shell .ed-meetup-cta:hover,
+ .ep-shell .ed-search-toggle:hover,.ep-auth-layout .ep-auth-submit:hover,
+ .landing-editorial .landing-cta:hover,.landing-editorial .landing-signup:hover{
+  transform:translateY(-3px)!important;filter:brightness(1.06);
+  box-shadow:0 13px 30px #79e9ac4d,0 0 0 1px #d5ffe57a!important;
+ }
+ .ep-shell .ep-button.primary:hover::before,.ep-shell .aw-primary:hover::before,
+ .ep-shell .ed-meetup-cta:hover::before,.ep-shell .ed-search-toggle:hover::before,
+ .ep-auth-layout .ep-auth-submit:hover::before,.landing-editorial .landing-cta:hover::before,
+ .landing-editorial .landing-signup:hover::before{
+  opacity:1;animation:ev-sheen .8s ease-out both;
+ }
+}
+.ep-shell button:active:not(:disabled),.ep-auth-layout button:active:not(:disabled),
+.landing-editorial button:active:not(:disabled){
+ transform:translateY(1px) scale(.985)!important;filter:brightness(.98);
+}
+.ep-shell button:disabled,.ep-auth-layout button:disabled{filter:saturate(.4);box-shadow:none!important}
+.ep-shell .ep-button.secondary,.ep-shell .ep-button.plain,.ep-shell .md-outline-action,
+.ep-shell .aw-text-action{transition:background .2s,border-color .2s,color .2s,transform .2s!important}
+.ep-shell .ep-button.secondary:hover,.ep-shell .md-outline-action:hover{
+ background:#325c45!important;border-color:#a0dfb7!important;color:#f4fff6!important;
+}
+.ep-shell .ep-nav-link{transition:background .22s var(--ev-ease),color .2s,transform .22s var(--ev-ease)!important}
+.ep-shell .ep-nav-link.active{box-shadow:inset 2px 0 0 #adf6c9,0 4px 16px #001b0e2e!important}
+.ep-shell .ep-field input,.ep-shell .ep-field select,.ep-shell .ep-field textarea,
+.ep-auth-layout input,.ep-auth-layout select,.ep-auth-layout textarea{
+ transition:border-color .18s,box-shadow .18s,background .18s!important;
+}
+.ep-shell .ep-chip.green,.ep-shell .aw-status.active{animation:ev-soft-pulse 4s ease-in-out infinite}
+.ep-shell .aw-heading,.ep-shell .ep-page-head,.ep-shell .ed-browse-title,
+.ep-shell .aw-metric-grid,.ep-shell .ep-stats,.ep-shell .ed-meetup-copy,
+.ep-auth-layout .ep-auth-card{animation:ev-rise .55s var(--ev-ease) both}
+.ep-shell .aw-metric-grid>.aw-metric:nth-child(2),.ep-shell .ep-stats>div:nth-child(2){animation-delay:70ms}
+.ep-shell .aw-metric-grid>.aw-metric:nth-child(3),.ep-shell .ep-stats>div:nth-child(3){animation-delay:130ms}
+.ep-shell .aw-metric-grid>.aw-metric:nth-child(4),.ep-shell .ep-stats>div:nth-child(4){animation-delay:190ms}
+.ep-shell .aw-metric-grid>.aw-metric,.ep-shell .ep-stats>div{animation:ev-rise .48s var(--ev-ease) both}
+.landing-photo-hero::after{
+ content:"";position:absolute;inset:-25%;z-index:-1;pointer-events:none;
+ background:radial-gradient(ellipse at 80% 25%,rgba(129,235,174,.18),transparent 44%),
+ radial-gradient(ellipse at 16% 79%,rgba(238,152,184,.12),transparent 35%);
+ animation:ev-halo 13s ease-in-out infinite alternate;
+}
+.landing-editorial .landing-hero-main{animation:ev-rise .8s var(--ev-ease) both}
+.landing-editorial .landing-glass-stamp{
+ background:rgba(15,36,27,.63)!important;border:1px solid #c7f5da55!important;
+ backdrop-filter:blur(22px) saturate(130%);-webkit-backdrop-filter:blur(22px) saturate(130%);
+ box-shadow:0 20px 50px #0006,inset 0 1px #ffffff2e!important;
+ animation:ev-float 7s ease-in-out infinite;
+}
+.landing-editorial .landing-curation{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .3s var(--ev-ease),box-shadow .3s ease!important}
+.landing-editorial .landing-curation:nth-child(2){animation-delay:80ms}
+.landing-editorial .landing-curation:nth-child(3){animation-delay:160ms}
+.landing-editorial .landing-curation:nth-child(4){animation-delay:240ms}
+@media(max-width:720px){
+ .ep-shell .aw-metric,.ep-shell .ep-stats>div,.ep-shell .v3-metrics>div{min-height:98px!important}
+ .landing-editorial .landing-glass-stamp{animation:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .ep-shell *,.ep-shell *::before,.ep-shell *::after,
+ .ep-auth-layout *,.ep-auth-layout *::before,.ep-auth-layout *::after,
+ .landing-editorial *,.landing-editorial *::before,.landing-editorial *::after{
+  animation-duration:.01ms!important;animation-iteration-count:1!important;
+  transition-duration:.01ms!important;scroll-behavior:auto!important;
+ }
+ .ep-shell .ep-button.primary::before,.ep-auth-layout .ep-auth-submit::before,
+ .landing-editorial .landing-signup::before{display:none!important}
+}
