@@ -34,7 +34,7 @@ import {
 } from "@/lib/portal-model";
 import type { Company, EventFormat, EventStatus, Invitation, Person, PortalData, PortalEvent, Role } from "@/lib/portal-model";
 
-type View="home"|"events"|"registrations"|"people"|"companies"|"invitations"|"users"|"profile"|"attendance"|"hierarchy"|"event"|"eventForm"|"companyForm";
+type View="home"|"events"|"people"|"companies"|"invitations"|"users"|"profile"|"attendance"|"hierarchy"|"event"|"eventForm"|"companyForm";
 type AuthView="login"|"signup"|"verify"|"forgot";
 const STORE="elixir-events-data-v3",SESSION="elixir-events-session-v2";
 /** New events default to 09:00–12:00 local time one week from today, never a fixed date that goes stale. */
@@ -50,7 +50,7 @@ const initialEvent=(companyId:string,userId:string):PortalEvent=>({
 });
 const roleName=(role:Role)=>role==="platform_admin"?"Platform admin":role==="company_admin"?"Company admin":"Employee";
 const pageName=(view:View)=>({
-  home:"Discover",events:"Events",registrations:"My events",people:"People",companies:"Companies",
+  home:"Discover",events:"Events",people:"People",companies:"Companies",
   invitations:"Invitations",users:"Accounts",profile:"Profile & settings",attendance:"Attendance",hierarchy:"Hierarchy",event:"Event details",eventForm:"Event form",companyForm:"Company form"
 })[view];
 const emailOk=(e:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
@@ -286,7 +286,9 @@ export default function ElixirPortal(){
   useEffect(()=>{void Promise.resolve().then(()=>{if(new URLSearchParams(window.location.search).get("auth")==="login")setShowAuth(true);});},[]);
   const [participantSearch,setParticipantSearch]=useState("");
   const [showAttendees,setShowAttendees]=useState(false);
-  const [historyFilter,setHistoryFilter]=useState("Upcoming");
+  const [showParticipants,setShowParticipants]=useState(false);
+  const [accountMenuOpen,setAccountMenuOpen]=useState(false);
+
   const [category,setCategory]=useState("All");
   const [timeFilter,setTimeFilter]=useState("Upcoming");
   const [placesOnly,setPlacesOnly]=useState(false);
@@ -443,16 +445,16 @@ export default function ElixirPortal(){
       const slug=window.location.pathname.split("/").filter(Boolean)[0]||"";
       const eventId=new URLSearchParams(window.location.search).get("event");
       if(eventId){const target=data.events.find(e=>e.id===eventId);if(target&&eventAccess(current,target,data)){setSelectedEvent(eventId);setView("event");return;}}
-      const routes:Record<string,View>={overview:"home",events:"events",registrations:"registrations",people:"people",companies:"companies",invitations:"invitations",accounts:"users",profile:"profile",attendance:"attendance",hierarchy:"hierarchy"};
+      const routes:Record<string,View>={overview:"home",events:"events",people:"people",companies:"companies",invitations:"invitations",accounts:"users",profile:"profile",attendance:"attendance",hierarchy:"hierarchy"};
       const requested=routes[slug];
-      if(requested&&nav.includes(requested))setView(requested);
+      if(requested&&(nav.includes(requested)||requested==="profile"))setView(requested);
       else setView("home");
     };
     restore();window.addEventListener("popstate",restore);return ()=>window.removeEventListener("popstate",restore);
   },[ready,current?.id,nav.join(",")]);
   const goto=(v:View)=>{
     if(v==="profile")setProfileMode("view");
-    setView(v);setNotice("");setParticipantSearch("");setSearch("");
+    setView(v);setNotice("");setParticipantSearch("");setSearch("");setAccountMenuOpen(false);setShowParticipants(false);setShowAttendees(false);
     if(typeof window!=="undefined"&&v!=="event"&&v!=="eventForm"&&v!=="companyForm"){
       const slug=v==="home"?"overview":v==="users"?"accounts":v;
       if(window.location.pathname!=="/"+slug)window.history.pushState(null,"","/"+slug);
@@ -465,7 +467,7 @@ export default function ElixirPortal(){
     if(typeof window!=="undefined")window.scrollTo({top:0});
   };
   const openEvent=(id:string)=>{
-    setSelectedEvent(id);goto("event");
+    setSelectedEvent(id);goto("event");setShowParticipants(false);setShowAttendees(false);
     window.history.pushState(null,"","/events?event="+encodeURIComponent(id));
   };
 
@@ -737,11 +739,7 @@ export default function ElixirPortal(){
     if(timeFilter==="Past"&&new Date(e.startsAt)>=new Date(now))return false;
     return true;
   }).sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime());
-  const myRegs=registrationsFor(current.id,data).sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime());
-  const visibleRegs=myRegs.filter(r=>{const e=data.events.find(x=>x.id===r.eventId);if(!e||!eventAccess(current,e,data))return false;
-    if(historyFilter==="Upcoming")return (r.status==="going"||r.status==="waitlisted")&&new Date(e.startsAt).getTime()>now;
-    if(historyFilter==="Past")return new Date(e.startsAt).getTime()<=now;
-    if(historyFilter==="Cancelled")return r.status==="cancelled";return true;});
+
   const companyPeople=data.users.filter(u=>u.companyId===current.companyId&&(!isCountryAdmin||remote||data.v3?.members.some(m=>m.user_id===u.id&&m.country_code===previewActor(current,data).scope?.country_code&&m.level==="employee")));
   const availableCompanies=data.companies;
   return <div className="ep-shell">
@@ -753,7 +751,19 @@ export default function ElixirPortal(){
         {nav.map((v,i)=><div className="cc-nav-entry" key={v}>{i===dailyNav.length&&<div className="cc-nav-group-title">Administration & settings</div>}<button key={v} data-view={v} aria-current={view===v?"page":undefined} className={"ep-nav-link"+(view===v?" active":"")} onClick={()=>goto(v)}>{v==="home"?<LayoutDashboard size={18}/>:v==="events"?<CalendarDays size={18}/>:v==="registrations"?<ClipboardList size={18}/>:v==="companies"?<Building2 size={18}/>:v==="invitations"?<Mail size={18}/>:v==="profile"?<UserRound size={18}/>:v==="hierarchy"?<Network size={18}/>:v==="attendance"?<UserRoundCheck size={18}/>:<Users size={18}/>} {v==="home"?(current.role==="platform_admin"?"Overview":current.role==="company_admin"||(!remote&&previewActor(current,data).level==="state_admin")?"Dashboard":"My impact"):v==="hierarchy"&&current.role==="platform_admin"?"Global hierarchy":pageName(v)}</button></div>)}
       </nav>
  
-      <div className="ep-top-right">{current.role==="employee"&&!isStateAdmin&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}<div className="ep-account cc-account-label"><PersonAvatar person={current} size={27}/><span>{current.fullName}</span></div><button className="ep-header-signout" type="button" onClick={logout} aria-label="Sign out" title="Sign out"><LogOut size={18}/></button></div>
+      <div className="ep-top-right">
+        {current.role==="employee"&&!isStateAdmin&&<EmployeeEventNotifications user={current} data={data} events={companyEvents} onOpen={openEvent}/>}
+        <div className="ep-account-menu">
+          <button className="ep-account cc-account-label" type="button" aria-label="Open profile and settings" aria-expanded={accountMenuOpen} aria-haspopup="menu" onClick={()=>setAccountMenuOpen(open=>!open)}>
+            <PersonAvatar person={current} size={27}/><span>{current.fullName}</span><ChevronRight size={15} className={accountMenuOpen?"ep-account-caret open":"ep-account-caret"}/>
+          </button>
+          {accountMenuOpen&&<div className="ep-account-dropdown" role="menu">
+            <div className="ep-account-dropdown-head"><strong>{current.fullName}</strong><small>{current.email}</small></div>
+            <button type="button" role="menuitem" onClick={()=>goto("profile")}><UserRound size={17}/> Profile & settings</button>
+            <button type="button" role="menuitem" onClick={()=>{setAccountMenuOpen(false);logout();}}><LogOut size={17}/> Sign out</button>
+          </div>}
+        </div>
+      </div>
     </header>
     <div className="ep-layout">
      <main className="ep-main" id="main-content" tabIndex={-1}>
@@ -846,26 +856,15 @@ export default function ElixirPortal(){
               {permittedAttendees.length?permittedAttendees.map(person=><span key={person.id}>{person.fullName}</span>):<span>No public attendee names yet.</span>}
             </div>}
           </footer>
-          {canManageEvent(selected)&&<section className="ep-panel ep-participants"><div className="ep-section-head"><h2>Participants</h2><Action kind="secondary" onClick={()=>exportCsv("participants-"+selected.id+".csv",["Name","Email","Department","Registered"],activeRegistrations(selected.id,data).map(r=>{const p=data.users.find(u=>u.id===r.userId);return[p?.fullName||"",p?.email||"",p?.department||"",dateText(r.createdAt)];}))}><Download size={16}/> Export CSV</Action></div>
-            <div className="ep-participant-search"><FormRow label="Search participants"><input value={participantSearch} onChange={e=>setParticipantSearch(e.target.value)} placeholder="Name, email or department"/></FormRow></div>
+          {canManageEvent(selected)&&<section className="ep-panel ep-participants"><div className="ep-section-head"><h2>Participants ({activeRegistrations(selected.id,data).length})</h2><button type="button" className="ep-button secondary" aria-expanded={showParticipants} onClick={()=>setShowParticipants(v=>!v)}>{showParticipants?"Hide participants":"Show all participants"}</button>{showParticipants&&<Action kind="secondary" onClick={()=>exportCsv("participants-"+selected.id+".csv",["Name","Email","Department","Registered"],activeRegistrations(selected.id,data).map(r=>{const p=data.users.find(u=>u.id===r.userId);return[p?.fullName||"",p?.email||"",p?.department||"",dateText(r.createdAt)];}))}><Download size={16}/> Export CSV</Action></div>
+            {showParticipants&&<><div className="ep-participant-search"><FormRow label="Search participants"><input value={participantSearch} onChange={e=>setParticipantSearch(e.target.value)} placeholder="Name, email or department"/></FormRow></div>
           {waitlistedRegistrations(selected.id,data).length>0&&<div className="ep-info">{waitlistedRegistrations(selected.id,data).length} employees are waitlisted and will be promoted in order when places open.</div>}
           {activeRegistrations(selected.id,data).length?<div className="ep-table-scroll"><table><thead><tr><th>Employee</th><th>Department</th><th>Registered</th><th>Action</th></tr></thead><tbody>{activeRegistrations(selected.id,data).filter(r=>{const p=data.users.find(u=>u.id===r.userId);return [p?.fullName,p?.email,p?.department].join(" ").toLowerCase().includes(participantSearch.toLowerCase());}).map(r=>{const p=data.users.find(u=>u.id===r.userId);return <tr key={r.id}><td><b>{p?.fullName}</b><small>{p?.email}</small></td><td>{p?.department}</td><td>{shortDate(r.createdAt)}</td><td><button onClick={()=>removeParticipant(selected,r.userId)}>Remove</button></td></tr>;})}</tbody></table></div>:<EmptyState title="No participants" description="Employee registrations will appear here."/>}
+          </>}
           </section>}
         </>}
         {view==="event"&&selected&&eventAccess(current,selected,data)&&(selected.speakers||[]).length>0&&<div className="ed-detail-speakers cc-speakers-secondary"><SpeakerGallery speakers={selected.speakers||[]}/></div>}
         {view==="event"&&(!selected||!eventAccess(current,selected,data))&&<EmptyState title="Event not available" description="The event was not found or you do not have access."/>}
-        {view==="registrations"&&<>
-          <WorkspaceHeading eyebrow="YOUR PARTICIPATION" title="My events" description="The events you joined, waitlisted and cancelled."/>
-          <div className="aw-browse-bar"><div className="aw-filter-tabs" role="group" aria-label="Filter registrations">
-            {["All","Upcoming","Past","Cancelled"].map(option=><button key={option} className={historyFilter===option?"active":""} onClick={()=>setHistoryFilter(option)} aria-pressed={historyFilter===option}>{option}</button>)}
-          </div><span className="aw-count">{visibleRegs.length} records</span></div>
-          {visibleRegs.length?<div className="aw-registration-list">{visibleRegs.map(r=>{const e=data.events.find(x=>x.id===r.eventId)!;
-            return <button className="aw-registration-row" key={r.id} onClick={()=>openEvent(e.id)}>
-             <span className="aw-reg-date"><strong>{new Date(e.startsAt).toLocaleDateString("en-IN",{day:"2-digit"})}</strong><small>{new Date(e.startsAt).toLocaleDateString("en-IN",{month:"short"}).toUpperCase()}</small></span>
-             <span className="aw-reg-info"><strong>{e.title}</strong><small>{e.category} · {dateText(e.startsAt)}</small></span>
-             <Chip tone={r.status==="going"?"green":r.status==="waitlisted"?"orange":"neutral"}>{r.status==="going"?"Going":r.status==="waitlisted"?"Waitlisted":"Cancelled"}</Chip><ChevronRight size={20}/>
-            </button>})}</div>:<div className="aw-empty"><CalendarDays size={23}/><strong>No registrations found</strong><p>Join an event to see it here, or choose another filter.</p></div>}
-        </>}
         {view==="people"&&remote&&current.role==="company_admin"&&!isCountryAdmin&&<div className="ep-info" role="alert"><strong>Country access not assigned.</strong> The platform administrator must assign this company admin to a country under Global hierarchy before employees can be managed.</div>}
         {view==="people"&&current.role==="company_admin"&&!remote&&<>
           {(!isCountryAdmin||remote)&&<WorkspaceHeading eyebrow={company?.name.toUpperCase()||"COMPANY"} title="Your people" description="Manage employee accounts."/>}
