@@ -17,6 +17,7 @@ import "./impact-workspace.css";
 import "./layout-density.css";
 import "./premium-2026.css";
 import "./motion-glass.css";
+import "./header-navigation.css";
 
 export default function Home() {
   return <ElixirPortal />;
